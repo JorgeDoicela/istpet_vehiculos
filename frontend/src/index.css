@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Paleta Apple Air 2026 */
+    --apple-bg: #f5f5f7;
+    --apple-card: rgba(255, 255, 255, 0.7);
+    --apple-border: rgba(255, 255, 255, 0.3);
+    --apple-text-main: #1d1d1f;
+    --apple-text-sub: #86868b;
+    --apple-primary: #0071e3;
+    --apple-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+  }
+
+  body {
+    @apply bg-[var(--apple-bg)] text-[var(--apple-text-main)] font-sans antialiased overflow-x-hidden;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(210,100%,98%,1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(220,100%,97%,1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(190,100%,98%,1) 0, transparent 50%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Efecto Cristal Esmerilado Premium */
+  .apple-glass {
+    @apply backdrop-blur-2xl bg-white/70 border border-white/40 shadow-[var(--apple-glass-shadow)];
+  }
+
+  .apple-glass-dark {
+    @apply backdrop-blur-3xl bg-slate-900/10 border border-white/10 shadow-2xl;
+  }
+
+  /* Botones Apple Estilo Líquido */
+  .btn-apple {
+    @apply px-6 py-3 rounded-full font-semibold transition-all duration-500 active:scale-95;
+  }
+
+  .btn-apple-primary {
+    @apply btn-apple bg-[var(--apple-primary)] text-white shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 hover:-translate-y-0.5;
+  }
+
+  .btn-apple-secondary {
+    @apply btn-apple bg-white/80 text-[var(--apple-text-main)] border border-white/50 backdrop-blur-md hover:bg-white;
+  }
+
+  /* Tarjetas Apple Widget */
+  .apple-card {
+    @apply rounded-[2.5rem] apple-glass p-8 transition-all duration-700 hover:shadow-2xl hover:scale-[1.01];
+  }
+}
+
+/* Animaciones Orgánicas */
+@keyframes apple-fade-in {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-apple-in {
+  animation: apple-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

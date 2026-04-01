@@ -1,0 +1,28 @@
+# .NET 8 / C#
+[Bb]in/
+[Oo]bj/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Node.js / React
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Logs
+logs/
+*.log
+
+# Databases
+*.db
+*.mysql
+
+# Editor (VS Code / Visual Studio)
+.vscode/
+.vs/
+*.suo
+*.user
+*.userosscache
+!/**/.github/workflows/
