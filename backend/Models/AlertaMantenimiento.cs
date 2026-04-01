@@ -5,14 +5,16 @@ namespace backend.Models
 {
     /**
      * Read-only model for SQL View: v_alerta_mantenimiento
+     * Aligned with SQL Healer (snake_case database)
      */
     [Keyless]
     public class AlertaMantenimiento
     {
+        public int Id_Vehiculo { get; set; }
         public int Numero_Vehiculo { get; set; }
         public string Placa { get; set; } = string.Empty;
         public int Km_Actual { get; set; }
         public int? Km_Proximo_Mantenimiento { get; set; }
-        public int? Km_Para_Taller { get; set; }
+        public int? Km_Restantes { get; set; }
     }
 }

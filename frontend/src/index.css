@@ -51,9 +51,30 @@
   .apple-card {
     @apply rounded-[2.5rem] apple-glass p-8 transition-all duration-700 hover:shadow-2xl hover:scale-[1.01];
   }
+
+  /* Esqueletos de Carga Zenith */
+  .skeleton {
+    @apply bg-slate-200/50 rounded-2xl relative overflow-hidden;
+  }
+
+  .skeleton::after {
+    @apply absolute inset-0 content-[''];
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 1.8s infinite;
+  }
+
+  /* Notificaciones macOS Style */
+  .apple-toast {
+    @apply fixed top-8 right-8 z-[100] apple-glass px-8 py-5 rounded-[2rem] flex items-center gap-6 animate-apple-in shadow-2xl;
+  }
 }
 
-/* Animaciones Orgánicas */
+/* Animaciones Zenith */
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 @keyframes apple-fade-in {
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }

@@ -1,32 +1,42 @@
 import axios from 'axios';
 
 /**
- * 🛰️ CONFIGURACIÓN DE API EMPRESARIAL
- * Centraliza la comunicación y el manejo de errores.
+ * ISTPET API - Ultra-Stable Axios Configuration
+ * Port: 5112 (Development)
  */
 const api = axios.create({
-  baseURL: 'http://localhost:5112/api',
-  timeout: 10000,
-  headers: {
-    'Content-Type': 'application/json'
-  }
+    baseURL: 'http://localhost:5112/api',
+    timeout: 8000,
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
 
-// INTERCEPTOR DE RESPUESTA: Procesa el formato ApiResponse<T> automáticamente
-api.interceptors.response.use(
-  (response) => {
-    // Si la respuesta es exitosa segun nuestro estandar ApiResponse
-    if (response.data && response.data.success) {
-      return response.data.data; // Devolvemos solo la carga útil (Data)
+// Logger Seguro de Peticiones
+api.interceptors.request.use(config => {
+    try {
+        console.log(`[API REQUEST] ${config?.method?.toUpperCase() || 'GET'} -> ${config?.url || 'URL_UNKNOWN'}`);
+    } catch (e) {
+        // Silencio en modo producción si falla el log
     }
-    return Promise.reject(response.data?.message || 'Error desconocido del servidor');
-  },
-  (error) => {
-    // Manejo global de desconexiones o errores 500
-    const message = error.response?.data?.message || 'Error de conexión con el sistema ISTPET';
-    console.error('API Error:', message);
-    return Promise.reject(message);
-  }
+    return config;
+}, error => {
+    return Promise.reject(error);
+});
+
+// Logger Seguro de Respuestas
+api.interceptors.response.use(
+    (response) => {
+        try {
+            console.log(`[API RESPONSE SUCCESS] ${response?.config?.url || 'OK'}`);
+        } catch (e) {}
+        return response;
+    },
+    (error) => {
+        const errorMsg = error.response?.data?.message || error.message || 'Error de conexión';
+        console.error(`[API ERROR] ${errorMsg}`);
+        return Promise.reject(error);
+    }
 );
 
 export default api;

@@ -1,15 +1,23 @@
 import api from './api';
 
+/**
+ * Dashboard Service - Unpacks ApiResponse<T> for UI components
+ */
 const dashboardService = {
   getClasesActivas: async () => {
-    return await api.get('/Dashboard/clases-activas');
+    const response = await api.get('/Dashboard/clases-activas');
+    // Desempaquetamos ApiResponse.Data
+    return response.data?.data || [];
   },
+  
   getAlertasMantenimiento: async () => {
-    return await api.get('/Dashboard/alertas-mantenimiento');
+    const response = await api.get('/Dashboard/alertas-mantenimiento');
+    return response.data?.data || [];
   },
+  
   syncStudents: async () => {
-    // Sincronización Profesional con fuentes externas
-    return await api.post('/Sync/students');
+    const response = await api.post('/Sync/students');
+    return response.data?.data || null;
   }
 };
 

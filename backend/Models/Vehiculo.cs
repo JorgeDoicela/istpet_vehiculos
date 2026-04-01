@@ -3,6 +3,10 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
+    /**
+     * ISTPET Enterprise Vehicle Model
+     * Aligned with DESCRIBE vehiculos (MySQL tinyint(1) -> bool)
+     */
     public class Vehiculo
     {
         [Key]
@@ -30,9 +34,9 @@ namespace backend.Models
 
         public int? KmProximoMantenimiento { get; set; }
 
-        public bool Activo { get; set; } = true;
+        public bool Activo { get; set; } = true; // Corregido: tinyint(1) mapea a bool en .NET
 
-        // Navigation Properties (Enterprise approach)
+        // Navigation Properties
         [ForeignKey("IdTipoLicencia")]
         public virtual TipoLicencia? TipoLicencia { get; set; }
 
