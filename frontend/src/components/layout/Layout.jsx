@@ -14,17 +14,20 @@ const Layout = ({ children }) => {
             <main className="flex-1 lg:ml-80 transition-all duration-700">
                 {/* Header Fijo Zenith 2026 */}
                 <header className="fixed top-0 left-0 lg:left-80 right-0 z-40 bg-[var(--apple-bg)]/80 backdrop-blur-2xl border-b border-[var(--apple-border)] px-4 lg:px-12 py-3 lg:py-6 flex items-center justify-between transition-all duration-500 animate-apple-in">
-                        <div className="flex items-center gap-4 lg:gap-6">
+                        <div className="flex items-center gap-5 lg:gap-8 hover:opacity-90 transition-all cursor-pointer">
                             <img 
                                 src={logoImg} 
                                 alt="Logo ISTPET" 
-                                className="w-12 h-12 lg:w-20 lg:h-20 object-contain transition-all duration-500 hover:scale-105 drop-shadow-[0_2px_8px_rgba(0,30,80,0.15)]" 
+                                className={`
+                                    w-14 h-14 lg:w-24 lg:h-24 object-contain transition-all duration-700 hover:scale-105 active:scale-95
+                                    ${theme === 'light' ? 'brightness-0 contrast-200 opacity-90' : 'drop-shadow-[0_4px_20px_rgba(255,255,255,0.15)]'}
+                                `} 
                             />
                             <div className="flex flex-col">
-                                <h2 className="text-sm lg:text-xl font-black tracking-tighter text-[var(--istpet-navy)] leading-none mb-1 uppercase opacity-80">
+                                <h2 className="text-[10px] lg:text-sm font-black tracking-[0.3em] text-[var(--istpet-navy)] leading-none mb-1.5 uppercase opacity-60">
                                     Gestión Conducción
                                 </h2>
-                                <span className="text-lg lg:text-3xl font-black tracking-tighter text-[var(--istpet-gold)] leading-none -mt-1">
+                                <span className="text-xl lg:text-4xl font-black tracking-tighter text-[var(--istpet-gold)] leading-none">
                                     ISTPET
                                 </span>
                             </div>
