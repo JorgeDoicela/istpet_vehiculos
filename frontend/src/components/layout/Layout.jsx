@@ -13,14 +13,14 @@ const Layout = ({ children }) => {
             {/* Área de Contenido Principal */}
             <main className="flex-1 lg:ml-80 transition-all duration-700">
                 {/* Header Fijo Zenith 2026 */}
-                <header className="sticky top-0 z-40 bg-[var(--apple-bg)]/80 backdrop-blur-2xl border-b border-[var(--apple-border)] px-4 lg:px-12 py-6 mb-8 lg:mb-12 flex items-center justify-between transition-all duration-500 animate-apple-in">
+                <header className="fixed top-0 left-0 lg:left-80 right-0 z-40 bg-[var(--apple-bg)]/80 backdrop-blur-2xl border-b border-[var(--apple-border)] px-4 lg:px-12 py-3 lg:py-6 flex items-center justify-between transition-all duration-500 animate-apple-in">
                     <div className="flex items-center gap-4 lg:gap-6">
                         <div className={`
                             p-2.5 lg:p-3 rounded-2xl shadow-xl border flex items-center justify-center group overflow-hidden relative transition-all duration-500
                             ${theme === 'dark' ? 'bg-slate-800/50 border-white/10' : 'bg-[var(--istpet-navy)] border-white/10'}
                         `}>
                             <div className="absolute inset-0 bg-gradient-to-tr from-white/5 to-transparent pointer-events-none"></div>
-                            <img src={logoImg} alt="Logo ISTPET" className="w-10 h-10 lg:w-14 lg:h-14 object-contain transition-transform duration-500 group-hover:scale-110" />
+                            <img src={logoImg} alt="Logo ISTPET" className="w-8 h-8 lg:w-14 lg:h-14 object-contain transition-transform duration-500 group-hover:scale-110" />
                         </div>
                         <div className="flex flex-col">
                             <h2 className="text-lg lg:text-3xl font-black tracking-tighter text-[var(--istpet-navy)] leading-none mb-1">
@@ -57,7 +57,7 @@ const Layout = ({ children }) => {
                     </div>
                 </header>
 
-                <div className="p-4 lg:p-12 pt-0 lg:pt-0">
+                <div className="p-4 lg:p-12 pt-24 lg:pt-36">
                     {children}
                 </div>
             </main>

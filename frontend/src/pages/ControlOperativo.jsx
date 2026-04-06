@@ -179,7 +179,7 @@ const ControlOperativo = () => {
                 <div className="flex items-center justify-center gap-3 lg:gap-6 mb-6 lg:mb-10 text-center animate-apple-in">
                     <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-r from-transparent to-[var(--apple-text-main)] opacity-10"></div>
                     <h1 className="text-[10px] lg:text-xs font-black tracking-[0.4em] text-[var(--apple-text-main)] opacity-80 uppercase whitespace-nowrap">
-                        Gestión y Control de Unidades
+                        Gestión de Unidades
                     </h1>
                     <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-l from-transparent to-[var(--apple-text-main)] opacity-10"></div>
                 </div>
@@ -194,7 +194,7 @@ const ControlOperativo = () => {
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
                                 <div className="flex items-center justify-between mb-10">
-                                    <h3 className="text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
+                                    <h3 className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                 </div>
 
                                 <div className="space-y-8">
@@ -210,7 +210,7 @@ const ControlOperativo = () => {
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value)}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-3xl px-8 py-5 text-xl font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-3xl px-6 lg:px-8 py-3 lg:py-5 text-lg lg:text-xl font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner"
                                             />
                                             {salidaLoading && (
                                                 <div className="absolute right-6">
@@ -295,7 +295,7 @@ const ControlOperativo = () => {
                                     <div className="pt-6">
                                         <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 px-2">
                                             <div>
-                                                <h3 className="text-xl font-black text-[var(--apple-text-main)] mb-1">Selección de Vehículo</h3>
+                                                <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Selección de Vehículo</h3>
                                                 <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Unidades operativas disponibles</p>
                                             </div>
                                             <div className="flex bg-[var(--apple-bg)] p-1 rounded-2xl border border-[var(--apple-border)]">
@@ -327,7 +327,7 @@ const ControlOperativo = () => {
 
                                     {/* Selección Instructor */}
                                     <div className="pt-6">
-                                        <h3 className="text-xl font-black text-[var(--apple-text-main)] mb-6 px-2">Asignación de Instructor</h3>
+                                        <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-6 px-2">Asignación de Instructor</h3>
                                         <div className="relative group">
                                             <label className="absolute left-6 -top-3 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-emerald-600 tracking-[0.2em] uppercase z-10">
                                                 Docente Responsable
@@ -335,7 +335,7 @@ const ControlOperativo = () => {
                                             <select
                                                 value={instructorSeleccionado?.id_Instructor || ''}
                                                 onChange={(e) => setInstructorSeleccionado(instructores.find(i => i.id_Instructor.toString() === e.target.value))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-8 py-5 text-sm font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-6 lg:px-8 py-4 lg:py-5 text-xs lg:text-sm font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
                                             >
                                                 <option value="" disabled>-- SELECCIONE DOCENTE --</option>
                                                 {instructores.map(i => <option key={i.id_Instructor} value={i.id_Instructor}>{i.fullName}</option>)}
@@ -357,7 +357,7 @@ const ControlOperativo = () => {
                                         <button
                                             onClick={procesarSalida}
                                             disabled={!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado}
-                                            className={`px-12 py-6 rounded-[2.5rem] text-xl font-black transition-all ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.02]'}`}
+                                            className={`px-8 lg:px-12 py-4 lg:py-6 rounded-[2.5rem] text-lg lg:text-xl font-black transition-all ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.02]'}`}
                                         >
                                             Confirmar Salida
                                         </button>
@@ -367,7 +367,7 @@ const ControlOperativo = () => {
                         ) : (
                             <div className="apple-card">
                                 <div className="flex items-center justify-between mb-10">
-                                    <h3 className="text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
+                                    <h3 className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
                                     <div className="flex gap-2 items-center text-xs font-black text-emerald-500 uppercase tracking-widest">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                                         UNIDADES EN PISTA
@@ -416,7 +416,7 @@ const ControlOperativo = () => {
                                                 </div>
                                                 <button
                                                     onClick={procesarLlegada}
-                                                    className="px-12 py-6 bg-[var(--istpet-gold)] text-white rounded-[2.5rem] text-xl font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                                    className="px-8 lg:px-12 py-4 lg:py-6 bg-[var(--istpet-gold)] text-white rounded-[2.5rem] text-lg lg:text-xl font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                                                 >
                                                     Confirmar Retorno
                                                 </button>

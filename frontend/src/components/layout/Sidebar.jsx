@@ -45,7 +45,7 @@ const Sidebar = () => {
     const isItemActive = (item) => {
         if (item.id === 'monitoreo') return location.pathname === '/monitoreo';
         if (location.pathname !== '/') return false;
-        if (!currentTab && item.id === 'salida') return true; 
+        if (!currentTab && item.id === 'salida') return true;
         return currentTab === item.id;
     };
 
@@ -70,11 +70,11 @@ const Sidebar = () => {
                                 className={`
                                     flex items-center gap-5 px-6 py-4 rounded-2xl transition-all duration-500 group
                                     ${active
-                                        ? (theme === 'light' 
-                                            ? 'bg-[var(--istpet-navy)] text-white shadow-xl shadow-slate-200' 
+                                        ? (theme === 'light'
+                                            ? 'bg-[var(--istpet-navy)] text-white shadow-xl shadow-slate-200'
                                             : 'bg-[var(--apple-primary)] text-white shadow-xl shadow-blue-500/20')
-                                        : theme === 'light' 
-                                            ? 'text-[var(--istpet-gold)] hover:bg-[var(--apple-card)] hover:shadow-lg' 
+                                        : theme === 'light'
+                                            ? 'text-[var(--istpet-gold)] hover:bg-[var(--apple-card)] hover:shadow-lg'
                                             : 'text-[var(--apple-text-sub)] hover:bg-[var(--apple-card)] hover:text-[var(--apple-text-main)] hover:shadow-lg'
                                     }
                                 `}
@@ -97,7 +97,7 @@ const Sidebar = () => {
             </aside>
 
             {/* Bottom Tab Bar Mobile (Themed Style) */}
-            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-[var(--apple-card)] backdrop-blur-xl border-t border-[var(--apple-border)] z-[100] flex items-center justify-around px-4 lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
+            <nav className="fixed bottom-0 left-0 right-0 h-16 lg:h-20 bg-[var(--apple-card)]/90 backdrop-blur-2xl border-t border-[var(--apple-border)] z-[100] flex items-center justify-around px-2 lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.05)]">
                 {menuItems.map((item) => {
                     const active = isItemActive(item);
                     return (
@@ -105,17 +105,17 @@ const Sidebar = () => {
                             key={item.id}
                             to={item.path}
                             className={`
-                                flex flex-col items-center justify-center gap-1.5 transition-all duration-300 flex-1
-                                ${active 
-                                    ? (theme === 'light' ? 'text-[var(--istpet-navy)]' : 'text-[var(--apple-primary)]') + ' scale-110'
+                                flex flex-col items-center justify-center gap-0.5 transition-all duration-300 flex-1
+                                ${active
+                                    ? (theme === 'light' ? 'text-[var(--istpet-navy)]' : 'text-[var(--apple-primary)]') + ' scale-105'
                                     : (theme === 'light' ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--apple-text-main)]')
                                 }
                             `}
                         >
-                            <div className="p-1 px-3 rounded-xl transition-all">
+                            <div className="p-0.5 px-2 rounded-xl transition-all">
                                 {item.icon}
                             </div>
-                            <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${active ? 'opacity-100' : 'opacity-60'}`}>
+                            <span className={`text-[8px] font-black uppercase tracking-widest ${active ? 'opacity-100' : 'opacity-60'}`}>
                                 {item.name}
                             </span>
                         </NavLink>
