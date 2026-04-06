@@ -178,7 +178,7 @@ const ControlOperativo = () => {
                 {/* Header Seccion */}
                 <div className="flex items-center justify-center gap-3 lg:gap-6 mb-6 lg:mb-10 text-center animate-apple-in">
                     <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-r from-transparent to-[var(--apple-text-main)] opacity-10"></div>
-                    <h1 className="text-[10px] lg:text-xs font-black tracking-[0.4em] text-[var(--apple-text-main)] opacity-80 uppercase whitespace-nowrap">
+                    <h1 className="text-xl lg:text-3xl font-black tracking-[0.2em] text-[var(--apple-text-main)] uppercase whitespace-nowrap drop-shadow-sm">
                         Gestión de Unidades
                     </h1>
                     <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-l from-transparent to-[var(--apple-text-main)] opacity-10"></div>
@@ -469,13 +469,7 @@ const ControlOperativo = () => {
                             </div>
                         </div>
 
-                        <div className="apple-card p-8 border border-[var(--apple-border)]">
-                            <h4 className="text-xs font-black text-[var(--apple-text-sub)] tracking-[0.2em] uppercase mb-4">Estado de Red</h4>
-                            <div className="flex items-center gap-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                <span className="text-xs font-black text-[var(--apple-text-main)] uppercase tracking-widest">Servidores Operativos</span>
-                            </div>
-                        </div>
+
 
                     </div>
                 </div>
