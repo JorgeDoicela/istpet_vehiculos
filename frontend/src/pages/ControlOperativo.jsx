@@ -1,13 +1,24 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
+import LogisticaHeader from '../components/logistica/LogisticaHeader';
 import logisticaService from '../services/logisticaService';
 import dashboardService from '../services/dashboardService';
 import StatusBadge from '../components/common/StatusBadge';
 import VehicleCard from '../components/logistica/VehicleCard';
 
 const ControlOperativo = () => {
-    const [activeTab, setActiveTab] = useState('salida'); // salida | llegada
+    const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
+
+    // Sync activeTab con URL params
+    useEffect(() => {
+        const tab = searchParams.get('tab');
+        if (tab && (tab === 'salida' || tab === 'llegada')) {
+            setActiveTab(tab);
+        }
+    }, [searchParams]);
 
     // --- Estado Salida ---
     const [salidaCedula, setSalidaCedula] = useState('');
@@ -167,43 +178,24 @@ const ControlOperativo = () => {
             )}
 
             <div className="max-w-6xl mx-auto pt-10 pb-20 px-6">
-                
-                {/* Header Premium */}
-                <div className="mb-6 lg:mb-12 text-center animate-apple-in">
-                    <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-slate-900 mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
+
+                <div className="mb-10 lg:mb-16 text-center animate-apple-in">
+                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900 mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600 uppercase">
                         Logística Operativa
                     </h1>
-                    <p className="text-slate-500 font-medium text-sm lg:text-lg">Control de flota y gestión académica en tiempo real</p>
-                </div>
-
-                {/* Tabs Estilo Zen */}
-                <div className="flex justify-center mb-8 lg:mb-16 animate-apple-in" style={{ animationDelay: '0.1s' }}>
-                    <div className="bg-slate-200/50 backdrop-blur-xl p-1.5 rounded-full flex gap-1 border border-white/40 shadow-inner w-full max-w-sm lg:max-w-none">
-                        <button 
-                            onClick={() => setActiveTab('salida')} 
-                            className={`flex-1 lg:px-10 py-3 rounded-full text-xs lg:text-sm font-bold transition-all duration-500 ${activeTab === 'salida' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
-                            Salida
-                        </button>
-                        <button 
-                            onClick={() => setActiveTab('llegada')} 
-                            className={`flex-1 lg:px-10 py-3 rounded-full text-xs lg:text-sm font-bold transition-all duration-500 ${activeTab === 'llegada' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
-                            Llegada
-                        </button>
-                    </div>
+                    <p className="text-slate-500 font-medium text-sm lg:text-xl tracking-tight opacity-70 italic">Despacho y Seguimiento de Unidades en Pista</p>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
-                    
+
                     {/* Formulario Principal (Izquierda) */}
                     <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
-                        
+
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
                                 <div className="flex items-center justify-between mb-10">
                                     <h3 className="text-2xl font-black text-slate-800 tracking-tight">Registro de Salida</h3>
                                     <div className="flex gap-2 items-center text-xs font-black text-slate-400 tracking-widest uppercase">
-                                        <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></div>
-                                        Paso 1: Identificación
                                     </div>
                                 </div>
 
@@ -214,13 +206,13 @@ const ControlOperativo = () => {
                                             Cédula del Estudiante
                                         </label>
                                         <div className="flex items-center gap-4">
-                                            <input 
-                                                type="text" 
+                                            <input
+                                                type="text"
                                                 placeholder="Ej. 1725555377"
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value)}
-                                                className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-3xl px-8 py-5 text-xl font-bold text-slate-800 focus:border-blue-500 focus:bg-white outline-none transition-all shadow-inner" 
+                                                className="w-full bg-slate-50/50 border-2 border-slate-100 rounded-3xl px-8 py-5 text-xl font-bold text-slate-800 focus:border-blue-500 focus:bg-white outline-none transition-all shadow-inner"
                                             />
                                             {salidaLoading && (
                                                 <div className="absolute right-6">
@@ -236,9 +228,9 @@ const ControlOperativo = () => {
                                             <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-6 text-center lg:text-left">
                                                 {estudianteData.fotoBase64 ? (
                                                     <div className="h-24 w-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0">
-                                                        <img 
-                                                            src={`data:image/jpeg;base64,${estudianteData.fotoBase64}`} 
-                                                            alt="Alumno" 
+                                                        <img
+                                                            src={`data:image/jpeg;base64,${estudianteData.fotoBase64}`}
+                                                            alt="Alumno"
                                                             className="w-full h-full object-cover"
                                                         />
                                                     </div>
@@ -287,7 +279,7 @@ const ControlOperativo = () => {
                                                             <p className="text-sm font-bold">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora || '--:--'} • {estudianteData.practicaInstructor}</p>
                                                         </div>
                                                     </div>
-                                                    <button 
+                                                    <button
                                                         onClick={() => {
                                                             const veh = vehiculos.find(v => v.idVehiculo === estudianteData.idPracticaCentral || v.vehiculoStr.includes(estudianteData.practicaVehiculo));
                                                             const inst = instructores.find(i => i.fullName.includes(estudianteData.practicaInstructor?.split(' ')[0] || '---'));
@@ -313,33 +305,32 @@ const ControlOperativo = () => {
                                             <div className="flex flex-col">
                                                 <h3 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Selección de Vehículo</h3>
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                                                    Escoja una unidad operativa de la flota
+                                                    Escoja una unidad operativa
                                                 </p>
                                             </div>
 
                                             {/* Selector de Licencia Estilo Toggle Premium */}
                                             <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
                                                 {['C', 'D', 'E'].map(lic => (
-                                                    <button 
+                                                    <button
                                                         key={lic}
-                                                        onClick={() => {/* El filtro es automático por el alumno, pero aquí se muestra el estado */}}
+                                                        onClick={() => {/* El filtro es automático por el alumno, pero aquí se muestra el estado */ }}
                                                         disabled={estudianteData && estudianteData.tipoLicencia !== lic}
-                                                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${
-                                                            estudianteData?.tipoLicencia === lic 
-                                                            ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' 
+                                                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${estudianteData?.tipoLicencia === lic
+                                                            ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200'
                                                             : 'text-slate-400 opacity-40'
-                                                        }`}
+                                                            }`}
                                                     >
                                                         TIPO {lic}
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
-                                        
+
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                             {vehiculos.length > 0 ? (
                                                 (() => {
-                                                    const filteredVehicles = estudianteData 
+                                                    const filteredVehicles = estudianteData
                                                         ? vehiculos.filter(v => v.idTipoLicencia <= estudianteData.idTipoLicencia)
                                                         : vehiculos;
 
@@ -354,9 +345,9 @@ const ControlOperativo = () => {
                                                     }
 
                                                     return filteredVehicles.map(v => (
-                                                        <VehicleCard 
-                                                            key={v.idVehiculo} 
-                                                            vehiculo={v} 
+                                                        <VehicleCard
+                                                            key={v.idVehiculo}
+                                                            vehiculo={v}
                                                             isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
                                                             onSelect={handleSeleccionarVehiculo}
                                                         />
@@ -365,7 +356,7 @@ const ControlOperativo = () => {
                                             ) : (
                                                 <div className="col-span-full py-20 text-center apple-glass rounded-[2rem] opacity-30">
                                                     <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                                                     <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Conectando con Flota...</p>
+                                                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Conectando con Flota...</p>
                                                 </div>
                                             )}
                                         </div>
@@ -375,14 +366,13 @@ const ControlOperativo = () => {
                                     <div className="pt-6 animate-apple-in">
                                         <div className="flex items-center justify-between mb-6">
                                             <h3 className="text-xl font-black text-slate-800 tracking-tight">Asignación de Instructor</h3>
-                                            <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">Paso 3: Personal Autorizado</span>
                                         </div>
-                                        
+
                                         <div className="relative group">
                                             <label className="absolute left-6 -top-3 px-2 bg-white text-[9px] font-black text-emerald-600 tracking-[0.2em] uppercase z-10 transition-all group-focus-within:text-emerald-700">
                                                 Instructor de Clase
                                             </label>
-                                            <select 
+                                            <select
                                                 value={instructorSeleccionado?.id_Instructor || ''}
                                                 onChange={(e) => {
                                                     const inst = instructores.find(i => i.id_Instructor.toString() === e.target.value);
@@ -404,25 +394,39 @@ const ControlOperativo = () => {
 
                                     </div>
 
-                                    <div className="pt-10 flex justify-end gap-4 border-t border-slate-100">
-                                         <div className="flex-1 flex flex-col justify-center">
-                                            <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 tracking-widest uppercase">
-                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                Timestamp: {new Date().toLocaleDateString('es-ES', { weekday: 'short' })} {horaRetorno}
+                                    <div className="pt-10 flex flex-row items-stretch justify-between gap-2 sm:gap-4 border-t border-slate-100 h-24 sm:h-32">
+                                        <div className="flex-1 flex items-stretch min-w-0">
+                                            <div className="w-full flex items-center gap-2 sm:gap-6 bg-white border-2 border-blue-50 px-3 sm:px-8 rounded-[2.5rem] sm:rounded-[4rem] shadow-xl group transition-all hover:shadow-2xl relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 w-24 h-24 bg-blue-50 rounded-full translate-x-12 -translate-y-12 opacity-50"></div>
+
+                                                <div className="relative">
+                                                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/30 group-hover:rotate-12 transition-transform duration-500">
+                                                        <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    </div>
+                                                    <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-emerald-500 rounded-full border-4 border-white animate-pulse shadow-sm"></div>
+                                                </div>
+
+                                                <div className="flex flex-col relative z-10">
+                                                    <span className="text-[9px] font-black text-blue-600/60 uppercase tracking-[0.25em] leading-none mb-1.5">Salida</span>
+                                                    <div className="flex items-baseline gap-1.5 sm:gap-3">
+                                                        <span className="text-xl sm:text-4xl font-black tracking-tighter leading-none text-slate-900">{horaRetorno}</span>
+                                                        <span className="text-[10px] sm:text-xs font-black text-blue-600 bg-blue-50 px-2 sm:px-3 py-1 rounded-lg uppercase tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                         </div>
-                                         <button 
+                                        </div>
+                                        <button
                                             onClick={procesarSalida}
                                             disabled={!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado}
-                                            className={`btn-apple-primary px-12 py-5 text-lg font-black tracking-tight ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) && 'opacity-30 grayscale cursor-not-allowed transform-none shadow-none text-slate-400'}`}>
+                                            className={`flex-shrink-0 btn-apple-primary px-6 sm:px-12 text-sm sm:text-xl font-black tracking-tight rounded-[2.5rem] sm:rounded-[4rem] ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) && 'opacity-30 grayscale cursor-not-allowed transform-none shadow-none text-slate-400'}`}>
                                             Confirmar Salida
-                                         </button>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="apple-card">
-                                 <div className="flex items-center justify-between mb-10">
+                                <div className="flex items-center justify-between mb-10">
                                     <h3 className="text-2xl font-black text-slate-800 tracking-tight">Registro de Llegada</h3>
                                     <div className="flex gap-2 items-center text-xs font-black text-slate-400 tracking-widest uppercase">
                                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -434,7 +438,7 @@ const ControlOperativo = () => {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {clasesActivas.length > 0 ? (
                                             clasesActivas.map(c => (
-                                                <div 
+                                                <div
                                                     key={c.id_Registro}
                                                     onClick={() => setClaseSeleccionada(c)}
                                                     className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-emerald-50 border-emerald-500 shadow-md ring-4 ring-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:border-slate-300'}`}
@@ -447,7 +451,7 @@ const ControlOperativo = () => {
                                                     <p className="text-xs text-slate-500 font-medium truncate mb-4">Estudiante: {c.estudiante || 'Cargando...'}</p>
                                                     <div className="flex items-center gap-3 text-[10px] font-black text-slate-400 tracking-widest uppercase">
                                                         <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Salida: {new Date(c.salida).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                                        Salida: {new Date(c.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </div>
                                                 </div>
                                             ))
@@ -460,14 +464,30 @@ const ControlOperativo = () => {
 
                                     {claseSeleccionada && (
                                         <div className="mt-8 p-8 bg-amber-50/70 border border-amber-200 rounded-[2.5rem] animate-apple-in">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <h6 className="text-amber-900 font-black tracking-tight leading-none mb-1">Cierre de Operación</h6>
-                                                    <p className="text-amber-700/60 text-xs font-bold uppercase tracking-widest">Confirme el retorno de la unidad</p>
+                                            <div className="flex flex-row items-stretch justify-between gap-2 sm:gap-4 w-full h-24 sm:h-32">
+                                                <div className="flex-1 flex items-stretch min-w-0">
+                                                    <div className="w-full flex items-center gap-2 sm:gap-6 bg-white border-2 border-emerald-50 px-3 sm:px-8 rounded-[2.5rem] sm:rounded-[4rem] shadow-xl group transition-all hover:shadow-2xl relative overflow-hidden">
+                                                        <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full translate-x-12 -translate-y-12 opacity-50"></div>
+
+                                                        <div className="relative">
+                                                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-emerald-600 flex items-center justify-center text-white shadow-lg shadow-emerald-600/30 group-hover:rotate-12 transition-transform duration-500">
+                                                                <svg className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                            </div>
+                                                            <div className="absolute -bottom-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full border-4 border-white animate-pulse shadow-sm"></div>
+                                                        </div>
+
+                                                        <div className="flex flex-col relative z-10">
+                                                            <span className="text-[9px] font-black text-emerald-600/60 uppercase tracking-[0.25em] leading-none mb-1.5">Retorno (Live)</span>
+                                                            <div className="flex items-baseline gap-1.5 sm:gap-3">
+                                                                <span className="text-xl sm:text-4xl font-black tracking-tighter leading-none text-slate-900">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                                <span className="text-[10px] sm:text-xs font-black text-emerald-600 bg-emerald-50 px-2 sm:px-3 py-1 rounded-lg uppercase tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <button 
+                                                <button
                                                     onClick={procesarLlegada}
-                                                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-12 py-5 text-lg font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
+                                                    className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white rounded-[2.5rem] sm:rounded-[4rem] px-6 sm:px-12 text-sm sm:text-xl font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
                                                     Confirmar Retorno
                                                 </button>
                                             </div>
@@ -480,14 +500,14 @@ const ControlOperativo = () => {
 
                     {/* Dashboard Lateral / Info (Derecha) */}
                     <div className="lg:col-span-5 xl:col-span-4 space-y-8 animate-apple-in" style={{ animationDelay: '0.3s' }}>
-                        
+
                         {/* Widget de Resumen */}
                         <div className="apple-glass rounded-[2.5rem] p-8 border-white/60 relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-blue-500/10 transition-colors duration-700"></div>
-                             
-                             <h4 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-8">Agenda ISTPET (SIGAFI)</h4>
-                             
-                             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-blue-500/10 transition-colors duration-700"></div>
+
+                            <h4 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-8">Agenda ISTPET (SIGAFI)</h4>
+
+                            <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
                                 {agendadosHoy.length > 0 ? (
                                     agendadosHoy.map(ag => (
                                         <div key={ag.idPractica} className="bg-white/40 p-4 rounded-2xl border border-white/40 hover:bg-white/60 transition-all group/item">
@@ -497,7 +517,7 @@ const ControlOperativo = () => {
                                             </div>
                                             <p className="text-[11px] font-bold text-slate-800 uppercase truncate">{ag.cedulaAlumno}</p>
                                             <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate">{ag.profesorNombre}</p>
-                                            <button 
+                                            <button
                                                 onClick={() => setSalidaCedula(ag.cedulaAlumno)}
                                                 className="mt-3 w-full py-1.5 bg-blue-500/10 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-blue-500 hover:text-white"
                                             >
@@ -514,21 +534,10 @@ const ControlOperativo = () => {
                                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sin agendas para hoy</p>
                                     </div>
                                 )}
-                             </div>
+                            </div>
                         </div>
 
-                        {/* Banner Estilo Apple Card */}
-                        <div className="bg-gradient-to-br from-indigo-600 to-blue-700 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden group">
-                             <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-125 transition-transform duration-700">
-                                <svg className="h-40 w-40" fill="currentColor" viewBox="0 0 24 24"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
-                             </div>
-                             <h5 className="text-2xl font-black tracking-tight mb-2">Flota en Pista</h5>
-                             <p className="text-blue-100 text-sm font-medium leading-relaxed mb-6 opacity-80">Gestione eficientemente el flujo de vehículos y estudiantes de la institución ISTPET.</p>
-                             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400"></div>
-                                Sistema Activo 2026
-                             </div>
-                        </div>
+
 
                     </div>
                 </div>

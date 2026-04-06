@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
+import LogisticaHeader from '../components/logistica/LogisticaHeader';
 import ActiveClasses from '../components/features/ActiveClasses';
 import SkeletonLoader from '../components/features/SkeletonLoader';
 import dashboardService from '../services/dashboardService';
@@ -66,8 +67,10 @@ const Home = () => {
 
             <div className="space-y-12">
                 <div className="max-w-4xl">
-                    <h1 className="text-5xl font-black tracking-tighter text-slate-900 uppercase">Monitoreo Live </h1>
-                    <p className="text-[var(--apple-text-sub)] font-bold text-[10px] uppercase tracking-[0.25em] mt-3">SISTEMA SIMPLIFICADO DE CONTROL</p>
+                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900 uppercase bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
+                        Pista & Monitoreo
+                    </h1>
+                    <p className="text-slate-500 font-medium text-sm lg:text-xl tracking-tight opacity-70 mt-2">Visión global de flota en tiempo real</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-12">
