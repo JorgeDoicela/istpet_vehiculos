@@ -101,7 +101,7 @@ const Sidebar = () => {
                             to={item.path}
                             className={`
                                 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 flex-1
-                                ${active ? 'text-blue-600 scale-110' : 'text-slate-400 hover:text-slate-600'}
+                                ${active ? 'text-[var(--istpet-gold)] scale-110' : 'text-slate-400 hover:text-slate-600'}
                             `}
                         >
                             <div className="p-1 px-3 rounded-xl transition-all">

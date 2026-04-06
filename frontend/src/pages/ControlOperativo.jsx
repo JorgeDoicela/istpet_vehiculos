@@ -180,7 +180,7 @@ const ControlOperativo = () => {
             <div className="max-w-6xl mx-auto pt-10 pb-20 px-6">
 
                 <div className="mb-10 lg:mb-16 text-center animate-apple-in">
-                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900 mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600 uppercase">
+                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-[var(--istpet-navy)] mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-[var(--istpet-navy)] to-slate-600 uppercase">
                         Logística Operativa
                     </h1>
                     <p className="text-slate-500 font-medium text-sm lg:text-xl tracking-tight opacity-70 italic">Despacho y Seguimiento de Unidades en Pista</p>
@@ -480,14 +480,14 @@ const ControlOperativo = () => {
                                                             <span className="text-[9px] font-black text-emerald-600/60 uppercase tracking-[0.25em] leading-none mb-1.5">Retorno (Live)</span>
                                                             <div className="flex items-baseline gap-1.5 sm:gap-3">
                                                                 <span className="text-xl sm:text-4xl font-black tracking-tighter leading-none text-slate-900">{new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                                <span className="text-[10px] sm:text-xs font-black text-emerald-600 bg-emerald-50 px-2 sm:px-3 py-1 rounded-lg uppercase tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'short' })}</span>
+                                                                <span className="text-[10px] sm:text-xs font-black text-[var(--istpet-gold)] bg-amber-50 px-2 sm:px-3 py-1 rounded-lg uppercase tracking-widest">{new Date().toLocaleDateString('es-ES', { weekday: 'short' })}</span>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <button
                                                     onClick={procesarLlegada}
-                                                    className="flex-shrink-0 bg-amber-500 hover:bg-amber-600 text-white rounded-[2.5rem] sm:rounded-[4rem] px-6 sm:px-12 text-sm sm:text-xl font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
+                                                    className="flex-shrink-0 bg-[var(--istpet-gold)] hover:bg-amber-600 text-white rounded-[2.5rem] sm:rounded-[4rem] px-6 sm:px-12 text-sm sm:text-xl font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
                                                     Confirmar Retorno
                                                 </button>
                                             </div>
