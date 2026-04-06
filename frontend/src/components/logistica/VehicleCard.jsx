@@ -7,7 +7,7 @@ const VehicleCard = ({ vehiculo, isSelected, onSelect }) => {
     return (
         <div
             onClick={() => isOperativo ? onSelect(vehiculo) : null}
-            className={`group relative p-4 lg:p-5 rounded-[1.5rem] lg:rounded-[2rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden ${
+            className={`group relative p-4 lg:p-5 rounded-[2rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden ${
                 !isOperativo ? 'opacity-30 grayscale cursor-not-allowed border-[var(--apple-border)] bg-[var(--apple-bg)]' :
                 isSelected
                     ? 'bg-gradient-to-br from-[var(--apple-primary)]/[0.05] to-[var(--apple-card)] border-[var(--apple-primary)] shadow-xl shadow-blue-500/10 scale-[1.03]'

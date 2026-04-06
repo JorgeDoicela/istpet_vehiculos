@@ -211,7 +211,7 @@ const ControlOperativo = () => {
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value)}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-3xl px-6 lg:px-8 py-3 lg:py-5 text-lg lg:text-xl font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2rem] px-6 lg:px-8 py-3 lg:py-5 text-lg lg:text-xl font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner"
                                             />
                                             {salidaLoading && (
                                                 <div className="absolute right-6">
@@ -299,9 +299,9 @@ const ControlOperativo = () => {
                                                 <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Selección de Vehículo</h3>
                                                 <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Unidades operativas disponibles</p>
                                             </div>
-                                            <div className="flex bg-[var(--apple-bg)] p-1 rounded-2xl border border-[var(--apple-border)]">
+                                            <div className="flex bg-[var(--apple-bg)] p-1 rounded-xl lg:rounded-[2rem] border border-[var(--apple-border)]">
                                                 {['C', 'D', 'E'].map(lic => (
-                                                    <button key={lic} disabled className={`px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${estudianteData?.tipoLicencia === lic ? 'bg-[var(--apple-card)] text-[var(--istpet-gold)] shadow-sm' : 'text-[var(--apple-text-sub)] opacity-20'}`}>
+                                                    <button key={lic} disabled className={`px-4 py-1.5 rounded-[1.5rem] text-[10px] font-black transition-all ${estudianteData?.tipoLicencia === lic ? 'bg-[var(--apple-card)] text-[var(--istpet-gold)] shadow-sm' : 'text-[var(--apple-text-sub)] opacity-20'}`}>
                                                         TIPO {lic}
                                                     </button>
                                                 ))}
@@ -336,7 +336,7 @@ const ControlOperativo = () => {
                                             <select
                                                 value={instructorSeleccionado?.id_Instructor || ''}
                                                 onChange={(e) => setInstructorSeleccionado(instructores.find(i => i.id_Instructor.toString() === e.target.value))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-6 lg:px-8 py-4 lg:py-5 text-xs lg:text-sm font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2rem] px-6 lg:px-8 py-4 lg:py-5 text-xs lg:text-sm font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
                                             >
                                                 <option value="" disabled>-- SELECCIONE DOCENTE --</option>
                                                 {instructores.map(i => <option key={i.id_Instructor} value={i.id_Instructor}>{i.fullName}</option>)}
@@ -346,7 +346,7 @@ const ControlOperativo = () => {
 
                                     {/* Botón Final Salida */}
                                     <div className="pt-10 flex flex-col md:flex-row items-stretch justify-between gap-4 border-t border-[var(--apple-border)]">
-                                        <div className="flex-1 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2.5rem] flex items-center gap-6 shadow-inner">
+                                        <div className="flex-1 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2rem] flex items-center gap-6 shadow-inner">
                                             <div className="text-[var(--apple-primary)] scale-110">
                                                 <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             </div>
@@ -358,7 +358,7 @@ const ControlOperativo = () => {
                                         <button
                                             onClick={procesarSalida}
                                             disabled={!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado}
-                                            className={`px-8 lg:px-12 py-4 lg:py-6 rounded-[2.5rem] text-lg lg:text-xl font-black transition-all ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.02]'}`}
+                                            className={`px-8 lg:px-12 py-4 lg:py-6 rounded-[2rem] text-lg lg:text-xl font-black transition-all ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.02]'}`}
                                         >
                                             Confirmar Salida
                                         </button>
@@ -406,7 +406,7 @@ const ControlOperativo = () => {
                                     {claseSeleccionada && (
                                         <div className="mt-8 p-8 bg-[var(--apple-primary)]/5 border border-[var(--apple-primary)]/20 rounded-[2.5rem] animate-apple-in">
                                             <div className="flex flex-col md:flex-row items-stretch justify-between gap-4">
-                                                <div className="flex-1 bg-[var(--apple-card)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2.5rem] flex items-center gap-6 shadow-inner">
+                                                <div className="flex-1 bg-[var(--apple-card)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2rem] flex items-center gap-6 shadow-inner">
                                                     <div className="text-emerald-500 scale-110">
                                                         <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     </div>
@@ -417,7 +417,7 @@ const ControlOperativo = () => {
                                                 </div>
                                                 <button
                                                     onClick={procesarLlegada}
-                                                    className="px-8 lg:px-12 py-4 lg:py-6 bg-[var(--istpet-gold)] text-white rounded-[2.5rem] text-lg lg:text-xl font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                                    className="px-8 lg:px-12 py-4 lg:py-6 bg-[var(--istpet-gold)] text-white rounded-[2rem] text-lg lg:text-xl font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                                                 >
                                                     Confirmar Retorno
                                                 </button>
