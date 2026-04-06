@@ -28,7 +28,7 @@ builder.Services.AddScoped<IVehiculoService, SqlVehiculoService>();
 builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
 builder.Services.AddScoped<IDataSyncService, DataSyncService>();
-builder.Services.AddScoped<IExternalStudentProvider, MockExternalStudentProvider>();
+builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
 
 
 // 🤖 AUTOMATIZACIÓN: Registrar AutoMapper

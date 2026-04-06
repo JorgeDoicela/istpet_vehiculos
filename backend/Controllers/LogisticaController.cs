@@ -12,19 +12,19 @@ namespace backend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
-        private readonly IExternalStudentProvider _externalProvider;
+        private readonly ICentralStudentProvider _centralProvider;
 
-        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, IExternalStudentProvider externalProvider)
+        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider)
         {
             _context = context;
             _logisticaService = logisticaService;
-            _externalProvider = externalProvider;
+            _centralProvider = centralProvider;
         }
 
         [HttpGet("estudiante/{cedula}")]
         public async Task<ActionResult<ApiResponse<EstudianteLogisticaResponse>>> BuscarEstudiante(string cedula)
         {
-            // 1. INTENTO LOCAL (MySQL)
+            // 1. INTENTO LOCAL (MySQL actual)
             var localStudent = await (from m in _context.Matriculas
                                join e in _context.Estudiantes on m.CedulaEstudiante equals e.Cedula
                                join c in _context.Cursos on m.IdCurso equals c.Id_Curso
@@ -45,39 +45,40 @@ namespace backend.Controllers
 
             if (localStudent != null)
             {
-                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Local: Alumno encontrado."));
+                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Alumno localizado (Local)."));
             }
 
-            // 2. INTENTO EXTERNO (Simulación / Sistema Central)
-            var external = await _externalProvider.GetByCedulaAsync(cedula);
-            if (external == null)
+            // 2. INTENTO DESDE BASE DE DATOS CENTRAL (ISTPET)
+            var centralData = await _centralProvider.GetFromCentralAsync(cedula);
+            if (centralData == null)
             {
-                return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en ningún sistema conocido."));
+                return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en la BD Central del ISTPET."));
             }
 
-            // 3. AUTO-REGISTRO SMART SYNC
+            // 3. AUTO-REGISTRO Y MATRÍCULA (SMART SYNC REAL)
             try 
             {
-                // Verificar si el estudiante base existe (pudo estar inactivo o sin matrícula)
-                var eBase = await _context.Estudiantes.FindAsync(external.Cedula);
+                // Importamos al alumno a nuestra base local si no existe
+                var eBase = await _context.Estudiantes.FindAsync(centralData.Cedula);
                 if (eBase == null)
                 {
                     eBase = new backend.Models.Estudiante 
                     { 
-                        Cedula = external.Cedula, 
-                        Nombres = external.Nombres, 
-                        Apellidos = external.Apellidos 
+                        Cedula = centralData.Cedula, 
+                        Nombres = centralData.Nombres, 
+                        Apellidos = centralData.Apellidos 
                     };
                     _context.Estudiantes.Add(eBase);
                 }
 
-                // Buscar un curso local que coincida con el tipo de licencia sugerido por el externo
-                var cursoLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.IdTipoLicencia == external.IdTipoLicencia && c.Estado == "ACTIVO")
+                // Buscamos un curso local activo para auto-matricularlo (Default o por Licencia)
+                var cursoLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.IdTipoLicencia == (centralData.IdTipoLicencia != 0 ? centralData.IdTipoLicencia : 1) && c.Estado == "ACTIVO")
                                  ?? await _context.Cursos.FirstOrDefaultAsync(c => c.Estado == "ACTIVO");
 
-                if (cursoLocal == null) return BadRequest(ApiResponse<EstudianteLogisticaResponse>.Fail("Externo: No hay cursos locales disponibles para automatizar el ingreso."));
+                if (cursoLocal == null) 
+                    return BadRequest(ApiResponse<EstudianteLogisticaResponse>.Fail("Central: No hay cursos locales activos para automatizar el ingreso."));
 
-                // Crear Matricula Automática
+                // Creamos la matrícula en Logística
                 var nuevaMatricula = new backend.Models.Matricula
                 {
                     CedulaEstudiante = eBase.Cedula,
@@ -87,34 +88,30 @@ namespace backend.Controllers
                 };
                 _context.Matriculas.Add(nuevaMatricula);
                 
-                // Migración del Trigger SQL (tg_actualizar_cupos_after_matricula):
-                // Reducir los cupos del curso asignado automáticamente
-                if (cursoLocal.CuposDisponibles > 0)
-                {
-                    cursoLocal.CuposDisponibles -= 1;
-                }
+                // Actualizamos cupos del curso
+                if (cursoLocal.CuposDisponibles > 0) cursoLocal.CuposDisponibles -= 1;
 
                 await _context.SaveChangesAsync();
 
-                // Devolver respuesta mapeada al nuevo ingreso
-                var tlCode = await _context.TipoLicencias.Where(x=>x.Id_Tipo == external.IdTipoLicencia).Select(x=>x.Codigo).FirstOrDefaultAsync() ?? "C";
+                // Obtenemos código de licencia para respuesta
+                var tlCode = await _context.TipoLicencias.Where(x=>x.Id_Tipo == cursoLocal.IdTipoLicencia).Select(x=>x.Codigo).FirstOrDefaultAsync() ?? "C";
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
                 {
                     Cedula = eBase.Cedula,
                     EstudianteNombre = $"{eBase.Apellidos} {eBase.Nombres}".ToUpper(),
-                    CursoDetalle = $"[SYNC] {cursoLocal.Nombre} {cursoLocal.Nivel}".ToUpper(),
-                    Paralelo = external.Paralelo.ToUpper(),
-                    Jornada = external.Jornada.ToUpper(),
+                    CursoDetalle = $"[CENTRAL] {cursoLocal.Nombre} {cursoLocal.Nivel}".ToUpper(),
+                    Paralelo = centralData.Paralelo.ToUpper(),
+                    Jornada = centralData.Jornada.ToUpper(),
                     TipoLicencia = tlCode.ToUpper(),
-                    IdTipoLicencia = external.IdTipoLicencia,
-                    Periodo = external.Periodo.ToUpper(),
+                    IdTipoLicencia = cursoLocal.IdTipoLicencia,
+                    Periodo = centralData.Periodo.ToUpper(),
                     IdMatricula = nuevaMatricula.Id_Matricula
-                }, "Sistema Central: Alumno sincronizado y matriculado automáticamente."));
+                }, "Sincronizado: Alumno importado desde la Base de Datos Central ISTPET."));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error en Sincronización: {ex.Message}"));
+                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error en Puente Central: {ex.Message}"));
             }
         }
 
@@ -122,16 +119,17 @@ namespace backend.Controllers
         [HttpGet("vehiculos-disponibles")]
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoLogisticaResponse>>>> GetVehiculosDisponibles()
         {
-            // Devuelve todos los operativos, la BD validará posteriormente si ya están en uso
+            // Filtramos vehículos operativos y QUE NO ESTÉN EN PISTA (no tengan salida activa)
             var query = await (from v in _context.Vehiculos
                                join i in _context.Instructores on v.IdInstructorFijo equals i.Id_Instructor
                                where v.EstadoMecanico == "OPERATIVO" && v.Activo
+                               && !_context.ClasesActivas.Any(ca => ca.Id_Vehiculo == v.Id_Vehiculo)
                                select new VehiculoLogisticaResponse
                                {
                                    IdVehiculo = v.Id_Vehiculo,
-                                   VehiculoStr = $"{v.Placa} - #{v.NumeroVehiculo}",
+                                   VehiculoStr = (v.Placa + " - #" + v.NumeroVehiculo),
                                    IdInstructorFijo = v.IdInstructorFijo,
-                                   InstructorNombre = $"{i.Apellidos} {i.Nombres}".ToUpper(),
+                                   InstructorNombre = (i.Apellidos + " " + i.Nombres).ToUpper(),
                                    KmActual = v.KmActual,
                                    IdTipoLicencia = v.IdTipoLicencia
                                }).ToListAsync();
@@ -147,7 +145,7 @@ namespace backend.Controllers
                 .Select(i => new InstructorLogisticaResponse
                 {
                     Id_Instructor = i.Id_Instructor,
-                    FullName = $"{i.Apellidos} {i.Nombres}".ToUpper()
+                    FullName = (i.Apellidos + " " + i.Nombres).ToUpper()
                 })
                 .OrderBy(i => i.FullName)
                 .ToListAsync();
@@ -161,7 +159,7 @@ namespace backend.Controllers
             try
             {
                 var result = await _logisticaService.RegistrarSalidaAsync(req.IdMatricula, req.IdVehiculo, req.IdInstructor, req.Observaciones ?? "Ninguna", req.RegistradoPor);
-                if (result == "OK")
+                if (result == "EXITO")
                 {
                     return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
                 }
@@ -179,7 +177,7 @@ namespace backend.Controllers
             try
             {
                 var result = await _logisticaService.RegistrarLlegadaAsync(req.IdRegistro, req.KmLlegada, req.Observaciones ?? "Ninguna", req.RegistradoPor);
-                if (result == "OK")
+                if (result == "EXITO")
                 {
                     return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
                 }

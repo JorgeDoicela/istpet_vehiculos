@@ -21,17 +21,6 @@ const VehicleCard = ({ vehiculo, isSelected, onSelect }) => {
         <p className="text-[10px] font-bold text-slate-400/80 tracking-tighter uppercase italic">{vehiculo.vehiculoStr.split(' - ')[0]}</p>
       </div>
 
-      <div className="mt-2 pt-3 border-t border-slate-100/60">
-        <div className="flex items-center gap-2">
-            <div className="h-6 w-6 rounded-lg bg-slate-100 flex items-center justify-center text-slate-400">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-            </div>
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-tight truncate">
-                {vehiculo.instructorNombre || 'Sin Instructor'}
-            </span>
-        </div>
-      </div>
-
             {isSelected && (
                 <div className="absolute -top-1.5 -right-1.5 h-5 w-5 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-sm border border-white">
                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">

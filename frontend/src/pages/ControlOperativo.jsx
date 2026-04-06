@@ -102,13 +102,8 @@ const ControlOperativo = () => {
 
     const handleSeleccionarVehiculo = (veh) => {
         setVehiculoSeleccionado(veh);
-        // Sugerencia Inteligente: Pre-seleccionar el instructor fijo del vehículo
-        if (veh && instructores.length > 0) {
-            const defaultInstructor = instructores.find(i => i.id_Instructor === veh.idInstructorFijo);
-            if (defaultInstructor) {
-                setInstructorSeleccionado(defaultInstructor);
-            }
-        }
+        // Desacoplamiento Total: Ya no se pre-selecciona el instructor fijo.
+        // El usuario DEBE elegirlo manualmente del dropdown en el Paso 3.
     };
 
     const procesarSalida = async () => {
@@ -273,7 +268,7 @@ const ControlOperativo = () => {
                                             {vehiculos.length > 0 ? (
                                                 (() => {
                                                     const filteredVehicles = estudianteData 
-                                                        ? vehiculos.filter(v => v.idTipoLicencia === estudianteData.idTipoLicencia)
+                                                        ? vehiculos.filter(v => v.idTipoLicencia <= estudianteData.idTipoLicencia)
                                                         : vehiculos;
 
                                                     if (filteredVehicles.length === 0) {
@@ -334,12 +329,6 @@ const ControlOperativo = () => {
                                             </div>
                                         </div>
 
-                                        {instructorSeleccionado && vehiculoSeleccionado && instructorSeleccionado.id_Instructor !== vehiculoSeleccionado.idInstructorFijo && (
-                                            <div className="mt-4 flex items-center gap-3 px-6 py-3 bg-amber-50 rounded-2xl border border-amber-200 animate-apple-in">
-                                                <svg className="h-5 w-5 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                                <p className="text-[10px] font-bold text-amber-800 uppercase tracking-tight">Cambio de instructor detectado (Manual Overwrite)</p>
-                                            </div>
-                                        )}
                                     </div>
 
                                     <div className="pt-10 flex justify-end gap-4 border-t border-slate-100">

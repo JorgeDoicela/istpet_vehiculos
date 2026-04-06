@@ -8,9 +8,18 @@ El sistema sigue los principios de **Arquitectura Limpia (Clean Architecture)** 
 ### 1. Backend (.NET 8 Web API)
 - **Modelos de Dominio**: Representación directa de las 11 tablas del script SQL original.
 - **DTO Layer (Data Transfer Objects)**: Capa de abstracción que asegura que los detalles internos de la base de datos nunca se expongan directamente.
-- **AutoMapper Automation**: Implementación del patrón de mapeo automático para permitir la evolución del sistema sin cambios manuales en los controladores.
+- **AutoMapper Automation**: Implementación del patrón de mapeo automático para permitir la## Sincronización e Integridad de Datos
+
+### Sincronización Inteligente de Estudiantes
+El sistema implementa un mecanismo de "succión" de datos desde la **Base de Datos Central del ISTPET** para maximizar la eficiencia en las garitas:
+1.  **Búsqueda Local**: Se prioriza la consulta en las tablas locales para máxima velocidad.
+2.  **Puente Central (Real-time Bridge)**: Si el alumno no existe localmente, el sistema consulta la base académica central mediante SQL directo.
+3.  **Persistencia Automática**: Una vez localizado el alumno en la central, sus datos se **guardan permanentemente** en las tablas locales (`estudiantes` y `matriculas`). Esto asegura que el sistema siga funcionando incluso si la conexión con la base central se interrumpe en el futuro.
+
+## Evolución y Migraciones
+tema sin cambios manuales en los controladores.
 - **Service Layer**: Lógica de negocio encapsulada que consume el `AppDbContext` de Entity Framework Core.
-- **Integration Layer (Sync Hub)**: Motor de sincronización externa diseñado con el **Patrón Adaptador** para ingerir datos JSON dinámicos.
+- **Integration Layer (Smart Sync)**: Motor de sincronización que conecta la base de datos de logística con la **Base de Datos Central del ISTPET**. Utiliza el patrón **Adapter** para succionar datos academicos y persistirlos localmente.
 
 ### 2. Frontend (React + Vite + Tailwind CSS)
 - **Component-Based Architecture**: Interfaz modular y reutilizable.

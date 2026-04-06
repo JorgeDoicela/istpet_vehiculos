@@ -61,6 +61,7 @@ namespace backend.Data
                 entity.Property(e => e.Cedula).HasColumnName("cedula");
                 entity.Property(e => e.Nombres).HasColumnName("nombres");
                 entity.Property(e => e.Apellidos).HasColumnName("apellidos");
+                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
             });
 
             modelBuilder.Entity<InstructorLicencia>(entity => {
@@ -100,6 +101,7 @@ namespace backend.Data
                 entity.Property(e => e.Cedula).HasColumnName("cedula");
                 entity.Property(e => e.Nombres).HasColumnName("nombres");
                 entity.Property(e => e.Apellidos).HasColumnName("apellidos");
+                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
             });
 
             modelBuilder.Entity<Curso>(entity => {
@@ -155,10 +157,16 @@ namespace backend.Data
                 entity.Property(e => e.RegistradoPor).HasColumnName("registrado_por");
             });
 
-            // SQL VIEWS MAPPING (Apple Light 2026 Core)
+            // SQL VIEWS MAPPING
             modelBuilder.Entity<ClaseActiva>(entity => {
                 entity.ToView("v_clases_activas").HasNoKey();
                 entity.Property(e => e.Id_Registro).HasColumnName("id_registro");
+                entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
+                entity.Property(e => e.Cedula).HasColumnName("cedula");
+                entity.Property(e => e.Estudiante).HasColumnName("estudiante");
+                entity.Property(e => e.Placa).HasColumnName("placa");
+                entity.Property(e => e.NumeroVehiculo).HasColumnName("numero_vehiculo");
+                entity.Property(e => e.Instructor).HasColumnName("instructor");
                 entity.Property(e => e.Salida).HasColumnName("salida");
             });
 

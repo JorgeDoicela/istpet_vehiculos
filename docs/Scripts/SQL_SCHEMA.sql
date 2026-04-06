@@ -175,8 +175,9 @@ CREATE TABLE registros_llegada (
 -- 8. VISTAS
 -- ------------------------------------------------------------
 CREATE OR REPLACE VIEW v_clases_activas AS
-SELECT
+SELECT 
     rs.id_registro,
+    v.id_vehiculo,
     e.cedula,
     CONCAT(e.nombres, ' ', e.apellidos) AS estudiante,
     v.placa,
@@ -188,7 +189,8 @@ JOIN matriculas m ON rs.id_matricula = m.id_matricula
 JOIN estudiantes e ON m.cedula_estudiante = e.cedula
 JOIN vehiculos v ON rs.id_vehiculo = v.id_vehiculo
 JOIN instructores ins ON rs.id_instructor = ins.id_instructor
-WHERE rs.id_registro NOT IN (SELECT id_registro FROM registros_llegada);
+LEFT JOIN registros_llegada rl ON rs.id_registro = rl.id_registro
+WHERE rl.id_llegada IS NULL;
 
 CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
 SELECT

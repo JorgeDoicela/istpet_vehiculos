@@ -52,5 +52,13 @@ Para evitar discrepancias entre los nombres en C# y los nombres en español de M
 - **Primary Keys**: Se definieron todas las llaves primarias y foráneas para asegurar la integridad referencial.
 - **Keyless Entities**: Las vistas se mapearon como entidades sin llave para permitir consultas de solo lectura súper rápidas.
 
+## Sincronización e Integridad de Datos
+
+### Sincronización Inteligente de Estudiantes
+El sistema implementa un mecanismo de "succión" de datos desde la **Base de Datos Central del ISTPET** para maximizar la eficiencia en las garitas:
+1.  **Búsqueda Local**: Se prioriza la consulta en las tablas locales para máxima velocidad.
+2.  **Puente Central (Real-time Bridge)**: Si el alumno no existe localmente, el sistema consulta la base académica central mediante SQL directo.
+3.  **Persistencia Automática**: Una vez localizado el alumno en la central, sus datos se **guardan permanentemente** en las tablas locales (`estudiantes` y `matriculas`). Esto asegura que el sistema siga funcionando incluso si la conexión con la base central se interrumpe en el futuro.
+
 ## Evolución y Migraciones
 El sistema está preparado para **EF Core Migrations**. Esto significa que si necesitas agregar un campo a una tabla, puedes hacerlo desde C# y el sistema generará el SQL necesario para actualizar MySQL sin errores manuales.

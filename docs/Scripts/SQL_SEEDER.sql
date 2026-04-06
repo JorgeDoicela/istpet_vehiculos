@@ -36,24 +36,33 @@ INSERT IGNORE INTO estudiantes (cedula, nombres, apellidos, telefono, email) VAL
 ('1799887766', 'Carlos Andrés', 'Domínguez Paz', '0999887766', 'carlos.dp@gmail.com'),
 ('1799887767', 'María José', 'Guerra Santos', '0999887767', 'maria.gs@gmail.com'),
 ('1799887768', 'Roberto Carlos', 'Vaca Luna', '0999887768', 'roberto.vl@gmail.com'),
-('1799887769', 'Anita Belén', 'Torres Vega', '0999887769', 'anita.tv@gmail.com');
+('1799887769', 'Anita Belén', 'Torres Vega', '0999887769', 'anita.tv@gmail.com'),
+('1725555377', 'Jorge Ismael', 'Doicela Molina', '0999999999', 'jorge.doicela@istpet.edu.ec');
 
 -- 6. MATRÍCULAS
 INSERT IGNORE INTO matriculas (cedula_estudiante, id_curso, fecha_matricula, horas_completadas) VALUES
-('1799887766', 1, '2026-03-20', 5.5), ('1799887767', 1, '2026-03-21', 12.0), ('1799887768', 2, '2026-03-22', 0.0), ('1799887769', 3, '2026-03-23', 20.0);
+('1799887766', 1, '2026-03-20', 5.5), ('1799887767', 1, '2026-03-21', 12.0), ('1799887768', 2, '2026-03-22', 0.0), ('1799887769', 3, '2026-03-23', 20.0), ('1725555377', 1, '2026-04-01', 0.0);
 
 -- 7. SESIONES ACTIVAS (Dashboard Vivo)
 -- Usamos 'WHERE NOT EXISTS' para evitar duplicados en tablas sin claves únicas simples
 INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
-SELECT 1, 1, 1, 4850, 'Clase de parqueo en reversa', 1
-WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=1 AND id_vehiculo=1 AND id_instructor=1);
+SELECT 1, 35, 3, 500, 'Clase de parqueo en reversa', 1
+WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=1 AND id_vehiculo=35 AND id_instructor=3);
 
 INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
-SELECT 2, 2, 2, 12000, 'Recorrido en vía perimetral', 1
-WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=2 AND id_vehiculo=2 AND id_instructor=2);
+SELECT 2, 101, 1, 4850, 'Recorrido en vía perimetral', 1
+WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=2 AND id_vehiculo=101 AND id_instructor=1);
 
--- 8. HISTORIAL DE LLEGADAS
-INSERT IGNORE INTO registros_salida (id_registro, id_matricula, id_vehiculo, id_instructor, km_salida, registrado_por) VALUES
-(3, 3, 3, 3, 25000, 1);
-INSERT IGNORE INTO registros_llegada (id_registro, km_llegada, observaciones_llegada, registrado_por) VALUES
-(3, 25100, 'Práctica de frenos exitosa', 1);
+
+-- 8. HISTORIAL DE LLEGADAS (viaje cerrado del #102 de ayer)
+-- Primero insertamos la salida histórica
+INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
+SELECT 3, 102, 2, 12000, 'Práctica de historial', 1
+WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=3 AND id_vehiculo=102 AND id_instructor=2);
+
+-- Luego cerramos esa salida con su llegada (el id se generó en el paso anterior)
+INSERT INTO registros_llegada (id_registro, km_llegada, observaciones_llegada, registrado_por)
+SELECT id_registro, 12045, 'Llegada sin novedad', 1
+FROM registros_salida 
+WHERE id_matricula=3 AND id_vehiculo=102 AND id_instructor=2
+AND NOT EXISTS (SELECT 1 FROM registros_llegada rl WHERE rl.id_registro = registros_salida.id_registro);
