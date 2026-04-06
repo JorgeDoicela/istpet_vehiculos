@@ -16,13 +16,11 @@ const Home = () => {
 
     const fetchInitialData = async () => {
         setLoading(true);
-        console.log('[DASHBOARD] Solicitando monitor de clases activas...');
         try {
             const cData = await dashboardService.getClasesActivas();
-            console.log('[DASHBOARD SUCCESS] Clases recibidas:', cData?.length || 0);
             setActiveClasses(cData);
         } catch (err) {
-            console.error('[DASHBOARD ERROR] Fallo al cargar monitor:', err.message);
+            console.error('[DASHBOARD ERROR]', err.message);
         } finally {
             setLoading(false);
         }
@@ -43,14 +41,14 @@ const Home = () => {
             <div className="flex flex-col items-center">
                 <div className="relative w-24 h-24">
                     <svg className="w-full h-full transform -rotate-90">
-                        <circle cx="48" cy="48" r={radius} stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-100" />
+                        <circle cx="48" cy="48" r={radius} stroke="currentColor" strokeWidth="8" fill="transparent" className="text-[var(--apple-border)]" />
                         <circle cx="48" cy="48" r={radius} stroke="currentColor" strokeWidth="8" fill="transparent"
                             strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-                            className={`transition-all duration-1000 ${color === 'blue' ? 'text-blue-500' : 'text-emerald-500'}`} />
+                            className={`transition-all duration-1000 ${color === 'blue' ? 'text-[var(--apple-primary)]' : 'text-emerald-500'}`} />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-slate-800">{Math.round(percentage)}%</div>
+                    <div className="absolute inset-0 flex items-center justify-center font-black text-xl text-[var(--apple-text-main)]">{Math.round(percentage)}%</div>
                 </div>
-                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-slate-400">{label}</p>
+                <p className="mt-3 text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">{label}</p>
             </div>
         );
     };
@@ -59,33 +57,34 @@ const Home = () => {
         <Layout>
             {/* Sistema de Notificaciones Zenith */}
             {notification && (
-                <div className="apple-toast border-white border animate-apple-in">
+                <div className="apple-toast border border-white/10 animate-apple-in">
                     <div className={`w-3 h-12 rounded-full ${notification.type === 'error' ? 'bg-rose-500' : 'bg-[var(--apple-primary)]'}`}></div>
-                    <p className="text-sm font-bold text-slate-800">{notification.message}</p>
+                    <p className="text-sm font-bold text-[var(--apple-text-main)]">{notification.message}</p>
                 </div>
             )}
 
             <div className="space-y-12">
                 <div className="max-w-4xl">
-                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900 uppercase bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
+                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
                         Pista & Monitoreo
                     </h1>
-                    <p className="text-slate-500 font-medium text-sm lg:text-xl tracking-tight opacity-70 mt-2">Visión global de flota en tiempo real</p>
+                    <p className="text-[var(--apple-text-sub)] font-medium text-sm lg:text-xl tracking-tight opacity-70 mt-2">Visión global de flota en tiempo real</p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-12">
                     <div className="space-y-12 animate-apple-in">
                         {/* KPI WIDGETS */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-white/40">
+                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--apple-card)]">
                                 <CircularKPI value={85} max={100} label="Flota Operativa" />
                             </div>
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-white/40">
+                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--apple-card)]">
                                 <CircularKPI value={activeClasses.length} max={15} label="Ocupación Live" color="emerald" />
                             </div>
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-slate-900 text-white !border-none">
-                                <div className="text-center">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-slate-400 mb-4">Integridad</p>
+                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--istpet-navy)] text-white !border-none relative overflow-hidden group shadow-2xl">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl translate-x-16 -translate-y-16 group-hover:bg-white/10 transition-all duration-700"></div>
+                                <div className="text-center relative z-10">
+                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50 mb-4">Integridad</p>
                                     <p className="text-4xl font-black">99.9%</p>
                                     <p className="text-[9px] font-bold text-emerald-400 mt-2 uppercase">Sistema Protegido</p>
                                 </div>
@@ -95,7 +94,7 @@ const Home = () => {
 
                     <div className="animate-apple-in">
                         {loading ? (
-                            <div className="apple-card space-y-6 p-10 bg-white/40">
+                            <div className="apple-card space-y-6 p-10 bg-[var(--apple-card)]">
                                 <SkeletonLoader type="title" />
                                 <SkeletonLoader type="card" />
                                 <SkeletonLoader type="card" />

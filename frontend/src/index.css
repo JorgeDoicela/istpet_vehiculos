@@ -4,28 +4,38 @@
 
 @layer base {
   :root {
-    /* Paleta Corporativa ISTPET 2026 */
+    /* Paleta Corporativa ISTPET 2026 Core */
     --istpet-navy: #1a2544;
     --istpet-gold: #b5944a;
+    
+    /* Configuración por defecto (Modo Claro) */
     --apple-bg: #f8f9fb;
     --apple-card: rgba(255, 255, 255, 0.8);
-    --apple-border: rgba(26, 37, 68, 0.1);
+    --apple-border: rgba(26, 37, 68, 0.08);
     --apple-text-main: #1a2544;
     --apple-text-sub: #64748b;
-    --apple-primary: #1a2544; /* Navy as primary */
-    --apple-glass-shadow: 0 10px 40px rgba(26, 37, 68, 0.08);
-    
-    /* Fluid Typography (Modern Clamp) */
-    --font-size-h1: clamp(2.5rem, 8vw, 5rem);
-    --font-size-h2: clamp(1.8rem, 5vw, 3rem);
-    --font-size-body: clamp(0.9rem, 1vw, 1.1rem);
+    --apple-primary: #1a2544;
+    --apple-glass-shadow: 0 10px 40px rgba(26, 37, 68, 0.06);
+    --apple-gradient-bg: radial-gradient(at 0% 0%, hsla(220, 45%, 98%, 1) 0, transparent 50%), 
+                        radial-gradient(at 100% 100%, hsla(43, 40%, 96%, 1) 0, transparent 50%);
+  }
+
+  .dark {
+    /* Configuración Modo Oscuro */
+    --apple-bg: #0f172a;
+    --apple-card: rgba(30, 41, 59, 0.4);
+    --apple-border: rgba(255, 255, 255, 0.05);
+    --apple-text-main: #f8fafc;
+    --apple-text-sub: #94a3b8;
+    --apple-primary: #b5944a; /* Golden as primary in dark mode for pop */
+    --apple-glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    --apple-gradient-bg: radial-gradient(at 0% 0%, hsla(222, 47%, 11%, 1) 0, transparent 50%), 
+                        radial-gradient(at 100% 100%, hsla(222, 47%, 15%, 1) 0, transparent 50%);
   }
 
   body {
-    @apply bg-[var(--apple-bg)] text-[var(--apple-text-main)] font-sans antialiased overflow-x-hidden;
-    background-image: 
-      radial-gradient(at 0% 0%, hsla(220, 45%, 98%, 1) 0, transparent 50%), 
-      radial-gradient(at 100% 100%, hsla(43, 40%, 96%, 1) 0, transparent 50%);
+    @apply bg-[var(--apple-bg)] text-[var(--apple-text-main)] font-sans antialiased overflow-x-hidden transition-colors duration-500;
+    background-image: var(--apple-gradient-bg);
     min-height: 100vh;
   }
 }
@@ -33,11 +43,13 @@
 @layer components {
   /* Efecto Cristal Esmerilado Premium */
   .apple-glass {
-    @apply backdrop-blur-2xl bg-white/80 border border-slate-200/50 shadow-[var(--apple-glass-shadow)];
+    @apply backdrop-blur-2xl border transition-all duration-500 shadow-[var(--apple-glass-shadow)];
+    background-color: var(--apple-card);
+    border-color: var(--apple-border);
   }
 
   .apple-glass-dark {
-    @apply backdrop-blur-3xl bg-[var(--istpet-navy)]/95 border border-white/10 shadow-2xl;
+    @apply backdrop-blur-3xl bg-slate-900 border border-white/5 shadow-2xl;
   }
 
   .apple-tab-bar {

@@ -53,10 +53,10 @@ const Sidebar = () => {
             {/* Sidebar Desktop */}
             <aside className="fixed left-6 top-6 bottom-6 w-72 apple-glass rounded-[3rem] p-8 hidden lg:flex flex-col z-50">
                 <div className="mb-12 flex items-center gap-4 px-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-lg border border-slate-100 overflow-hidden p-2">
+                    <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden p-2 backdrop-blur-md">
                         <img src={logoImg} alt="ISTPET Logo" className="w-full h-full object-contain scale-110" />
                     </div>
-                    <h1 className="text-xl font-black text-slate-800 tracking-tighter uppercase text-[10px] leading-tight">ISTPET<br />ZENITH 2026</h1>
+                    <h1 className="text-xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase text-[10px] leading-tight">ISTPET<br />ZENITH 2026</h1>
                 </div>
 
                 <nav className="flex-1 space-y-4">
@@ -70,7 +70,7 @@ const Sidebar = () => {
                                     flex items-center gap-5 px-6 py-4 rounded-2xl transition-all duration-500 group
                                     ${active
                                         ? 'bg-[var(--apple-primary)] text-white shadow-xl shadow-blue-500/20'
-                                        : 'text-[var(--apple-text-sub)] hover:bg-white hover:text-[var(--apple-text-main)] hover:shadow-lg'
+                                        : 'text-[var(--apple-text-sub)] hover:bg-[var(--apple-card)] hover:text-[var(--apple-text-main)] hover:shadow-lg'
                                     }
                                 `}
                             >
@@ -83,16 +83,16 @@ const Sidebar = () => {
                     })}
                 </nav>
 
-                <div className="mt-auto pt-8 border-t border-white/20 px-4">
-                    <div className="p-4 bg-white/40 rounded-3xl backdrop-blur-md">
+                <div className="mt-auto pt-8 border-t border-white/5 px-4 text-center">
+                    <div className="p-4 apple-glass rounded-3xl">
                         <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Usuario</p>
-                        <p className="text-xs font-bold text-slate-800 mt-1">Admin ISTPET</p>
+                        <p className="text-xs font-bold text-[var(--apple-text-main)] mt-1">Admin ISTPET</p>
                     </div>
                 </div>
             </aside>
 
-            {/* Bottom Tab Bar Mobile (Minimalist White Style) */}
-            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-white/95 backdrop-blur-xl border-t border-slate-100 z-[100] flex items-center justify-around px-4 lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
+            {/* Bottom Tab Bar Mobile (Themed Style) */}
+            <nav className="fixed bottom-0 left-0 right-0 h-20 bg-[var(--apple-card)] backdrop-blur-xl border-t border-white/5 z-[100] flex items-center justify-around px-4 lg:hidden shadow-[0_-10px_40px_rgba(0,0,0,0.1)]">
                 {menuItems.map((item) => {
                     const active = isItemActive(item);
                     return (
@@ -101,7 +101,7 @@ const Sidebar = () => {
                             to={item.path}
                             className={`
                                 flex flex-col items-center justify-center gap-1.5 transition-all duration-300 flex-1
-                                ${active ? 'text-[var(--istpet-gold)] scale-110' : 'text-slate-400 hover:text-slate-600'}
+                                ${active ? 'text-[var(--apple-primary)] scale-110' : 'text-[var(--apple-text-sub)] hover:text-[var(--apple-text-main)]'}
                             `}
                         >
                             <div className="p-1 px-3 rounded-xl transition-all">
