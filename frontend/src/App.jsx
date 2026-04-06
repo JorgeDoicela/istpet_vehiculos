@@ -21,11 +21,11 @@ function App() {
 
       <div className="min-h-screen w-full overflow-x-hidden bg-[var(--apple-bg)]">
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<ControlOperativo />} />
+          <Route path="/monitoreo" element={<Home />} />
           <Route path="/estudiantes" element={<Students />} />
           <Route path="/vehiculos" element={<Vehicles />} />
-          <Route path="/logistica" element={<ControlOperativo />} />
-          <Route path="*" element={<Home />} />
+          <Route path="*" element={<ControlOperativo />} />
         </Routes>
       </div>
     </BrowserRouter>
