@@ -18,6 +18,7 @@ namespace backend.DTOs
         public string? PracticaInstructor { get; set; }
         public string? PracticaHora { get; set; }
         public bool TienePracticaHoy => IdPracticaCentral.HasValue;
+        public string? FotoBase64 { get; set; }
     }
 
     public class VehiculoLogisticaResponse

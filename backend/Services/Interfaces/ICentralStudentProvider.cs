@@ -20,7 +20,8 @@ namespace backend.Services.Interfaces
         // --- Formato "Legacy" (Messy/Foto) ---
         public string? NombreCompleto { get; set; } 
         public string? DetalleRaw { get; set; }   
-        public string Periodo { get; set; } = string.Empty;      
+        public string Periodo { get; set; } = string.Empty;
+        public string? FotoBase64 { get; set; }
     }
 
     public class CentralInstructorDto
@@ -46,5 +47,6 @@ namespace backend.Services.Interfaces
         Task<CentralStudentDto?> GetFromCentralAsync(string cedula);
         Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula);
+        Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
     }
 }

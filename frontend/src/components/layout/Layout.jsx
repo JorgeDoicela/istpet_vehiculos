@@ -8,10 +8,10 @@ const Layout = ({ children }) => {
       <Sidebar />
       
       {/* Área de Contenido Principal */}
-      <main className="flex-1 ml-80 p-12 transition-all duration-700 animate-apple-in">
-        <header className="mb-16 flex items-center justify-between">
+      <main className="flex-1 lg:ml-80 p-4 lg:p-12 transition-all duration-700 animate-apple-in">
+        <header className="mb-8 lg:mb-16 flex items-center justify-between">
            <div>
-              <h2 className="text-4xl font-black tracking-tight text-[var(--apple-text-main)]">Gestión Vehicular</h2>
+              <h2 className="text-2xl lg:text-4xl font-black tracking-tight text-[var(--apple-text-main)]">Gestión Vehicular</h2>
               <p className="text-[var(--apple-text-sub)] font-bold text-[10px] uppercase tracking-[0.25em] mt-2">ISTPET CONDUCCIÓN PROFESIONAL</p>
            </div>
            

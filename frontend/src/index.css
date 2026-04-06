@@ -12,6 +12,11 @@
     --apple-text-sub: #86868b;
     --apple-primary: #0071e3;
     --apple-glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.05);
+    
+    /* Fluid Typography (Modern Clamp) */
+    --font-size-h1: clamp(2.5rem, 8vw, 5rem);
+    --font-size-h2: clamp(1.8rem, 5vw, 3rem);
+    --font-size-body: clamp(0.9rem, 1vw, 1.1rem);
   }
 
   body {
@@ -32,6 +37,11 @@
 
   .apple-glass-dark {
     @apply backdrop-blur-3xl bg-slate-900/10 border border-white/10 shadow-2xl;
+  }
+
+  .apple-tab-bar {
+    @apply fixed bottom-6 left-6 right-6 h-20 apple-glass rounded-[2rem] z-[100] flex items-center justify-around px-4 lg:hidden;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.05), var(--apple-glass-shadow);
   }
 
   /* Botones Apple Estilo Líquido */

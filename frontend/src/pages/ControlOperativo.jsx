@@ -22,6 +22,8 @@ const ControlOperativo = () => {
     const [clasesActivas, setClasesActivas] = useState([]);
     const [claseSeleccionada, setClaseSeleccionada] = useState(null);
     const [horaRetorno, setHoraRetorno] = useState('');
+    const [agendadosHoy, setAgendadosHoy] = useState([]);
+    const [agendadosLoading, setAgendadosLoading] = useState(false);
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -43,10 +45,23 @@ const ControlOperativo = () => {
         if (activeTab === 'salida') {
             cargarVehiculosDisponibles();
             cargarInstructores();
+            cargarAgendadosHoy();
         } else {
             cargarClasesActivas();
         }
     }, [activeTab]);
+
+    const cargarAgendadosHoy = async () => {
+        setAgendadosLoading(true);
+        try {
+            const data = await logisticaService.getAgendadosHoy();
+            setAgendadosHoy(data);
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setAgendadosLoading(false);
+        }
+    };
 
     const cargarInstructores = async () => {
         try {
@@ -154,33 +169,33 @@ const ControlOperativo = () => {
             <div className="max-w-6xl mx-auto pt-10 pb-20 px-6">
                 
                 {/* Header Premium */}
-                <div className="mb-12 text-center animate-apple-in">
-                    <h1 className="text-5xl font-black tracking-tighter text-slate-900 mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
+                <div className="mb-6 lg:mb-12 text-center animate-apple-in">
+                    <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-slate-900 mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
                         Logística Operativa
                     </h1>
-                    <p className="text-slate-500 font-medium text-lg">Control de flota y gestión académica en tiempo real</p>
+                    <p className="text-slate-500 font-medium text-sm lg:text-lg">Control de flota y gestión académica en tiempo real</p>
                 </div>
 
                 {/* Tabs Estilo Zen */}
-                <div className="flex justify-center mb-16 animate-apple-in" style={{ animationDelay: '0.1s' }}>
-                    <div className="bg-slate-200/50 backdrop-blur-xl p-1.5 rounded-full flex gap-1 border border-white/40 shadow-inner">
+                <div className="flex justify-center mb-8 lg:mb-16 animate-apple-in" style={{ animationDelay: '0.1s' }}>
+                    <div className="bg-slate-200/50 backdrop-blur-xl p-1.5 rounded-full flex gap-1 border border-white/40 shadow-inner w-full max-w-sm lg:max-w-none">
                         <button 
                             onClick={() => setActiveTab('salida')} 
-                            className={`px-10 py-3 rounded-full text-sm font-bold transition-all duration-500 ${activeTab === 'salida' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
-                            Salida a Pista
+                            className={`flex-1 lg:px-10 py-3 rounded-full text-xs lg:text-sm font-bold transition-all duration-500 ${activeTab === 'salida' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
+                            Salida
                         </button>
                         <button 
                             onClick={() => setActiveTab('llegada')} 
-                            className={`px-10 py-3 rounded-full text-sm font-bold transition-all duration-500 ${activeTab === 'llegada' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
-                            Llegada de Vehículo
+                            className={`flex-1 lg:px-10 py-3 rounded-full text-xs lg:text-sm font-bold transition-all duration-500 ${activeTab === 'llegada' ? 'bg-white text-blue-600 shadow-xl scale-100' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 scale-95 opacity-70'}`}>
+                            Llegada
                         </button>
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                     
                     {/* Formulario Principal (Izquierda) */}
-                    <div className="lg:col-span-12 xl:col-span-7 space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
+                    <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
                         
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
@@ -218,12 +233,22 @@ const ControlOperativo = () => {
                                     {/* Data Estudiante (Solo si existe) */}
                                     {estudianteData ? (
                                         <div className="bg-blue-50/50 border border-blue-100 rounded-[2rem] p-8 space-y-6 transition-all animate-apple-in">
-                                            <div className="flex items-start gap-6">
-                                                <div className="h-16 w-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-black text-shadow-sm shadow-lg shadow-blue-500/30">
-                                                    {estudianteData.estudianteNombre?.[0]}
-                                                </div>
+                                            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-6 text-center lg:text-left">
+                                                {estudianteData.fotoBase64 ? (
+                                                    <div className="h-24 w-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white flex-shrink-0">
+                                                        <img 
+                                                            src={`data:image/jpeg;base64,${estudianteData.fotoBase64}`} 
+                                                            alt="Alumno" 
+                                                            className="w-full h-full object-cover"
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="h-16 w-16 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-2xl font-black text-shadow-sm shadow-lg shadow-blue-500/30 flex-shrink-0">
+                                                        {estudianteData.estudianteNombre?.[0]}
+                                                    </div>
+                                                )}
                                                 <div className="flex-1">
-                                                    <h4 className="text-xl font-black text-slate-900 leading-tight mb-1">{estudianteData.estudianteNombre}</h4>
+                                                    <h4 className="text-lg lg:text-xl font-black text-slate-900 leading-tight mb-1">{estudianteData.estudianteNombre}</h4>
                                                     <div className="flex items-center gap-2 flex-wrap">
                                                         <span className="text-[10px] font-black bg-blue-100 text-blue-700 px-2 py-0.5 rounded-md uppercase tracking-wider">
                                                             {estudianteData.cursoDetalle}
@@ -235,20 +260,47 @@ const ControlOperativo = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                                 <div className="bg-white/80 p-4 rounded-2xl border border-blue-200/50 shadow-sm">
                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1.5">Licencia</p>
-                                                    <p className="text-base font-black text-blue-700">TIPO {estudianteData.tipoLicencia}</p>
+                                                    <p className="text-sm lg:text-base font-black text-blue-700">TIPO {estudianteData.tipoLicencia}</p>
                                                 </div>
                                                 <div className="bg-white/80 p-4 rounded-2xl border border-blue-200/50 shadow-sm">
                                                     <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1.5">Paralelo</p>
-                                                    <p className="text-base font-black text-slate-700">"{estudianteData.paralelo}"</p>
+                                                    <p className="text-sm lg:text-base font-black text-slate-700">"{estudianteData.paralelo}"</p>
                                                 </div>
                                                 <div className="bg-white/80 p-4 rounded-2xl border border-blue-200/50 shadow-sm col-span-2 sm:col-span-1">
-                                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1.5">Jornada</p>
-                                                    <p className="text-base font-black text-slate-700">{estudianteData.jornada}</p>
+                                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.15em] leading-none mb-1.5">Jornada</p>
+                                                    <p className="text-sm lg:text-base font-black text-slate-700">{estudianteData.jornada}</p>
                                                 </div>
                                             </div>
+
+                                            {/* ALERTA DE AGENDAMIENTO PROACTIVO */}
+                                            {estudianteData.tienePracticaHoy && (
+                                                <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-600/20 flex flex-col md:flex-row justify-between items-center gap-4 border border-blue-400/30">
+                                                    <div className="flex items-center gap-4 text-center md:text-left">
+                                                        <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                                                            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-[10px] font-black uppercase tracking-widest text-blue-100/80 mb-0.5">Práctica Agendada Central</p>
+                                                            <p className="text-sm font-bold">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora || '--:--'} • {estudianteData.practicaInstructor}</p>
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => {
+                                                            const veh = vehiculos.find(v => v.idVehiculo === estudianteData.idPracticaCentral || v.vehiculoStr.includes(estudianteData.practicaVehiculo));
+                                                            const inst = instructores.find(i => i.fullName.includes(estudianteData.practicaInstructor?.split(' ')[0] || '---'));
+                                                            if (veh) setVehiculoSeleccionado(veh);
+                                                            if (inst) setInstructorSeleccionado(inst);
+                                                            showNotification('Datos de agenda aplicados');
+                                                        }}
+                                                        className="px-6 py-2 bg-white text-blue-600 rounded-xl text-xs font-black uppercase shadow-lg shadow-black/10 hover:bg-blue-50 transition-all active:scale-95"
+                                                    >
+                                                        Cargar Datos
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
                                     ) : !salidaLoading && salidaCedula.length >= 1 && (
                                         <div className="p-8 border-2 border-dashed border-slate-100 rounded-[2rem] text-center">
@@ -427,55 +479,41 @@ const ControlOperativo = () => {
                     </div>
 
                     {/* Dashboard Lateral / Info (Derecha) */}
-                    <div className="lg:col-span-12 xl:col-span-5 space-y-8 animate-apple-in" style={{ animationDelay: '0.3s' }}>
+                    <div className="lg:col-span-5 xl:col-span-4 space-y-8 animate-apple-in" style={{ animationDelay: '0.3s' }}>
                         
                         {/* Widget de Resumen */}
                         <div className="apple-glass rounded-[2.5rem] p-8 border-white/60 relative overflow-hidden group">
                              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-blue-500/10 transition-colors duration-700"></div>
                              
-                             <h4 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-8">Resumen de Operación</h4>
+                             <h4 className="text-xs font-black text-slate-400 tracking-[0.2em] uppercase mb-8">Agenda ISTPET (SIGAFI)</h4>
                              
-                             <div className="space-y-6">
-                                <div className="flex justify-between items-center bg-white/40 p-5 rounded-3xl border border-white/40">
-                                    <div className="flex gap-4 items-center">
-                                        <div className="h-10 w-10 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600">
-                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                             <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                                {agendadosHoy.length > 0 ? (
+                                    agendadosHoy.map(ag => (
+                                        <div key={ag.idPractica} className="bg-white/40 p-4 rounded-2xl border border-white/40 hover:bg-white/60 transition-all group/item">
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-xs font-black text-blue-600">{ag.horaSalida ? ag.horaSalida.substring(0, 5) : '--:--'}</span>
+                                                <span className="text-[9px] font-black bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded uppercase">{ag.vehiculoDetalle}</span>
+                                            </div>
+                                            <p className="text-[11px] font-bold text-slate-800 uppercase truncate">{ag.cedulaAlumno}</p>
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter truncate">{ag.profesorNombre}</p>
+                                            <button 
+                                                onClick={() => setSalidaCedula(ag.cedulaAlumno)}
+                                                className="mt-3 w-full py-1.5 bg-blue-500/10 text-blue-600 rounded-lg text-[10px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-blue-500 hover:text-white"
+                                            >
+                                                Cargar Cédula
+                                            </button>
                                         </div>
-                                        <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Salidas Hoy</p>
+                                    ))
+                                ) : agendadosLoading ? (
+                                    <div className="py-10 text-center">
+                                        <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div>
                                     </div>
-                                    <span className="text-2xl font-black text-blue-600">08</span>
-                                </div>
-
-                                <div className="flex justify-between items-center bg-white/40 p-5 rounded-3xl border border-white/40">
-                                    <div className="flex gap-4 items-center">
-                                        <div className="h-10 w-10 rounded-xl bg-emerald-100 flex items-center justify-center text-emerald-600">
-                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Retornos</p>
+                                ) : (
+                                    <div className="py-10 text-center opacity-40">
+                                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sin agendas para hoy</p>
                                     </div>
-                                    <span className="text-2xl font-black text-emerald-600">05</span>
-                                </div>
-
-                                <div className="flex justify-between items-center bg-white/40 p-5 rounded-3xl border border-white/40">
-                                    <div className="flex gap-4 items-center">
-                                        <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600">
-                                            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        </div>
-                                        <p className="text-sm font-bold text-slate-700 uppercase tracking-tight">Pendientes</p>
-                                    </div>
-                                    <span className="text-2xl font-black text-amber-600">03</span>
-                                </div>
-                             </div>
-
-                             <div className="mt-10 pt-10 border-t border-slate-200/40">
-                                 <p className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4">Última Actividad</p>
-                                 <div className="flex gap-4 items-start opacity-70">
-                                     <div className="w-1 h-12 rounded-full bg-blue-200 mt-1"></div>
-                                     <div>
-                                         <p className="text-[10px] font-black text-slate-400">08:12 AM</p>
-                                         <p className="text-xs font-bold text-slate-700 leading-tight">Salida registrada #12 - TRUJILLO REDROBAN</p>
-                                     </div>
-                                 </div>
+                                )}
                              </div>
                         </div>
 

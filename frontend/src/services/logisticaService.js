@@ -58,6 +58,15 @@ const logisticaService = {
     } catch (error) {
        throw new Error(error.response?.data?.message || 'Error al procesar llegada');
     }
+  },
+
+  getAgendadosHoy: async () => {
+    try {
+      const response = await api.get('/logistica/agendados-hoy');
+      return response.data.data;
+    } catch (error) {
+      throw new Error('No se cargaron los agendados del día');
+    }
   }
 };
 

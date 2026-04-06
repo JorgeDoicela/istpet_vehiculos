@@ -163,6 +163,7 @@ namespace backend.Controllers
                     IdTipoLicencia = 1,
                     Periodo = centralData.Periodo ?? "2026-I",
                     IdMatricula = nuevaMatricula.Id_Matricula,
+                    FotoBase64 = centralData.FotoBase64,
                     // Datos de práctica si existen
                     IdPracticaCentral = scheduled?.IdPractica,
                     PracticaVehiculo = scheduled?.VehiculoDetalle,
@@ -285,6 +286,12 @@ namespace backend.Controllers
             {
                 return StatusCode(500, ApiResponse<string>.Fail($"Error interno: {ex.Message}"));
             }
+        }
+        [HttpGet("agendados-hoy")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<ScheduledPracticeDto>>>> GetAgendadosHoy()
+        {
+            var data = await _centralProvider.GetSchedulesForTodayAsync();
+            return Ok(ApiResponse<IEnumerable<ScheduledPracticeDto>>.Ok(data, "Listado de agendados del día (SIGAFI)."));
         }
     }
 }

@@ -32,9 +32,10 @@ namespace backend.Services.Implementations
                 string sql = $@"
                     SELECT
                         a.idAlumno AS Cedula,
-                        CONCAT(a.primerNombre, ' ', a.apellidoPaterno) AS NombreCompleto,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
                         CONCAT('MATRICULADO: ', p.detalle, ' (', m.paralelo, ')') AS DetalleRaw,
-                        p.idPeriodo AS Periodo
+                        p.idPeriodo AS Periodo,
+                        TO_BASE64(a.foto) AS FotoBase64
                     FROM {CENTRAL_DB_NAME}.alumnos a
                     JOIN {CENTRAL_DB_NAME}.matriculas m ON m.idAlumno = a.idAlumno
                     JOIN {CENTRAL_DB_NAME}.periodos p ON p.idPeriodo = m.idPeriodo
@@ -60,8 +61,8 @@ namespace backend.Services.Implementations
                 string sql = $@"
                     SELECT
                         idProfesor AS Cedula,
-                        primerNombre AS Nombres,
-                        apellidos AS Apellidos
+                        CONCAT_WS(' ', primerNombre, segundoNombre) AS Nombres,
+                        CONCAT_WS(' ', apellidoPaterno, apellidoMaterno) AS Apellidos
                     FROM {CENTRAL_DB_NAME}.profesores
                     WHERE idProfesor = @p0 AND activo = 1
                     LIMIT 1";
@@ -106,6 +107,33 @@ namespace backend.Services.Implementations
             catch (Exception)
             {
                 return null;
+            }
+        }
+        public async Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync()
+        {
+            try
+            {
+                // Buscamos todas las prácticas para hoy (CURDATE)
+                string sql = $@"
+                    SELECT
+                        p.idPractica AS IdPractica,
+                        p.idalumno AS CedulaAlumno,
+                        p.idvehiculo AS IdVehiculo,
+                        p.idProfesor AS CedulaProfesor,
+                        p.hora_salida AS HoraSalida,
+                        CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
+                        CONCAT_WS(' ', pr.apellidoPaterno, pr.apellidoMaterno, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
+                    FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
+                    JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
+                    JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
+                    WHERE p.fecha = CURDATE()
+                    ORDER BY p.hora_salida ASC";
+
+                return await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
+            }
+            catch (Exception)
+            {
+                return new List<ScheduledPracticeDto>();
             }
         }
     }
