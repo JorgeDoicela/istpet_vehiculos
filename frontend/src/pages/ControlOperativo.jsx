@@ -259,12 +259,34 @@ const ControlOperativo = () => {
                                     )}
 
                                     <div className="pt-6">
-                                        <div className="flex items-center justify-between mb-6">
-                                            <h3 className="text-xl font-black text-slate-800 tracking-tight">Selección de Vehículo</h3>
-                                            <span className="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">Paso 2: Asignación Flota</span>
+                                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 px-2 gap-4">
+                                            <div className="flex flex-col">
+                                                <h3 className="text-xl font-black text-slate-800 tracking-tight leading-none mb-1">Selección de Vehículo</h3>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                                    Escoja una unidad operativa de la flota
+                                                </p>
+                                            </div>
+
+                                            {/* Selector de Licencia Estilo Toggle Premium */}
+                                            <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 shadow-inner">
+                                                {['C', 'D', 'E'].map(lic => (
+                                                    <button 
+                                                        key={lic}
+                                                        onClick={() => {/* El filtro es automático por el alumno, pero aquí se muestra el estado */}}
+                                                        disabled={estudianteData && estudianteData.tipoLicencia !== lic}
+                                                        className={`px-4 py-1.5 rounded-xl text-[10px] font-black transition-all ${
+                                                            estudianteData?.tipoLicencia === lic 
+                                                            ? 'bg-white text-blue-600 shadow-sm ring-1 ring-slate-200' 
+                                                            : 'text-slate-400 opacity-40'
+                                                        }`}
+                                                    >
+                                                        TIPO {lic}
+                                                    </button>
+                                                ))}
+                                            </div>
                                         </div>
                                         
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                             {vehiculos.length > 0 ? (
                                                 (() => {
                                                     const filteredVehicles = estudianteData 
@@ -273,9 +295,9 @@ const ControlOperativo = () => {
 
                                                     if (filteredVehicles.length === 0) {
                                                         return (
-                                                            <div className="col-span-full py-8 px-6 text-center bg-amber-50 rounded-3xl border border-amber-100">
-                                                                <p className="text-amber-800 text-xs font-black uppercase tracking-widest leading-relaxed">
-                                                                    No hay vehículos disponibles tipo "{estudianteData?.tipoLicencia}" operando actualmente.
+                                                            <div className="col-span-full py-10 px-8 text-center bg-blue-50/30 rounded-[2rem] border-2 border-dashed border-blue-100">
+                                                                <p className="text-blue-900/40 text-xs font-black uppercase tracking-widest">
+                                                                    Sin unidades "{estudianteData?.tipoLicencia}" disponibles
                                                                 </p>
                                                             </div>
                                                         );
@@ -291,8 +313,9 @@ const ControlOperativo = () => {
                                                     ));
                                                 })()
                                             ) : (
-                                                <div className="col-span-full py-12 text-center apple-glass rounded-3xl opacity-50">
-                                                    <p className="text-slate-400 font-bold">Cargando flota disponible...</p>
+                                                <div className="col-span-full py-20 text-center apple-glass rounded-[2rem] opacity-30">
+                                                    <svg className="animate-spin h-8 w-8 text-blue-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                                     <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Conectando con Flota...</p>
                                                 </div>
                                             )}
                                         </div>
@@ -367,7 +390,7 @@ const ControlOperativo = () => {
                                                     className={`p-6 rounded-3xl border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-emerald-50 border-emerald-500 shadow-md ring-4 ring-emerald-100' : 'bg-slate-50/50 border-slate-100 hover:border-slate-300'}`}
                                                 >
                                                     <div className="flex justify-between items-start mb-4">
-                                                        <div className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-800">#{c.numero_vehiculo}</div>
+                                                        <div className="px-2 py-1 bg-white border border-slate-200 rounded-lg text-xs font-black text-slate-800">#{c.numeroVehiculo || c.numero_vehiculo}</div>
                                                         <StatusBadge status="En Pista" />
                                                     </div>
                                                     <h5 className="font-bold text-slate-800 leading-tight uppercase mb-1">{c.instructor}</h5>

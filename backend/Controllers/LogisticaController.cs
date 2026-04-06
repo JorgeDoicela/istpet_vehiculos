@@ -3,6 +3,7 @@ using backend.DTOs;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.RegularExpressions;
 
 namespace backend.Controllers
 {
@@ -55,30 +56,77 @@ namespace backend.Controllers
                 return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en la BD Central del ISTPET."));
             }
 
-            // 3. AUTO-REGISTRO Y MATRÍCULA (SMART SYNC REAL)
+            // 3. AUTO-REGISTRO Y MATRÍCULA (PUENTE HÍBRIDO UNIVERSAL)
             try 
             {
-                // Importamos al alumno a nuestra base local si no existe
+                // -- LÓGICA DE PRIORIDAD (DATOS LIMPIOS > SMART PARSING) --
+                
+                string finalNombres = "S/N";
+                string finalApellidos = "S/N";
+                string finalParalelo = "A";
+                string finalJornada = "MATUTINA";
+
+                // 1. Prioridad: Nombres y Apellidos (Formato Estructurado)
+                if (!string.IsNullOrEmpty(centralData.Nombres) && !string.IsNullOrEmpty(centralData.Apellidos))
+                {
+                    finalNombres = centralData.Nombres;
+                    finalApellidos = centralData.Apellidos;
+                }
+                else if (!string.IsNullOrEmpty(centralData.NombreCompleto))
+                {
+                    // Fallback: Smart Parsing de nombre completo (Messy)
+                    var parts = centralData.NombreCompleto.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    finalApellidos = parts.Length >= 2 ? $"{parts[0]} {parts[1]}" : centralData.NombreCompleto;
+                    finalNombres = parts.Length > 2 ? string.Join(" ", parts.Skip(2)) : "S/N";
+                }
+
+                // 2. Prioridad: Paralelo (Formato Estructurado)
+                if (!string.IsNullOrEmpty(centralData.Paralelo))
+                {
+                    finalParalelo = centralData.Paralelo;
+                }
+                else if (!string.IsNullOrEmpty(centralData.DetalleRaw))
+                {
+                    // Fallback: Buscar patrón "PARALELO:X"
+                    var matchParalelo = Regex.Match(centralData.DetalleRaw, @"PARALELO:([A-Z])", RegexOptions.IgnoreCase);
+                    if (matchParalelo.Success) finalParalelo = matchParalelo.Groups[1].Value.ToUpper();
+                }
+
+                // 3. Prioridad: Jornada (Formato Estructurado)
+                if (!string.IsNullOrEmpty(centralData.Jornada))
+                {
+                    finalJornada = centralData.Jornada;
+                }
+                else if (!string.IsNullOrEmpty(centralData.DetalleRaw))
+                {
+                    // Fallback: Buscar palabras clave en bloque de texto
+                    if (centralData.DetalleRaw.Contains("MATUTINA", StringComparison.OrdinalIgnoreCase)) finalJornada = "MATUTINA";
+                    else if (centralData.DetalleRaw.Contains("VESPERTINA", StringComparison.OrdinalIgnoreCase)) finalJornada = "VESPERTINA";
+                    else if (centralData.DetalleRaw.Contains("NOCTURNA", StringComparison.OrdinalIgnoreCase)) finalJornada = "NOCTURNA";
+                }
+
+                // -- PERSISTENCIA LOCAL (Mapeo Final) --
+
+                // Importamos al alumno a nuestra base local
                 var eBase = await _context.Estudiantes.FindAsync(centralData.Cedula);
                 if (eBase == null)
                 {
                     eBase = new backend.Models.Estudiante 
                     { 
                         Cedula = centralData.Cedula, 
-                        Nombres = centralData.Nombres, 
-                        Apellidos = centralData.Apellidos 
+                        Nombres = finalNombres.ToUpper(), 
+                        Apellidos = finalApellidos.ToUpper() 
                     };
                     _context.Estudiantes.Add(eBase);
                 }
 
-                // Buscamos un curso local activo para auto-matricularlo (Default o por Licencia)
-                var cursoLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.IdTipoLicencia == (centralData.IdTipoLicencia != 0 ? centralData.IdTipoLicencia : 1) && c.Estado == "ACTIVO")
+                // Buscamos un curso local (Default Tipo C para puente central)
+                var cursoLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.IdTipoLicencia == 1 && c.Estado == "ACTIVO")
                                  ?? await _context.Cursos.FirstOrDefaultAsync(c => c.Estado == "ACTIVO");
 
                 if (cursoLocal == null) 
                     return BadRequest(ApiResponse<EstudianteLogisticaResponse>.Fail("Central: No hay cursos locales activos para automatizar el ingreso."));
 
-                // Creamos la matrícula en Logística
                 var nuevaMatricula = new backend.Models.Matricula
                 {
                     CedulaEstudiante = eBase.Cedula,
@@ -88,30 +136,26 @@ namespace backend.Controllers
                 };
                 _context.Matriculas.Add(nuevaMatricula);
                 
-                // Actualizamos cupos del curso
                 if (cursoLocal.CuposDisponibles > 0) cursoLocal.CuposDisponibles -= 1;
 
                 await _context.SaveChangesAsync();
-
-                // Obtenemos código de licencia para respuesta
-                var tlCode = await _context.TipoLicencias.Where(x=>x.Id_Tipo == cursoLocal.IdTipoLicencia).Select(x=>x.Codigo).FirstOrDefaultAsync() ?? "C";
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
                 {
                     Cedula = eBase.Cedula,
                     EstudianteNombre = $"{eBase.Apellidos} {eBase.Nombres}".ToUpper(),
-                    CursoDetalle = $"[CENTRAL] {cursoLocal.Nombre} {cursoLocal.Nivel}".ToUpper(),
-                    Paralelo = centralData.Paralelo.ToUpper(),
-                    Jornada = centralData.Jornada.ToUpper(),
-                    TipoLicencia = tlCode.ToUpper(),
-                    IdTipoLicencia = cursoLocal.IdTipoLicencia,
-                    Periodo = centralData.Periodo.ToUpper(),
+                    CursoDetalle = (centralData.DetalleRaw ?? "CARRERA GENERAL").ToUpper(),
+                    Paralelo = finalParalelo.ToUpper(),
+                    Jornada = finalJornada.ToUpper(),
+                    TipoLicencia = "C",
+                    IdTipoLicencia = 1,
+                    Periodo = centralData.Periodo ?? "2026-I",
                     IdMatricula = nuevaMatricula.Id_Matricula
-                }, "Sincronizado: Alumno importado desde la Base de Datos Central ISTPET."));
+                }, "Sincronizado: Alumno localizado mediante el Puente Híbrido Universal."));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error en Puente Central: {ex.Message}"));
+                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error en Sincronización Híbrida: {ex.Message}"));
             }
         }
 
@@ -127,6 +171,7 @@ namespace backend.Controllers
                                select new VehiculoLogisticaResponse
                                {
                                    IdVehiculo = v.Id_Vehiculo,
+                                   NumeroVehiculo = v.NumeroVehiculo,
                                    VehiculoStr = (v.Placa + " - #" + v.NumeroVehiculo),
                                    IdInstructorFijo = v.IdInstructorFijo,
                                    InstructorNombre = (i.Apellidos + " " + i.Nombres).ToUpper(),

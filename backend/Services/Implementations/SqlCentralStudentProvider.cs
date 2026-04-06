@@ -32,8 +32,9 @@ namespace backend.Services.Implementations
                 string sql = $@"
                     SELECT 
                         cedula AS Cedula, 
-                        nombres AS Nombres, 
-                        apellidos AS Apellidos
+                        nombres_completos AS NombreCompleto, 
+                        detalle_academico AS DetalleRaw,
+                        periodo AS Periodo
                     FROM {CENTRAL_DB_NAME}.estudiantes
                     WHERE cedula = @p0
                     LIMIT 1";

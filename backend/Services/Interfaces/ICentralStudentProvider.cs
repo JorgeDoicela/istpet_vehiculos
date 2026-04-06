@@ -8,12 +8,17 @@ namespace backend.Services.Interfaces
     public class CentralStudentDto
     {
         public string Cedula { get; set; } = string.Empty;
-        public string Nombres { get; set; } = string.Empty;
-        public string Apellidos { get; set; } = string.Empty;
-        public int IdTipoLicencia { get; set; } // Proposed category based on previous records
-        public string Paralelo { get; set; } = "A";
-        public string Jornada { get; set; } = "MATUTINA";
-        public string Periodo { get; set; } = "2026-I";
+        
+        // --- Formato Limpio (Estructurado) ---
+        public string? Nombres { get; set; }
+        public string? Apellidos { get; set; }
+        public string? Paralelo { get; set; }
+        public string? Jornada { get; set; }
+        
+        // --- Formato "Legacy" (Messy/Foto) ---
+        public string? NombreCompleto { get; set; } 
+        public string? DetalleRaw { get; set; }   
+        public string Periodo { get; set; } = string.Empty;      
     }
 
     public interface ICentralStudentProvider

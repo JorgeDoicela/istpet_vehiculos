@@ -16,6 +16,7 @@ namespace backend.DTOs
     public class VehiculoLogisticaResponse
     {
         public int IdVehiculo { get; set; }
+        public int NumeroVehiculo { get; set; }
         public string VehiculoStr { get; set; } = string.Empty;
         public int IdInstructorFijo { get; set; }
         public string InstructorNombre { get; set; } = string.Empty;
