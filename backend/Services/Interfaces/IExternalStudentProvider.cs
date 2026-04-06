@@ -16,5 +16,8 @@ namespace backend.Services.Interfaces
         public string Apellidos { get; set; } = string.Empty;
         public int IdTipoLicencia { get; set; }
         public string CursoSugerido { get; set; } = string.Empty;
+        public string Periodo { get; set; } = string.Empty;
+        public string Paralelo { get; set; } = string.Empty;
+        public string Jornada { get; set; } = string.Empty;
     }
 }

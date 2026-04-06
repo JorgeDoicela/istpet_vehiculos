@@ -28,12 +28,16 @@ namespace backend.Controllers
             var localStudent = await (from m in _context.Matriculas
                                join e in _context.Estudiantes on m.CedulaEstudiante equals e.Cedula
                                join c in _context.Cursos on m.IdCurso equals c.Id_Curso
+                               join tl in _context.TipoLicencias on c.IdTipoLicencia equals tl.Id_Tipo
                                where e.Cedula == cedula && m.Estado == "ACTIVO"
                                select new EstudianteLogisticaResponse
                                {
                                    Cedula = e.Cedula,
                                    EstudianteNombre = $"{e.Apellidos} {e.Nombres}".ToUpper(),
-                                   CursoDetalle = $"{c.Nombre} {c.Nivel}, PARALELO:{c.Paralelo} {c.Jornada}".ToUpper(),
+                                   CursoDetalle = $"{c.Nombre} {c.Nivel}".ToUpper(),
+                                   Paralelo = c.Paralelo.ToUpper(),
+                                   Jornada = c.Jornada.ToString().ToUpper(),
+                                   TipoLicencia = tl.Codigo.ToUpper(),
                                    Periodo = c.Periodo.ToUpper(),
                                    IdMatricula = m.Id_Matricula
                                }).FirstOrDefaultAsync();
@@ -82,15 +86,27 @@ namespace backend.Controllers
                 };
                 _context.Matriculas.Add(nuevaMatricula);
                 
+                // Migración del Trigger SQL (tg_actualizar_cupos_after_matricula):
+                // Reducir los cupos del curso asignado automáticamente
+                if (cursoLocal.CuposDisponibles > 0)
+                {
+                    cursoLocal.CuposDisponibles -= 1;
+                }
+
                 await _context.SaveChangesAsync();
 
                 // Devolver respuesta mapeada al nuevo ingreso
+                var tlCode = await _context.TipoLicencias.Where(x=>x.Id_Tipo == external.IdTipoLicencia).Select(x=>x.Codigo).FirstOrDefaultAsync() ?? "C";
+
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
                 {
                     Cedula = eBase.Cedula,
                     EstudianteNombre = $"{eBase.Apellidos} {eBase.Nombres}".ToUpper(),
-                    CursoDetalle = $"[SYNC EXTERNO] {cursoLocal.Nombre} {cursoLocal.Nivel}".ToUpper(),
-                    Periodo = cursoLocal.Periodo.ToUpper(),
+                    CursoDetalle = $"[SYNC] {cursoLocal.Nombre} {cursoLocal.Nivel}".ToUpper(),
+                    Paralelo = external.Paralelo.ToUpper(),
+                    Jornada = external.Jornada.ToUpper(),
+                    TipoLicencia = tlCode.ToUpper(),
+                    Periodo = external.Periodo.ToUpper(),
                     IdMatricula = nuevaMatricula.Id_Matricula
                 }, "Sistema Central: Alumno sincronizado y matriculado automáticamente."));
             }
@@ -118,6 +134,22 @@ namespace backend.Controllers
                                }).ToListAsync();
 
             return Ok(ApiResponse<IEnumerable<VehiculoLogisticaResponse>>.Ok(query));
+        }
+
+        [HttpGet("instructores")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<InstructorLogisticaResponse>>>> GetInstructores()
+        {
+            var query = await _context.Instructores
+                .Where(i => i.Activo)
+                .Select(i => new InstructorLogisticaResponse
+                {
+                    Id_Instructor = i.Id_Instructor,
+                    FullName = $"{i.Apellidos} {i.Nombres}".ToUpper()
+                })
+                .OrderBy(i => i.FullName)
+                .ToListAsync();
+
+            return Ok(ApiResponse<IEnumerable<InstructorLogisticaResponse>>.Ok(query));
         }
 
         [HttpPost("salida")]

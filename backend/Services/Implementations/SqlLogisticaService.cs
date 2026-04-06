@@ -1,14 +1,14 @@
 using backend.Data;
+using backend.Models;
 using backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using MySqlConnector;
-using System.Data;
 
 namespace backend.Services.Implementations
 {
     /**
-     * Stored Procedure Implementation of ILogisticaService
-     * Executes SQL Procedures: sp_registrar_salida and sp_registrar_llegada
+     * EF Core Implementation of ILogisticaService
+     * Migrado desde Procedimientos Almacenados (Stored Procedures)
+     * Toda la lógica de negocio y validación reside ahora en el servidor.
      */
     public class SqlLogisticaService : ILogisticaService
     {
@@ -21,33 +21,121 @@ namespace backend.Services.Implementations
 
         public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, int idInstructor, string observaciones, int registradoPor)
         {
-            var pIdMat = new MySqlParameter("p_id_matricula", idMatricula);
-            var pIdVeh = new MySqlParameter("p_id_vehiculo", idVehiculo);
-            var pIdIns = new MySqlParameter("p_id_instructor", idInstructor);
-            var pObs = new MySqlParameter("p_obs", observaciones ?? (object)DBNull.Value);
-            var pUser = new MySqlParameter("p_registrado_por", registradoPor);
-            var pRes = new MySqlParameter("p_resultado", MySqlDbType.VarChar, 50) { Direction = ParameterDirection.Output };
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Validar que el vehículo exista y esté operativo
+                var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
+                if (vehiculo == null || !vehiculo.Activo || vehiculo.EstadoMecanico != "OPERATIVO")
+                    return "ERROR: Vehículo no disponible u operativo.";
 
-            await _context.Database.ExecuteSqlRawAsync(
-                "CALL sp_registrar_salida(@p_id_matricula, @p_id_vehiculo, @p_id_instructor, @p_obs, @p_registrado_por, @p_resultado)",
-                pIdMat, pIdVeh, pIdIns, pObs, pUser, pRes);
+                // 2. Validar que el vehículo no esté ya en uso (sin llegada)
+                var clasesActivasVehiculo = await _context.ClasesActivas.AnyAsync(c => c.Id_Vehiculo == idVehiculo);
+                if (clasesActivasVehiculo) 
+                    return "VEHICULO_EN_USO";
 
-            return pRes.Value?.ToString() ?? "ERROR_DESCONOCIDO";
+                // 3. Validar que el instructor no esté dando otra clase
+                var instructorOcupado = await _context.ClasesActivas.AnyAsync(c => c.Id_Instructor == idInstructor);
+                if (instructorOcupado) 
+                    return "INSTRUCTOR_OCUPADO";
+
+                // 4. Validar que el estudiante no esté ya en pista
+                // Buscamos si hay un registro de salida para esta matrícula sin su respectiva llegada
+                var estudianteOcupado = await _context.RegistrosSalida
+                    .Where(s => s.IdMatricula == idMatricula && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
+                    .AnyAsync();
+
+                if (estudianteOcupado) 
+                    return "ESTUDIANTE_EN_PISTA";
+
+                // 5. Registrar salida
+                var salida = new RegistroSalida
+                {
+                    IdMatricula = idMatricula,
+                    IdVehiculo = idVehiculo,
+                    IdInstructor = idInstructor,
+                    FechaHoraSalida = DateTime.Now,
+                    KmSalida = vehiculo.KmActual,
+                    ObservacionesSalida = observaciones,
+                    RegistradoPor = registradoPor
+                };
+
+                _context.RegistrosSalida.Add(salida);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "EXITO";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return $"ERROR: {ex.Message}";
+            }
         }
 
         public async Task<string> RegistrarLlegadaAsync(int idRegistro, int kmLlegada, string observaciones, int registradoPor)
         {
-            var pIdReg = new MySqlParameter("p_id_registro", idRegistro);
-            var pKm = new MySqlParameter("p_km_llegada", kmLlegada);
-            var pObs = new MySqlParameter("p_obs", observaciones ?? (object)DBNull.Value);
-            var pUser = new MySqlParameter("p_registrado_por", registradoPor);
-            var pRes = new MySqlParameter("p_resultado", MySqlDbType.VarChar, 50) { Direction = ParameterDirection.Output };
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Obtener registro de salida
+                var salida = await _context.RegistrosSalida.FindAsync(idRegistro);
+                if (salida == null) 
+                    return "ERROR: Registro de salida no encontrado.";
 
-            await _context.Database.ExecuteSqlRawAsync(
-                "CALL sp_registrar_llegada(@p_id_registro, @p_km_llegada, @p_obs, @p_registrado_por, @p_resultado)",
-                pIdReg, pKm, pObs, pUser, pRes);
+                // 2. Validar que no tenga llegada ya
+                var tieneLlegada = await _context.RegistrosLlegada.AnyAsync(l => l.IdRegistro == idRegistro);
+                if (tieneLlegada) 
+                    return "ERROR: Este registro ya fue cerrado.";
 
-            return pRes.Value?.ToString() ?? "ERROR_DESCONOCIDO";
+                // 3. Validar Kilometraje: El de llegada no puede ser menor al de salida
+                if (kmLlegada < salida.KmSalida) 
+                    return "ERROR_KM_INCOHERENTE";
+
+                // 4. Registrar Llegada
+                var llegada = new RegistroLlegada
+                {
+                    IdRegistro = idRegistro,
+                    FechaHoraLlegada = DateTime.Now,
+                    KmLlegada = kmLlegada,
+                    ObservacionesLlegada = observaciones,
+                    RegistradoPor = registradoPor
+                };
+                
+                _context.RegistrosLlegada.Add(llegada);
+
+                // 5. Actualizar Vehículo y alerta de mantenimiento
+                var vehiculo = await _context.Vehiculos.FindAsync(salida.IdVehiculo);
+                if (vehiculo != null)
+                {
+                    vehiculo.KmActual = kmLlegada;
+                    // Lógica sencilla de mantenimiento preventivo
+                    if (vehiculo.KmActual >= vehiculo.KmProximoMantenimiento)
+                    {
+                        vehiculo.EstadoMecanico = "MANTENIMIENTO";
+                    }
+                }
+
+                // 6. Actualizar Horas Completadas del Estudiante (Matrícula)
+                var matricula = await _context.Matriculas.FindAsync(salida.IdMatricula);
+                if (matricula != null)
+                {
+                    var duracionClase = llegada.FechaHoraLlegada - salida.FechaHoraSalida;
+                    // Redondear a dos decimales las horas totales (eg. 1.5 horas = 1 hora 30 min)
+                    decimal horasCalculadas = (decimal)Math.Round(duracionClase.TotalHours, 2);
+                    matricula.HorasCompletadas += horasCalculadas;
+                }
+
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "EXITO";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return $"ERROR: {ex.Message}";
+            }
         }
     }
 }

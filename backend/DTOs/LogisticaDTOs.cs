@@ -6,6 +6,9 @@ namespace backend.DTOs
         public string EstudianteNombre { get; set; } = string.Empty;
         public string CursoDetalle { get; set; } = string.Empty;
         public string Periodo { get; set; } = string.Empty;
+        public string Paralelo { get; set; } = string.Empty;
+        public string Jornada { get; set; } = string.Empty;
+        public string TipoLicencia { get; set; } = string.Empty; // C, D, E
         public int IdMatricula { get; set; }
     }
 
@@ -16,6 +19,12 @@ namespace backend.DTOs
         public int IdInstructorFijo { get; set; }
         public string InstructorNombre { get; set; } = string.Empty;
         public int KmActual { get; set; }
+    }
+
+    public class InstructorLogisticaResponse
+    {
+        public int Id_Instructor { get; set; }
+        public string FullName { get; set; } = string.Empty;
     }
 
     public class SalidaRequest
