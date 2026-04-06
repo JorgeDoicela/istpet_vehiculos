@@ -206,3 +206,7 @@ INSERT INTO tipo_licencia (codigo, descripcion) VALUES
 -- Admin Initial: istpet2026
 INSERT INTO usuarios (usuario, password_hash, rol, nombre_completo)
 VALUES ('admin_istpet', SHA2('istpet2026', 256), 'admin', 'Administrador General ISTPET');
+
+-- Curso Inicial para Auto-Registro (SIGAFI BRIDGE)
+INSERT INTO cursos (id_curso, id_tipo_licencia, nombre, nivel, paralelo, jornada, periodo, fecha_inicio, fecha_fin, cupo_maximo, cupos_disponibles, horas_practica_total, estado)
+VALUES (1, 1, 'CURSO PROFESIONAL TIPO C', 'INICIAL', 'A', 'MATUTINA', '2026-I', '2026-01-01', '2026-12-31', 500, 500, 15, 'ACTIVO');

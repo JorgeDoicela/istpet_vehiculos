@@ -223,64 +223,75 @@ const ControlOperativo = () => {
                                     {/* Información Estudiante */}
                                     {estudianteData ? (
                                         <div className="space-y-6 animate-apple-in">
-                                            <div className="bg-[var(--apple-primary)]/5 border border-[var(--apple-primary)]/10 rounded-[2rem] p-8">
-                                                <div className="flex flex-col lg:flex-row items-center lg:items-start gap-4 lg:gap-6 text-center lg:text-left mb-6">
-                                                    {estudianteData.fotoBase64 ? (
-                                                        <div className="h-24 w-24 rounded-2xl overflow-hidden shadow-lg border-2 border-white/20 flex-shrink-0">
-                                                            <img src={`data:image/jpeg;base64,${estudianteData.fotoBase64}`} className="w-full h-full object-cover" alt="Alumno" />
+                                            <div className="bg-white border border-[var(--apple-border)] rounded-[2rem] p-5 shadow-sm hover:shadow-md transition-all group">
+                                                <div className="flex items-center justify-between mb-5">
+                                                    <div className="flex-1 text-left">
+                                                        <h4 className="text-xl font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-none mb-2 group-hover:text-[var(--apple-primary)] transition-colors">
+                                                            {estudianteData.estudianteNombre}
+                                                        </h4>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="px-3 py-1 rounded-full bg-[var(--istpet-gold)]/10 border border-[var(--istpet-gold)]/20 shadow-sm">
+                                                                <span className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-tight">Periodo: {estudianteData.periodo}</span>
+                                                            </div>
                                                         </div>
-                                                    ) : (
-                                                        <div className="h-20 w-20 rounded-2xl bg-[var(--apple-primary)] flex items-center justify-center text-white text-3xl font-black shadow-lg">
-                                                            {estudianteData.estudianteNombre?.[0]}
-                                                        </div>
-                                                    )}
-                                                    <div className="flex-1">
-                                                        <h4 className="text-xl font-black text-[var(--apple-text-main)] mb-1">{estudianteData.estudianteNombre}</h4>
-                                                        <div className="flex items-center gap-2 flex-wrap justify-center lg:justify-start">
-                                                            <span className="text-[10px] font-black bg-[var(--istpet-gold)]/20 text-[var(--istpet-gold)] px-2 py-0.5 rounded-md uppercase tracking-widest">{estudianteData.cursoDetalle}</span>
-                                                            <span className="text-[10px] font-black bg-[var(--apple-text-sub)]/10 text-[var(--apple-text-sub)] px-2 py-0.5 rounded-md uppercase tracking-widest">PERIODO: {estudianteData.periodo}</span>
-                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                                        <span className="text-[9px] font-black text-emerald-700 uppercase tracking-widest">Activo</span>
                                                     </div>
                                                 </div>
 
-                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                                                    <div className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)]">
-                                                        <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase mb-1 tracking-widest">Licencia</p>
-                                                        <p className="text-sm font-black text-[var(--apple-primary)]">TIPO {estudianteData.tipoLicencia}</p>
+                                                <div className="grid grid-cols-3 gap-3">
+                                                    <div className="bg-[var(--apple-bg)] p-3 rounded-2xl border border-transparent hover:border-[var(--apple-border)] hover:bg-white transition-all text-center">
+                                                        <div className="flex justify-center mb-1 text-[var(--apple-text-sub)]">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                                        </div>
+                                                        <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter mb-0.5">Licencia</span>
+                                                        <span className="block text-xs font-black text-[var(--apple-primary)]">{estudianteData.tipoLicencia}</span>
                                                     </div>
-                                                    <div className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)]">
-                                                        <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase mb-1 tracking-widest">Paralelo</p>
-                                                        <p className="text-sm font-black text-[var(--apple-text-main)]">"{estudianteData.paralelo}"</p>
+                                                    
+                                                    <div className="bg-[var(--apple-bg)] p-3 rounded-2xl border border-transparent hover:border-[var(--apple-border)] hover:bg-white transition-all text-center">
+                                                        <div className="flex justify-center mb-1 text-[var(--apple-text-sub)]">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                                                        </div>
+                                                        <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter mb-0.5">Paralelo</span>
+                                                        <span className="block text-xs font-black text-[var(--apple-text-main)]">{estudianteData.paralelo}</span>
                                                     </div>
-                                                    <div className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] col-span-2 md:col-span-1">
-                                                        <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase mb-1 tracking-widest">Jornada</p>
-                                                        <p className="text-sm font-black text-[var(--apple-text-main)]">{estudianteData.jornada}</p>
+
+                                                    <div className="bg-[var(--apple-bg)] p-3 rounded-2xl border border-transparent hover:border-[var(--apple-border)] hover:bg-white transition-all text-center">
+                                                        <div className="flex justify-center mb-1 text-[var(--apple-text-sub)]">
+                                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                                        </div>
+                                                        <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter mb-0.5">Jornada</span>
+                                                        <span className="block text-[10px] font-black text-[var(--apple-text-main)] leading-none">{estudianteData.jornada}</span>
                                                     </div>
                                                 </div>
 
                                                 {estudianteData.tienePracticaHoy && (
-                                                    <div className="mt-6 bg-gradient-to-r from-[var(--apple-primary)] to-indigo-600 p-6 rounded-2xl text-white shadow-xl shadow-blue-600/10 flex flex-col md:flex-row justify-between items-center gap-4">
-                                                        <div className="flex items-center gap-4">
-                                                            <div className="h-10 w-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    <div className="mt-4 bg-gradient-to-r from-[var(--istpet-navy)] to-[#2a3a6a] p-3 rounded-2xl text-white shadow-lg flex items-center justify-between gap-3 overflow-hidden relative">
+                                                        <div className="flex items-center gap-3 relative z-10 text-left">
+                                                            <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/10">
+                                                                <svg className="h-4 w-4 text-[var(--istpet-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                                                             </div>
-                                                            <div>
-                                                                <p className="text-[10px] font-black uppercase text-white/70 tracking-widest">Agenda SIGAFI</p>
-                                                                <p className="text-sm font-bold">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora}</p>
+                                                            <div className="leading-tight">
+                                                                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--istpet-gold)]">Práctica de Hoy</p>
+                                                                <p className="text-[10px] font-bold text-white/90">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora}</p>
                                                             </div>
                                                         </div>
                                                         <button
-                                                            onClick={() => {
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
                                                                 const veh = vehiculos.find(v => v.idVehiculo === estudianteData.idPracticaCentral);
                                                                 const inst = instructores.find(i => i.fullName === estudianteData.practicaInstructor);
                                                                 if (veh) setVehiculoSeleccionado(veh);
                                                                 if (inst) setInstructorSeleccionado(inst);
                                                                 showNotification('Agenda cargada');
                                                             }}
-                                                            className="px-6 py-2 bg-white text-[var(--apple-primary)] rounded-xl text-xs font-black uppercase hover:scale-105 transition-all shadow-lg shadow-black/10"
+                                                            className="relative z-10 px-3 py-1.5 bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-xl text-[9px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-md shrink-0"
                                                         >
-                                                            CARGAR DATOS
+                                                            Auto-llenar
                                                         </button>
+                                                        <div className="absolute -right-2 top-0 h-full w-24 bg-white/5 skew-x-12"></div>
                                                     </div>
                                                 )}
                                             </div>

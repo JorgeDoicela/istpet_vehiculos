@@ -39,7 +39,7 @@ CREATE TABLE cond_alumnos_practicas (
 );
 
 CREATE TABLE matriculas (
-    idMatricula INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(15), idPeriodo INT, fechaMatricula DATE, valida INT DEFAULT 1
+    idMatricula INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(15), idPeriodo INT, fechaMatricula DATE, paralelo VARCHAR(5), valida INT DEFAULT 1
 );
 
 CREATE TABLE periodos (
@@ -58,7 +58,7 @@ INSERT INTO usuario VALUES (1712345678, '$2a$11$q9W1mufMebc9j6n0U8.H6D.5m0N1/6n7
 
 INSERT INTO vehiculo VALUES (35, 35, 'PBA-1234', 'CHEVROLET', 'AVEO', 1, 0);
 
-INSERT INTO matriculas (idAlumno, idPeriodo, fechaMatricula) VALUES ('1725555377', 1, CURDATE());
+INSERT INTO matriculas (idAlumno, idPeriodo, fechaMatricula, paralelo) VALUES ('1725555377', 1, CURDATE(), 'A');
 
 INSERT INTO periodos VALUES (1, 'OCT2025', 1);
 

@@ -22,36 +22,32 @@ namespace backend.Services.Implementations
 
         public async Task<CentralStudentDto?> GetFromCentralAsync(string cedula)
         {
-            try
-            {
-                /*
-                 * USANDO PUENTE SQL REAL:
-                 * Realizamos un query cross-database (hacia otra BD en el mismo servidor).
-                 * Si la BD central no existe aún, este catch capturará el error de forma segura.
-                 */
-                string sql = $@"
-                    SELECT
-                        a.idAlumno AS Cedula,
-                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
-                        CONCAT('MATRICULADO: ', p.detalle, ' (', m.paralelo, ')') AS DetalleRaw,
-                        p.idPeriodo AS Periodo,
-                        TO_BASE64(a.foto) AS FotoBase64
-                    FROM {CENTRAL_DB_NAME}.alumnos a
-                    JOIN {CENTRAL_DB_NAME}.matriculas m ON m.idAlumno = a.idAlumno
-                    JOIN {CENTRAL_DB_NAME}.periodos p ON p.idPeriodo = m.idPeriodo
-                    WHERE a.idAlumno = @p0 AND p.activo = 1
-                    LIMIT 1";
+            /*
+             * USANDO PUENTE SQL REAL:
+             * Realizamos un query cross-database (hacia otra BD en el mismo servidor).
+             * En EF Core 8 SqlQueryRaw requiere que el resultado mapee todas las propiedades del DTO.
+             */
+            string sql = $@"
+                SELECT
+                    a.idAlumno AS Cedula,
+                    a.primerNombre AS Nombres,
+                    a.apellidoPaterno AS Apellidos,
+                    m.paralelo AS Paralelo,
+                    'MATUTINA' AS Jornada,
+                    CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
+                    CONCAT('MATRICULADO: ', p.detalle, ' (', m.paralelo, ')') AS DetalleRaw,
+                    CAST(p.idPeriodo AS CHAR) AS Periodo,
+                    TO_BASE64(a.foto) AS FotoBase64
+                FROM {CENTRAL_DB_NAME}.alumnos a
+                JOIN {CENTRAL_DB_NAME}.matriculas m ON m.idAlumno = a.idAlumno
+                JOIN {CENTRAL_DB_NAME}.periodos p ON p.idPeriodo = m.idPeriodo
+                WHERE a.idAlumno = @p0 AND p.activo = 1
+                LIMIT 1";
 
-                // Nota: Esto requiere que el usuario de MySQL tenga permisos sobre ambas bases de datos.
-                var result = await _context.Database.SqlQueryRaw<CentralStudentDto>(sql, cedula)
-                    .FirstOrDefaultAsync();
+            var result = await _context.Database.SqlQueryRaw<CentralStudentDto>(sql, cedula)
+                .FirstOrDefaultAsync();
 
-                return result;
-            }
-            catch (Exception)
-            {
-                return null;
-            }
+            return result;
         }
 
         public async Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula)
