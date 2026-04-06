@@ -270,6 +270,31 @@ namespace backend.Controllers
             }
         }
 
+        [HttpGet("buscar")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<dynamic>>>> BuscarEstudiantes([FromQuery] string query)
+        {
+            if (string.IsNullOrEmpty(query) || query.Length < 3)
+                return Ok(ApiResponse<IEnumerable<dynamic>>.Ok(new List<dynamic>()));
+
+            var term = query.ToUpper();
+            
+            var sugerencias = await _context.Estudiantes
+                .Where(e => e.Cedula.StartsWith(term) || e.Apellidos.Contains(term) || e.Nombres.Contains(term))
+                .Select(e => new {
+                    Cedula = e.Cedula,
+                    NombreCompleto = $"{e.Apellidos} {e.Nombres}".ToUpper(),
+                    // Intentamos obtener la carrera de su matrícula más reciente
+                    Carrera = _context.Matriculas
+                        .Where(m => m.CedulaEstudiante == e.Cedula)
+                        .Join(_context.Cursos, m => m.IdCurso, c => c.Id_Curso, (m, c) => c.Nombre)
+                        .FirstOrDefault() ?? "ESTUDIANTE REGULAR"
+                })
+                .Take(5)
+                .ToListAsync();
+
+            return Ok(ApiResponse<IEnumerable<dynamic>>.Ok(sugerencias));
+        }
+
         [HttpPost("llegada")]
         public async Task<ActionResult<ApiResponse<string>>> RegistrarLlegada([FromBody] LlegadaRequest req)
         {

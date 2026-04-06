@@ -15,6 +15,16 @@ CREATE TABLE alumnos (
     celular VARCHAR(15), email VARCHAR(100), foto LONGBLOB
 );
 
+CREATE TABLE secciones (
+    idSeccion INT PRIMARY KEY,
+    nombre VARCHAR(50)
+);
+
+CREATE TABLE cursos (
+    idNivel INT PRIMARY KEY,
+    nombre VARCHAR(100)
+);
+
 CREATE TABLE profesores (
     idProfesor VARCHAR(15) PRIMARY KEY,
     primerNombre VARCHAR(50), segundoNombre VARCHAR(50),
@@ -39,7 +49,14 @@ CREATE TABLE cond_alumnos_practicas (
 );
 
 CREATE TABLE matriculas (
-    idMatricula INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(15), idPeriodo INT, fechaMatricula DATE, paralelo VARCHAR(5), valida INT DEFAULT 1
+    idMatricula INT PRIMARY KEY AUTO_INCREMENT, 
+    idAlumno VARCHAR(15), 
+    idPeriodo INT, 
+    idNivel INT,
+    idSeccion INT,
+    fechaMatricula DATE, 
+    paralelo VARCHAR(5), 
+    valida INT DEFAULT 1
 );
 
 CREATE TABLE periodos (
@@ -50,6 +67,15 @@ CREATE TABLE periodos (
 INSERT INTO alumnos VALUES
 ('1725555377', 'JORGE', 'ISMAEL', 'DOICELA', 'MOLINA', '0999999999', 'jorge@mail.com', NULL);
 
+INSERT INTO secciones VALUES 
+(1, 'MATUTINA'), 
+(2, 'NOCTURNA'), 
+(3, 'FIN DE SEMANA');
+
+INSERT INTO cursos VALUES 
+(100, 'DESARROLLO DE SOFTWARE CUARTO'), 
+(101, 'MECÁNICA AUTOMOTRIZ SEGUNDO');
+
 INSERT INTO profesores VALUES
 ('1712345678', 'RICHARD', 'MAURICIO', 'TRUJILLO', 'REDROBAN', '0888888888', 'richard@mail.com', 1);
 
@@ -58,7 +84,8 @@ INSERT INTO usuario VALUES (1712345678, '$2a$11$q9W1mufMebc9j6n0U8.H6D.5m0N1/6n7
 
 INSERT INTO vehiculo VALUES (35, 35, 'PBA-1234', 'CHEVROLET', 'AVEO', 1, 0);
 
-INSERT INTO matriculas (idAlumno, idPeriodo, fechaMatricula, paralelo) VALUES ('1725555377', 1, CURDATE(), 'A');
+INSERT INTO matriculas (idAlumno, idPeriodo, idNivel, idSeccion, fechaMatricula, paralelo) 
+VALUES ('1725555377', 1, 100, 1, CURDATE(), 'A');
 
 INSERT INTO periodos VALUES (1, 'OCT2025', 1);
 
@@ -66,4 +93,5 @@ INSERT INTO periodos VALUES (1, 'OCT2025', 1);
 INSERT INTO cond_alumnos_practicas (idalumno, idvehiculo, idProfesor, fecha, hora_salida, user_asigna)
 VALUES ('1725555377', 35, '1712345678', CURDATE(), '08:00:00', 'ADMIN');
 
-SELECT 'MOCK_SIGAFI_ES CREADO EXITOSAMENTE' AS Status;
+SELECT 'MOCK_SIGAFI_ES ACTUALIZADO EXITOSAMENTE' AS Status;
+

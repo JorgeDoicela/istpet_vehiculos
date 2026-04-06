@@ -33,14 +33,17 @@ namespace backend.Services.Implementations
                     a.primerNombre AS Nombres,
                     a.apellidoPaterno AS Apellidos,
                     m.paralelo AS Paralelo,
-                    'MATUTINA' AS Jornada,
+                    s.nombre AS Jornada,
                     CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
-                    CONCAT('MATRICULADO: ', p.detalle, ' (', m.paralelo, ')') AS DetalleRaw,
+                    CONCAT(c.nombre, ', PARALELO:', m.paralelo, ' ', s.nombre) AS DetalleRaw,
+                    c.nombre AS CursoDetalle,
                     CAST(p.idPeriodo AS CHAR) AS Periodo,
                     TO_BASE64(a.foto) AS FotoBase64
                 FROM {CENTRAL_DB_NAME}.alumnos a
                 JOIN {CENTRAL_DB_NAME}.matriculas m ON m.idAlumno = a.idAlumno
                 JOIN {CENTRAL_DB_NAME}.periodos p ON p.idPeriodo = m.idPeriodo
+                LEFT JOIN {CENTRAL_DB_NAME}.cursos c ON c.idNivel = m.idNivel
+                LEFT JOIN {CENTRAL_DB_NAME}.secciones s ON s.idSeccion = m.idSeccion
                 WHERE a.idAlumno = @p0 AND p.activo = 1
                 LIMIT 1";
 
@@ -84,11 +87,13 @@ namespace backend.Services.Implementations
                         p.idPractica AS IdPractica,
                         p.idalumno AS CedulaAlumno,
                         p.idvehiculo AS IdVehiculo,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
                         CONCAT(pr.apellidos, ' ', pr.nombres) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
+                    JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
                     JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
                     JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.idalumno = @p0 AND p.fecha = CURDATE()
@@ -115,11 +120,13 @@ namespace backend.Services.Implementations
                         p.idPractica AS IdPractica,
                         p.idalumno AS CedulaAlumno,
                         p.idvehiculo AS IdVehiculo,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.apellidoPaterno, pr.apellidoMaterno, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
+                    JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
                     JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
                     JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.fecha = CURDATE()

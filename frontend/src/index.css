@@ -75,7 +75,7 @@
     @apply rounded-[2.5rem] apple-glass p-8 transition-all duration-700 hover:shadow-2xl hover:scale-[1.01];
   }
 
-  /* Esqueletos de Carga Zenith */
+  /* Esqueletos de Carga Gestión Conducción */
   .skeleton {
     @apply bg-slate-200/50 rounded-2xl relative overflow-hidden;
   }
@@ -92,7 +92,7 @@
   }
 }
 
-/* Animaciones Zenith */
+/* Animaciones Gestión Conducción */
 @keyframes shimmer {
   0% { transform: translateX(-100%); }
   100% { transform: translateX(100%); }

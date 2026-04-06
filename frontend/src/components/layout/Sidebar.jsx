@@ -2,6 +2,7 @@ import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { useTheme } from '../common/ThemeContext';
 import logoImg from '../../assets/logo.png';
+import logoArriba from '../../assets/logo_arriba.png';
 
 const Sidebar = () => {
     const { theme } = useTheme();
@@ -54,6 +55,13 @@ const Sidebar = () => {
             {/* Sidebar Desktop */}
             <aside className="fixed left-6 top-6 bottom-6 w-72 apple-glass rounded-[3rem] p-8 hidden lg:flex flex-col z-50">
 
+                <header className="mb-12 px-2">
+                    <img 
+                        src={logoArriba} 
+                        alt="ISTPET Gestión Conducción" 
+                        className="w-full h-auto max-h-20 object-contain mx-auto drop-shadow-xl animate-apple-in" 
+                    />
+                </header>
 
                 <nav className="flex-1 space-y-4">
                     {menuItems.map((item) => {

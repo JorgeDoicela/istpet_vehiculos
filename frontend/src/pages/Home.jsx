@@ -63,30 +63,30 @@ const Home = () => {
                 </div>
             )}
 
-            <div className="space-y-12">
-                <div className="max-w-4xl">
-                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
+            <div className="space-y-8">
+                <div className="max-w-4xl px-2">
+                    <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
                         Pista & Monitoreo
                     </h1>
-                    <p className="text-[var(--apple-text-sub)] font-medium text-sm lg:text-xl tracking-tight opacity-70 mt-2">Visión global de flota en tiempo real</p>
+                    <p className="text-[var(--apple-text-sub)] font-bold text-[10px] lg:text-sm uppercase tracking-widest opacity-70 mt-1">Visión global de flota en tiempo real</p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-12">
-                    <div className="space-y-12 animate-apple-in">
-                        {/* KPI WIDGETS */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--apple-card)]">
+                <div className="grid grid-cols-1 gap-8">
+                    <div className="animate-apple-in">
+                        {/* KPI WIDGETS COMPACTOS */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+                            <div className="apple-card flex flex-col items-center justify-center p-6 lg:p-8 bg-[var(--apple-card)]">
                                 <CircularKPI value={85} max={100} label="Flota Operativa" />
                             </div>
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--apple-card)]">
+                            <div className="apple-card flex flex-col items-center justify-center p-6 lg:p-8 bg-[var(--apple-card)]">
                                 <CircularKPI value={activeClasses.length} max={15} label="Ocupación Live" color="emerald" />
                             </div>
-                            <div className="apple-card flex flex-col items-center justify-center p-10 bg-[var(--istpet-navy)] text-white !border-none relative overflow-hidden group shadow-2xl">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full blur-3xl translate-x-16 -translate-y-16 group-hover:bg-white/10 transition-all duration-700"></div>
+                            <div className="apple-card flex flex-col items-center justify-center p-6 lg:p-8 bg-[var(--istpet-navy)] text-white !border-none relative overflow-hidden group shadow-xl">
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full blur-2xl translate-x-12 -translate-y-12 group-hover:bg-white/10 transition-all duration-700"></div>
                                 <div className="text-center relative z-10">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.25em] text-white/50 mb-4">Integridad</p>
-                                    <p className="text-4xl font-black">99.9%</p>
-                                    <p className="text-[9px] font-bold text-emerald-400 mt-2 uppercase">Sistema Protegido</p>
+                                    <p className="text-[8px] font-black uppercase tracking-[0.2em] text-white/40 mb-2">Integridad</p>
+                                    <p className="text-3xl font-black">99.9%</p>
+                                    <p className="text-[8px] font-bold text-emerald-400 mt-1 uppercase">Protegido</p>
                                 </div>
                             </div>
                         </div>

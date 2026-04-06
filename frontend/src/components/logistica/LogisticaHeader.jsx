@@ -23,7 +23,7 @@ const LogisticaHeader = ({ activeTab, title = "Logística Operativa" }) => {
 
     return (
         <div className="mb-10 lg:mb-16 animate-apple-in" style={{ animationDelay: '0.1s' }}>
-            {/* Título Principal Zenith */}
+            {/* Título Principal Gestión Conducción */}
             <div className="mb-8 lg:mb-12 text-center">
                 <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-slate-900 mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-slate-900 to-slate-600">
                     {title}

@@ -20,6 +20,7 @@ namespace backend.Services.Interfaces
         // --- Formato "Legacy" (Messy/Foto) ---
         public string? NombreCompleto { get; set; } 
         public string? DetalleRaw { get; set; }   
+        public string? CursoDetalle { get; set; }
         public string Periodo { get; set; } = string.Empty;
         public string? FotoBase64 { get; set; }
     }
@@ -36,6 +37,7 @@ namespace backend.Services.Interfaces
         public int IdPractica { get; set; }
         public string CedulaAlumno { get; set; } = string.Empty;
         public int IdVehiculo { get; set; }
+        public string AlumnoNombre { get; set; } = string.Empty;
         public string CedulaProfesor { get; set; } = string.Empty;
         public TimeSpan? HoraSalida { get; set; }
         public string VehiculoDetalle { get; set; } = string.Empty;

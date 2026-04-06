@@ -13,6 +13,16 @@ const logisticaService = {
     }
   },
 
+  buscarSugerencias: async (query) => {
+    try {
+      const response = await api.get(`/logistica/buscar?query=${query}`);
+      return response.data.data; // List of { cedula, nombreCompleto }
+    } catch (error) {
+      console.error('Error fetching suggestions:', error);
+      return [];
+    }
+  },
+
   getVehiculosDisponibles: async () => {
     try {
       const response = await api.get('/logistica/vehiculos-disponibles');
