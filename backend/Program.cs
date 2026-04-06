@@ -28,6 +28,8 @@ builder.Services.AddScoped<IVehiculoService, SqlVehiculoService>();
 builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
 builder.Services.AddScoped<IDataSyncService, DataSyncService>();
+builder.Services.AddScoped<IExternalStudentProvider, MockExternalStudentProvider>();
+
 
 // 🤖 AUTOMATIZACIÓN: Registrar AutoMapper
 builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));

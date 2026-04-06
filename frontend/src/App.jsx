@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Home from './pages/Home';
 import Students from './pages/Students';
 import Vehicles from './pages/Vehicles';
+import ControlOperativo from './pages/ControlOperativo';
 
 /**
  * App Root - ISTPET 2026
@@ -23,6 +24,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/estudiantes" element={<Students />} />
           <Route path="/vehiculos" element={<Vehicles />} />
+          <Route path="/logistica" element={<ControlOperativo />} />
           <Route path="*" element={<Home />} />
         </Routes>
       </div>
