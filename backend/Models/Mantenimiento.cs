@@ -14,8 +14,7 @@ namespace backend.Models
         [Required]
         public DateTime Fecha { get; set; }
 
-        [Required]
-        public int KmRealizado { get; set; }
+
 
         public string? Descripcion { get; set; }
 

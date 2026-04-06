@@ -17,9 +17,9 @@ Hemos implementado una infraestructura desacoplada de alto rendimiento:
 Actualmente, el sistema ya es capaz de:
 
 ### A. Gestión de Flota Inteligente
-- **Inventario Maestro**: Control total de vehículos, placas, marcas y kilometraje activo.
+- **Inventario Maestro**: Control total de vehículos, placas y marcas operativas.
 - **Monitor de Salud Mecánica**: Seguimiento en tiempo real del estado (OPERATIVO, MANTENIMIENTO, FUERA_SERVICIO).
-- **Alertas de Taller**: Sistema de predicción que detecta automáticamente unidades a menos de 500 km del próximo mantenimiento.
+- **Alertas de Taller**: Sistema de notificación para unidades marcadas en reparación o mantenimiento preventivo manual.
 
 ### B. Dashboard de Control Logístico
 - **Monitor En Ruta**: Visualización dinámica de clases activas mediante la vista v_clases_activas, integrando datos de estudiante, instructor, vehículo y hora de salida.
@@ -27,7 +27,7 @@ Actualmente, el sistema ya es capaz de:
 
 ### C. Ecosistema de Datos (SQL Integrity)
 - **Esquema de 11 Tablas**: Sincronización absoluta entre modelos e identidad de base de datos.
-- **Lógica en Base de Datos**: Triggers para control de cupos y Procedimientos Almacenados (sp_registrar_salida, sp_registrar_llegada) para asegurar la consistencia del kilometraje.
+- **Lógica en Base de Datos**: Triggers para control de cupos y Procedimientos Almacenados (sp_registrar_salida, sp_registrar_llegada) para asegurar la consistencia del flujo operativo.
 - **Tooling de Recuperación**: Existencia de SQL_HEALER y SQL_SEEDER para mantenimiento preventivo y carga de datos de prueba.
 
 ## 3. Hoja de Ruta: Próximos Pasos (Visión 2026)
@@ -39,7 +39,7 @@ Basándonos en la solidez actual, el sistema evolucionará en las siguientes fas
 
 ### Fase 2: Registro de Actividad Operativa
 - **Formularios de Flujo**: Creación de la interfaz para que el guardia registre la salida de vehículos con un solo clic, validando que el instructor y el estudiante estén libres.
-- **Control de Retorno**: Interfaz de llegada con actualización automática del kilometraje del vehículo y horas prácticas del estudiante.
+- **Control de Retorno**: Interfaz de llegada con actualización del estado operativo del vehículo y horas prácticas del estudiante.
 
 ### Fase 3: Portal Académico
 - **Ficha del Estudiante**: Vista detallada de progreso con barra de porcentaje de horas completadas.

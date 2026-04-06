@@ -21,7 +21,6 @@ const ControlOperativo = () => {
     // --- Estado Llegada ---
     const [clasesActivas, setClasesActivas] = useState([]);
     const [claseSeleccionada, setClaseSeleccionada] = useState(null);
-    const [kmLlegada, setKmLlegada] = useState('');
     const [horaRetorno, setHoraRetorno] = useState('');
 
     const showNotification = (message, type = 'success') => {
@@ -129,15 +128,14 @@ const ControlOperativo = () => {
     };
 
     const procesarLlegada = async () => {
-        if (!claseSeleccionada || !kmLlegada) {
-            showNotification('Seleccione un vehículo y escriba el KM de llegada', 'error');
+        if (!claseSeleccionada) {
+            showNotification('Seleccione un vehículo en pista', 'error');
             return;
         }
         try {
-            await logisticaService.registrarLlegada(claseSeleccionada.id_Registro, kmLlegada);
+            await logisticaService.registrarLlegada(claseSeleccionada.id_Registro);
             showNotification('¡Llegada confirmada!');
             setClaseSeleccionada(null);
-            setKmLlegada('');
             cargarClasesActivas();
         } catch (err) {
             showNotification(err.message, 'error');
@@ -410,34 +408,15 @@ const ControlOperativo = () => {
 
                                     {claseSeleccionada && (
                                         <div className="mt-8 p-8 bg-amber-50/70 border border-amber-200 rounded-[2.5rem] animate-apple-in">
-                                            <div className="flex items-center gap-4 mb-8">
-                                                <div className="h-12 w-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-600">
-                                                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04kM12 21.75c-3.176 0-6.156-1.257-8.384-3.535A11.961 11.961 0 012.25 12c0-3.176 1.258-6.156 3.535-8.384A11.961 11.961 0 0112 2.25c3.176 0 6.156 1.257 8.384 3.535A11.961 11.961 0 0121.75 12c0 3.176-1.257 6.156-3.535 8.384A11.961 11.961 0 0112 21.75z" /></svg>
-                                                </div>
-                                                <div>
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex flex-col">
                                                     <h6 className="text-amber-900 font-black tracking-tight leading-none mb-1">Cierre de Operación</h6>
-                                                    <p className="text-amber-700/60 text-xs font-bold uppercase tracking-widest">Ingrese los detalles finales</p>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
-                                                <div className="space-y-3">
-                                                    <label className="text-[10px] font-black text-amber-800 tracking-[0.2em] uppercase ml-4">KM Final de Llegada</label>
-                                                    <div className="relative">
-                                                        <input 
-                                                            type="number" 
-                                                            value={kmLlegada}
-                                                            onChange={(e) => setKmLlegada(e.target.value)}
-                                                            className="w-full bg-white border-2 border-amber-300 rounded-2xl px-8 py-4 text-2xl font-black text-amber-900 focus:border-amber-500 focus:ring-4 focus:ring-amber-200/50 outline-none transition-all shadow-inner"
-                                                            placeholder="0"
-                                                        />
-                                                        <span className="absolute right-6 top-5 text-xs font-black text-amber-400">KM</span>
-                                                    </div>
+                                                    <p className="text-amber-700/60 text-xs font-bold uppercase tracking-widest">Confirme el retorno de la unidad</p>
                                                 </div>
                                                 <button 
                                                     onClick={procesarLlegada}
-                                                    className="w-full bg-amber-500 hover:bg-amber-600 text-white rounded-2xl py-5 text-lg font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
-                                                    Registrar Llegada
+                                                    className="bg-amber-500 hover:bg-amber-600 text-white rounded-2xl px-12 py-5 text-lg font-black tracking-tight shadow-lg shadow-amber-500/30 transition-all hover:-translate-y-1 active:scale-95">
+                                                    Confirmar Retorno
                                                 </button>
                                             </div>
                                         </div>

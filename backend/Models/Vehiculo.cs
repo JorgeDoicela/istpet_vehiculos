@@ -28,11 +28,9 @@ namespace backend.Models
 
         public int IdInstructorFijo { get; set; }
 
-        public int KmActual { get; set; } = 0;
-
         public string EstadoMecanico { get; set; } = "OPERATIVO";
 
-        public int? KmProximoMantenimiento { get; set; }
+
 
         public bool Activo { get; set; } = true; // Corregido: tinyint(1) mapea a bool en .NET
 

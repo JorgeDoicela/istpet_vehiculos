@@ -1,3 +1,5 @@
+using System.Threading.Tasks;
+
 namespace backend.Services.Interfaces
 {
     /**
@@ -21,8 +23,28 @@ namespace backend.Services.Interfaces
         public string Periodo { get; set; } = string.Empty;      
     }
 
+    public class CentralInstructorDto
+    {
+        public string Cedula { get; set; } = string.Empty;
+        public string Nombres { get; set; } = string.Empty;
+        public string Apellidos { get; set; } = string.Empty;
+    }
+
+    public class ScheduledPracticeDto
+    {
+        public int IdPractica { get; set; }
+        public string CedulaAlumno { get; set; } = string.Empty;
+        public int IdVehiculo { get; set; }
+        public string CedulaProfesor { get; set; } = string.Empty;
+        public TimeSpan? HoraSalida { get; set; }
+        public string VehiculoDetalle { get; set; } = string.Empty;
+        public string ProfesorNombre { get; set; } = string.Empty;
+    }
+
     public interface ICentralStudentProvider
     {
         Task<CentralStudentDto?> GetFromCentralAsync(string cedula);
+        Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula);
+        Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula);
     }
 }

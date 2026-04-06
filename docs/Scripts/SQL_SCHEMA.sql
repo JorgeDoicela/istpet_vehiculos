@@ -70,9 +70,7 @@ CREATE TABLE vehiculos (
     modelo           VARCHAR(80)  NULL,
     id_tipo_licencia INT          NOT NULL,
     id_instructor_fijo INT        NOT NULL,
-    km_actual        INT          NOT NULL DEFAULT 0,
     estado_mecanico  ENUM('OPERATIVO', 'MANTENIMIENTO', 'FUERA_SERVICIO') DEFAULT 'OPERATIVO',
-    km_proximo_mantenimiento INT NULL,
     activo           TINYINT(1)   NOT NULL DEFAULT 1,
     PRIMARY KEY (id_vehiculo),
     CONSTRAINT fk_veh_tipo FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia (id_tipo),
@@ -83,7 +81,6 @@ CREATE TABLE mantenimientos (
     id_mantenimiento INT NOT NULL AUTO_INCREMENT,
     id_vehiculo      INT NOT NULL,
     fecha            DATE NOT NULL,
-    km_realizado     INT NOT NULL,
     descripcion      TEXT,
     costo            DECIMAL(10,2) DEFAULT 0.00,
     PRIMARY KEY (id_mantenimiento),
@@ -142,7 +139,6 @@ CREATE TABLE registros_salida (
     id_vehiculo    INT          NOT NULL,
     id_instructor  INT          NOT NULL,
     fecha_hora_salida DATETIME  NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    km_salida      INT          NOT NULL,
     observaciones_salida TEXT   NULL,
     registrado_por INT          NULL,
     PRIMARY KEY (id_registro),
@@ -156,7 +152,6 @@ CREATE TABLE registros_llegada (
     id_llegada      INT NOT NULL AUTO_INCREMENT,
     id_registro     INT NOT NULL UNIQUE,
     fecha_hora_llegada DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    km_llegada      INT NOT NULL,
     observaciones_llegada TEXT NULL,
     registrado_por  INT NULL,
     PRIMARY KEY (id_llegada),
@@ -196,13 +191,9 @@ CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
 SELECT
     v.id_vehiculo,
     v.numero_vehiculo,
-    v.placa,
-    v.km_actual,
-    v.km_proximo_mantenimiento,
-    (v.km_proximo_mantenimiento - v.km_actual) AS km_restantes
+    v.placa
 FROM vehiculos v
-WHERE (v.km_proximo_mantenimiento - v.km_actual) <= 500
-OR v.estado_mecanico = 'MANTENIMIENTO';
+WHERE v.estado_mecanico = 'MANTENIMIENTO';
 
 -- ------------------------------------------------------------
 -- 9. DATOS INICIALES

@@ -18,12 +18,12 @@ INSERT IGNORE INTO instructor_licencias (id_instructor, id_tipo_licencia, fecha_
 (1, 1, '2020-05-15'), (1, 2, '2022-08-10'), (2, 1, '2019-11-20'), (3, 3, '2018-03-05'), (4, 2, '2021-06-12');
 
 -- 3. FLOTA DE VEHÍCULOS (Zenith Fleet)
-INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, km_actual, km_proximo_mantenimiento, estado_mecanico) VALUES
-(35, 35, 'PBA-1035', 'Chevrolet', 'Joy 2025', 1, 3, 500, 5000, 'OPERATIVO'),
-(101, 101, 'PBX-1234', 'Chevrolet', 'Sail 2024', 1, 1, 4850, 5000, 'OPERATIVO'),
-(102, 102, 'PBA-5678', 'Hyundai', 'Accent 2025', 1, 2, 12000, 15000, 'OPERATIVO'),
-(201, 201, 'PCX-9012', 'Hino', 'Bus City 2023', 2, 4, 45200, 45500, 'OPERATIVO'),
-(301, 301, 'PTX-3456', 'Mercedes', 'Actros 2024', 3, 3, 25000, 30000, 'OPERATIVO');
+INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico) VALUES
+(35, 35, 'PBA-1035', 'Chevrolet', 'Joy 2025', 1, 3, 'OPERATIVO'),
+(101, 101, 'PBX-1234', 'Chevrolet', 'Sail 2024', 1, 1, 'OPERATIVO'),
+(102, 102, 'PBA-5678', 'Hyundai', 'Accent 2025', 1, 2, 'OPERATIVO'),
+(201, 201, 'PCX-9012', 'Hino', 'Bus City 2023', 2, 4, 'OPERATIVO'),
+(301, 301, 'PTX-3456', 'Mercedes', 'Actros 2024', 3, 3, 'OPERATIVO');
 
 -- 4. CURSOS ACADÉMICOS
 INSERT IGNORE INTO cursos (id_tipo_licencia, nombre, nivel, paralelo, periodo, fecha_inicio, fecha_fin, cupos_disponibles) VALUES
@@ -45,24 +45,24 @@ INSERT IGNORE INTO matriculas (cedula_estudiante, id_curso, fecha_matricula, hor
 
 -- 7. SESIONES ACTIVAS (Dashboard Vivo)
 -- Usamos 'WHERE NOT EXISTS' para evitar duplicados en tablas sin claves únicas simples
-INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
-SELECT 1, 35, 3, 500, 'Clase de parqueo en reversa', 1
+INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, observaciones_salida, registrado_por)
+SELECT 1, 35, 3, 'Clase de parqueo en reversa', 1
 WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=1 AND id_vehiculo=35 AND id_instructor=3);
 
-INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
-SELECT 2, 101, 1, 4850, 'Recorrido en vía perimetral', 1
+INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, observaciones_salida, registrado_por)
+SELECT 2, 101, 1, 'Recorrido en vía perimetral', 1
 WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=2 AND id_vehiculo=101 AND id_instructor=1);
 
 
 -- 8. HISTORIAL DE LLEGADAS (viaje cerrado del #102 de ayer)
 -- Primero insertamos la salida histórica
-INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, km_salida, observaciones_salida, registrado_por)
-SELECT 3, 102, 2, 12000, 'Práctica de historial', 1
+INSERT INTO registros_salida (id_matricula, id_vehiculo, id_instructor, observaciones_salida, registrado_por)
+SELECT 3, 102, 2, 'Práctica de historial', 1
 WHERE NOT EXISTS (SELECT 1 FROM registros_salida WHERE id_matricula=3 AND id_vehiculo=102 AND id_instructor=2);
 
 -- Luego cerramos esa salida con su llegada (el id se generó en el paso anterior)
-INSERT INTO registros_llegada (id_registro, km_llegada, observaciones_llegada, registrado_por)
-SELECT id_registro, 12045, 'Llegada sin novedad', 1
+INSERT INTO registros_llegada (id_registro, observaciones_llegada, registrado_por)
+SELECT id_registro, 'Llegada sin novedad', 1
 FROM registros_salida 
 WHERE id_matricula=3 AND id_vehiculo=102 AND id_instructor=2
 AND NOT EXISTS (SELECT 1 FROM registros_llegada rl WHERE rl.id_registro = registros_salida.id_registro);

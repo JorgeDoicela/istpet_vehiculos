@@ -76,8 +76,6 @@ namespace backend.Data
                 entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
                 entity.Property(e => e.NumeroVehiculo).HasColumnName("numero_vehiculo");
                 entity.Property(e => e.Placa).HasColumnName("placa");
-                entity.Property(e => e.KmActual).HasColumnName("km_actual");
-                entity.Property(e => e.KmProximoMantenimiento).HasColumnName("km_proximo_mantenimiento");
                 entity.Property(e => e.EstadoMecanico).HasColumnName("estado_mecanico").HasDefaultValue("OPERATIVO");
                 entity.Property(e => e.IdTipoLicencia).HasColumnName("id_tipo_licencia");
                 entity.Property(e => e.IdInstructorFijo).HasColumnName("id_instructor_fijo");
@@ -90,7 +88,6 @@ namespace backend.Data
                 entity.Property(e => e.Id_Mantenimiento).HasColumnName("id_mantenimiento");
                 entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
                 entity.Property(e => e.Fecha).HasColumnName("fecha");
-                entity.Property(e => e.KmRealizado).HasColumnName("km_realizado");
                 entity.Property(e => e.Descripcion).HasColumnName("descripcion");
             });
 
@@ -141,7 +138,6 @@ namespace backend.Data
                 entity.Property(e => e.IdVehiculo).HasColumnName("id_vehiculo");
                 entity.Property(e => e.IdInstructor).HasColumnName("id_instructor");
                 entity.Property(e => e.FechaHoraSalida).HasColumnName("fecha_hora_salida");
-                entity.Property(e => e.KmSalida).HasColumnName("km_salida");
                 entity.Property(e => e.ObservacionesSalida).HasColumnName("observaciones_salida");
                 entity.Property(e => e.RegistradoPor).HasColumnName("registrado_por");
             });
@@ -152,7 +148,6 @@ namespace backend.Data
                 entity.Property(e => e.Id_Llegada).HasColumnName("id_llegada");
                 entity.Property(e => e.IdRegistro).HasColumnName("id_registro");
                 entity.Property(e => e.FechaHoraLlegada).HasColumnName("fecha_hora_llegada");
-                entity.Property(e => e.KmLlegada).HasColumnName("km_llegada");
                 entity.Property(e => e.ObservacionesLlegada).HasColumnName("observaciones_llegada");
                 entity.Property(e => e.RegistradoPor).HasColumnName("registrado_por");
             });
@@ -173,7 +168,6 @@ namespace backend.Data
             modelBuilder.Entity<AlertaMantenimiento>(entity => {
                 entity.ToView("v_alerta_mantenimiento").HasNoKey();
                 entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
-                entity.Property(e => e.Km_Restantes).HasColumnName("km_restantes");
             });
 
             // AUDIT LOGS

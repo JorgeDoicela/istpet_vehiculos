@@ -13,8 +13,5 @@ namespace backend.Models
         public int Id_Vehiculo { get; set; }
         public int Numero_Vehiculo { get; set; }
         public string Placa { get; set; } = string.Empty;
-        public int Km_Actual { get; set; }
-        public int? Km_Proximo_Mantenimiento { get; set; }
-        public int? Km_Restantes { get; set; }
     }
 }

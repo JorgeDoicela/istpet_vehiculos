@@ -39,13 +39,6 @@ const VehicleList = ({ vehicles }) => {
             </div>
 
             <div className="space-y-6">
-              <div className="flex justify-between items-center p-4 bg-white/40 rounded-3xl">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Kilometraje Activo</span>
-                <span className="text-xl font-black text-slate-800 tabular-nums">
-                  {(v.km_Actual || v.km_actual || 0).toLocaleString()} KM
-                </span>
-              </div>
-              
               <div className="grid grid-cols-2 gap-4">
                  <div className="p-4 bg-white/40 rounded-3xl">
                     <p className="text-[9px] font-black uppercase text-slate-400">Marca</p>
@@ -58,12 +51,7 @@ const VehicleList = ({ vehicles }) => {
               </div>
             </div>
 
-            <div className="mt-8 pt-8 border-t border-white/40 flex justify-between items-center">
-              <p className="text-[9px] font-black uppercase text-slate-400">Mantenimiento Prox.</p>
-              <p className="text-xs font-black text-slate-800">
-                {(v.km_Proximo_Mantenimiento || v.km_proximo_mantenimiento || 0).toLocaleString()} KM
-              </p>
-            </div>
+
           </div>
         ))}
       </div>

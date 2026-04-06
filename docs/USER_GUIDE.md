@@ -14,9 +14,9 @@ Este manual instruye al usuario final sobre cómo operar el Dashboard de moderni
 - **Vista**: Panel derecho del Dashboard.
 - **Función**: Muestra en tiempo real qué alumnos e instructores están en ruta sincronizando los datos de las tablas `registros_salida` y `registros_llegada` (vía Vistas SQL).
 
-### 3. Alertas de Mantenimiento Prevencionista
+### 3. Alertas de Mantenimiento
 - **Ubicación**: Banner superior (si existen alertas).
-- **Lógica**: Se activa automáticamente cuando un vehículo está a menos de 500km de su próximo mantenimiento o se marca como no operativo en la tabla `vehiculos`.
+- **Lógica**: Se activa automáticamente cuando un vehículo se marca como en mantenimiento o fuera de servicio en la tabla `vehiculos`.
 
 ## Gestión Académica y de Flota
 

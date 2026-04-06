@@ -11,6 +11,13 @@ namespace backend.DTOs
         public string TipoLicencia { get; set; } = string.Empty; // C, D, E
         public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
         public int IdMatricula { get; set; }
+
+        // --- Detección de Práctica Central (Proactivo) ---
+        public int? IdPracticaCentral { get; set; }
+        public string? PracticaVehiculo { get; set; }
+        public string? PracticaInstructor { get; set; }
+        public string? PracticaHora { get; set; }
+        public bool TienePracticaHoy => IdPracticaCentral.HasValue;
     }
 
     public class VehiculoLogisticaResponse
@@ -20,7 +27,6 @@ namespace backend.DTOs
         public string VehiculoStr { get; set; } = string.Empty;
         public int IdInstructorFijo { get; set; }
         public string InstructorNombre { get; set; } = string.Empty;
-        public int KmActual { get; set; }
         public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
     }
 
@@ -42,7 +48,6 @@ namespace backend.DTOs
     public class LlegadaRequest
     {
         public int IdRegistro { get; set; }
-        public int KmLlegada { get; set; }
         public string? Observaciones { get; set; }
         public int RegistradoPor { get; set; } = 1; // Default admin
     }

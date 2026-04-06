@@ -47,11 +47,10 @@ const logisticaService = {
     }
   },
 
-  registrarLlegada: async (idRegistro, kmLlegada) => {
+  registrarLlegada: async (idRegistro) => {
     try {
       const response = await api.post('/logistica/llegada', {
         idRegistro,
-        kmLlegada: parseInt(kmLlegada, 10) || 0,
         observaciones: 'Llegada registrada en UI',
         registradoPor: 1
       });

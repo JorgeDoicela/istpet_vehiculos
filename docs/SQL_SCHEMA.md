@@ -16,7 +16,7 @@ Este documento detalla la estructura, lógica y reglas de negocio contenidas en 
 ## 2. Gestión de Recursos (RRHH y Flota)
 - **Capa Maestros**: Tablas `tipo_licencia` e `instructores`.
 - **Relaciones N:M**: `instructor_licencias` permite que un instructor maneje múltiples categorías de licencias.
-- **Flota de Vehículos**: Tabla `vehiculos` vincula cada unidad con un tipo de licencia necesaria y un instructor fijo. Incluye control de `km_actual` y `estado_mecanico`.
+- **Flota de Vehículos**: Tabla `vehiculos` vincula cada unidad con un tipo de licencia necesaria y un instructor fijo. Incluye control de `estado_mecanico`.
 - **Mantenimientos**: Registro detallado de intervenciones mecánicas y costos asociados.
 
 ## 3. Estructura Académica
@@ -26,8 +26,8 @@ Este documento detalla la estructura, lógica y reglas de negocio contenidas en 
 
 ## 4. Control Logístico y Operativo
 Es el núcleo transaccional del sistema:
-- **registros_salida**: Registra el inicio de una clase práctica, capturando el kilometraje inicial.
-- **registros_llegada**: Documenta el retorno del vehículo y actualiza automáticamente el kilometraje de la unidad.
+- **registros_salida**: Registra el inicio de una clase práctica.
+- **registros_llegada**: Documenta el retorno del vehículo y finaliza la sesión operativa.
 
 ## 5. Lógica de Negocio Automatizada (Triggers y Procesos)
 
@@ -43,10 +43,9 @@ Incluye una lógica de validación experta antes de permitir que un vehículo sa
 
 ### Procedimiento: `sp_registrar_llegada`
 Gestiona el cierre de la jornada de práctica:
-- Valida que el kilometraje de llegada sea coherente con el de salida.
 - Calcula automáticamente las horas de práctica realizadas basándose en el tiempo transcurrido.
-- Actualiza el `km_actual` del vehículo y suma las horas al registro del estudiante en `matriculas`.
+- Suma las horas al registro del estudiante en `matriculas`.
 
 ## 6. Monitoreo Inteligente (Vistas)
 - **`v_clases_activas`**: Dashboard en tiempo real de quién está en pista, con qué vehículo y qué instructor.
-- **`v_alerta_mantenimiento`**: Sistema de alerta temprana para vehículos que estén a menos de 500km de su próximo mantenimiento o marcados en reparación.
+- **`v_alerta_mantenimiento`**: Sistema de alerta para vehículos marcados en reparación o fuera de servicio.

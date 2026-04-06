@@ -1,6 +1,7 @@
 using backend.Data;
 using backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace backend.Services.Implementations
 {
@@ -11,9 +12,8 @@ namespace backend.Services.Implementations
     public class SqlCentralStudentProvider : ICentralStudentProvider
     {
         private readonly AppDbContext _context;
-        // 🛠️ CONFIGURACIÓN: El día que tengas el nombre de la BD Central, cámbialo aquí.
-        // Ejemplo: "academico_istpet" o "db_central"
-        private const string CENTRAL_DB_NAME = "ISTPET_CENTRAL_DB";
+        // CONFIGURACIÓN: El nombre de la BD Central encontrado en el dump SQL.
+        private const string CENTRAL_DB_NAME = "sigafi_es";
 
         public SqlCentralStudentProvider(AppDbContext context)
         {
@@ -22,21 +22,23 @@ namespace backend.Services.Implementations
 
         public async Task<CentralStudentDto?> GetFromCentralAsync(string cedula)
         {
-            try 
+            try
             {
-                /* 
+                /*
                  * USANDO PUENTE SQL REAL:
                  * Realizamos un query cross-database (hacia otra BD en el mismo servidor).
                  * Si la BD central no existe aún, este catch capturará el error de forma segura.
                  */
                 string sql = $@"
-                    SELECT 
-                        cedula AS Cedula, 
-                        nombres_completos AS NombreCompleto, 
-                        detalle_academico AS DetalleRaw,
-                        periodo AS Periodo
-                    FROM {CENTRAL_DB_NAME}.estudiantes
-                    WHERE cedula = @p0
+                    SELECT
+                        a.idAlumno AS Cedula,
+                        CONCAT(a.primerNombre, ' ', a.apellidoPaterno) AS NombreCompleto,
+                        CONCAT('MATRICULADO: ', p.detalle, ' (', m.paralelo, ')') AS DetalleRaw,
+                        p.idPeriodo AS Periodo
+                    FROM {CENTRAL_DB_NAME}.alumnos a
+                    JOIN {CENTRAL_DB_NAME}.matriculas m ON m.idAlumno = a.idAlumno
+                    JOIN {CENTRAL_DB_NAME}.periodos p ON p.idPeriodo = m.idPeriodo
+                    WHERE a.idAlumno = @p0 AND p.activo = 1
                     LIMIT 1";
 
                 // Nota: Esto requiere que el usuario de MySQL tenga permisos sobre ambas bases de datos.
@@ -47,7 +49,62 @@ namespace backend.Services.Implementations
             }
             catch (Exception)
             {
-                // En modo "Sin Configurar", simplemente no encuentra nada en la central de forma segura.
+                return null;
+            }
+        }
+
+        public async Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula)
+        {
+            try
+            {
+                string sql = $@"
+                    SELECT
+                        idProfesor AS Cedula,
+                        primerNombre AS Nombres,
+                        apellidos AS Apellidos
+                    FROM {CENTRAL_DB_NAME}.profesores
+                    WHERE idProfesor = @p0 AND activo = 1
+                    LIMIT 1";
+
+                var result = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql, cedula)
+                    .FirstOrDefaultAsync();
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula)
+        {
+            try
+            {
+                // Buscamos si tiene una práctica hoy (CURDATE)
+                string sql = $@"
+                    SELECT
+                        p.idPractica AS IdPractica,
+                        p.idalumno AS CedulaAlumno,
+                        p.idvehiculo AS IdVehiculo,
+                        p.idProfesor AS CedulaProfesor,
+                        p.hora_salida AS HoraSalida,
+                        CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
+                        CONCAT(pr.apellidos, ' ', pr.nombres) AS ProfesorNombre
+                    FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
+                    JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
+                    JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
+                    WHERE p.idalumno = @p0 AND p.fecha = CURDATE()
+                    ORDER BY p.hora_salida ASC
+                    LIMIT 1";
+
+                var result = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql, cedula)
+                    .FirstOrDefaultAsync();
+
+                return result;
+            }
+            catch (Exception)
+            {
                 return null;
             }
         }

@@ -16,8 +16,7 @@ namespace backend.Models
 
         public DateTime FechaHoraSalida { get; set; } = DateTime.Now;
 
-        [Required]
-        public int KmSalida { get; set; }
+
 
         public string? ObservacionesSalida { get; set; }
 
@@ -46,8 +45,7 @@ namespace backend.Models
 
         public DateTime FechaHoraLlegada { get; set; } = DateTime.Now;
 
-        [Required]
-        public int KmLlegada { get; set; }
+
 
         public string? ObservacionesLlegada { get; set; }
 

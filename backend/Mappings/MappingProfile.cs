@@ -22,8 +22,7 @@ namespace backend.Mappings
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.Id_Vehiculo))
                 .ForMember(dest => dest.Numero, opt => opt.MapFrom(src => $"V-{src.NumeroVehiculo}"))
                 .ForMember(dest => dest.MarcaModelo, opt => opt.MapFrom(src => $"{src.Marca} {src.Modelo}"))
-                .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => src.EstadoMecanico))
-                .ForMember(dest => dest.Kilometraje, opt => opt.MapFrom(src => src.KmActual));
+                .ForMember(dest => dest.Estado, opt => opt.MapFrom(src => src.EstadoMecanico));
         }
     }
 }

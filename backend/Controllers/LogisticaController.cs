@@ -4,6 +4,8 @@ using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
@@ -46,6 +48,13 @@ namespace backend.Controllers
 
             if (localStudent != null)
             {
+                // --- DETECCION DE PRACTICA PROGRAMADA (PROACTIVO) ---
+                var scheduledLocal = await _centralProvider.GetScheduledPracticeAsync(cedula);
+                localStudent.IdPracticaCentral = scheduledLocal?.IdPractica;
+                localStudent.PracticaVehiculo = scheduledLocal?.VehiculoDetalle;
+                localStudent.PracticaInstructor = scheduledLocal?.ProfesorNombre;
+                localStudent.PracticaHora = scheduledLocal?.HoraSalida?.ToString(@"hh\:mm");
+
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Alumno localizado (Local)."));
             }
 
@@ -139,6 +148,9 @@ namespace backend.Controllers
                 if (cursoLocal.CuposDisponibles > 0) cursoLocal.CuposDisponibles -= 1;
 
                 await _context.SaveChangesAsync();
+                
+                // --- DETECCION DE PRACTICA PROGRAMADA (PROACTIVO) ---
+                var scheduled = await _centralProvider.GetScheduledPracticeAsync(centralData.Cedula);
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
                 {
@@ -150,7 +162,12 @@ namespace backend.Controllers
                     TipoLicencia = "C",
                     IdTipoLicencia = 1,
                     Periodo = centralData.Periodo ?? "2026-I",
-                    IdMatricula = nuevaMatricula.Id_Matricula
+                    IdMatricula = nuevaMatricula.Id_Matricula,
+                    // Datos de práctica si existen
+                    IdPracticaCentral = scheduled?.IdPractica,
+                    PracticaVehiculo = scheduled?.VehiculoDetalle,
+                    PracticaInstructor = scheduled?.ProfesorNombre,
+                    PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm")
                 }, "Sincronizado: Alumno localizado mediante el Puente Híbrido Universal."));
             }
             catch (Exception ex)
@@ -175,7 +192,6 @@ namespace backend.Controllers
                                    VehiculoStr = (v.Placa + " - #" + v.NumeroVehiculo),
                                    IdInstructorFijo = v.IdInstructorFijo,
                                    InstructorNombre = (i.Apellidos + " " + i.Nombres).ToUpper(),
-                                   KmActual = v.KmActual,
                                    IdTipoLicencia = v.IdTipoLicencia
                                }).ToListAsync();
 
@@ -196,6 +212,43 @@ namespace backend.Controllers
                 .ToListAsync();
 
             return Ok(ApiResponse<IEnumerable<InstructorLogisticaResponse>>.Ok(query));
+        }
+
+        [HttpGet("instructor/{cedula}")]
+        public async Task<ActionResult<ApiResponse<InstructorLogisticaResponse>>> BuscarInstructor(string cedula)
+        {
+            // 1. Intento local
+            var localInstr = await _context.Instructores
+                .Where(i => i.Cedula == cedula && i.Activo)
+                .Select(i => new InstructorLogisticaResponse
+                {
+                    Id_Instructor = i.Id_Instructor,
+                    FullName = (i.Apellidos + " " + i.Nombres).ToUpper()
+                })
+                .FirstOrDefaultAsync();
+
+            if (localInstr != null) return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(localInstr, "Instructor localizado (Local)."));
+
+            // 2. Intento Central
+            var centralData = await _centralProvider.GetInstructorFromCentralAsync(cedula);
+            if (centralData == null) return NotFound(ApiResponse<InstructorLogisticaResponse>.Fail("Instructor no hallado en BD Central."));
+
+            // 3. Auto-Registro
+            var nuevoInstr = new backend.Models.Instructor
+            {
+                Cedula = centralData.Cedula,
+                Nombres = centralData.Nombres.ToUpper(),
+                Apellidos = centralData.Apellidos.ToUpper(),
+                Activo = true
+            };
+            _context.Instructores.Add(nuevoInstr);
+            await _context.SaveChangesAsync();
+
+            return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(new InstructorLogisticaResponse
+            {
+                Id_Instructor = nuevoInstr.Id_Instructor,
+                FullName = $"{nuevoInstr.Apellidos} {nuevoInstr.Nombres}".ToUpper()
+            }, "Instructor sincronizado desde SIGAFI."));
         }
 
         [HttpPost("salida")]
@@ -221,7 +274,7 @@ namespace backend.Controllers
         {
             try
             {
-                var result = await _logisticaService.RegistrarLlegadaAsync(req.IdRegistro, req.KmLlegada, req.Observaciones ?? "Ninguna", req.RegistradoPor);
+                var result = await _logisticaService.RegistrarLlegadaAsync(req.IdRegistro, req.Observaciones ?? "Ninguna", req.RegistradoPor);
                 if (result == "EXITO")
                 {
                     return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));

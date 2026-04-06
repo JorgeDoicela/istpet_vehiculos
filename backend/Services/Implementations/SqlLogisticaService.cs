@@ -59,7 +59,6 @@ namespace backend.Services.Implementations
                     IdVehiculo = idVehiculo,
                     IdInstructor = idInstructor,
                     FechaHoraSalida = DateTime.Now,
-                    KmSalida = vehiculo.KmActual,
                     ObservacionesSalida = observaciones,
                     RegistradoPor = registradoPor
                 };
@@ -77,7 +76,7 @@ namespace backend.Services.Implementations
             }
         }
 
-        public async Task<string> RegistrarLlegadaAsync(int idRegistro, int kmLlegada, string observaciones, int registradoPor)
+        public async Task<string> RegistrarLlegadaAsync(int idRegistro, string observaciones, int registradoPor)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -92,33 +91,16 @@ namespace backend.Services.Implementations
                 if (tieneLlegada) 
                     return "ERROR: Este registro ya fue cerrado.";
 
-                // 3. Validar Kilometraje: El de llegada no puede ser menor al de salida
-                if (kmLlegada < salida.KmSalida) 
-                    return "ERROR_KM_INCOHERENTE";
-
-                // 4. Registrar Llegada
+                // 3. Registrar Llegada
                 var llegada = new RegistroLlegada
                 {
                     IdRegistro = idRegistro,
                     FechaHoraLlegada = DateTime.Now,
-                    KmLlegada = kmLlegada,
                     ObservacionesLlegada = observaciones,
                     RegistradoPor = registradoPor
                 };
                 
                 _context.RegistrosLlegada.Add(llegada);
-
-                // 5. Actualizar Vehículo y alerta de mantenimiento
-                var vehiculo = await _context.Vehiculos.FindAsync(salida.IdVehiculo);
-                if (vehiculo != null)
-                {
-                    vehiculo.KmActual = kmLlegada;
-                    // Lógica sencilla de mantenimiento preventivo
-                    if (vehiculo.KmActual >= vehiculo.KmProximoMantenimiento)
-                    {
-                        vehiculo.EstadoMecanico = "MANTENIMIENTO";
-                    }
-                }
 
                 // 6. Actualizar Horas Completadas del Estudiante (Matrícula)
                 var matricula = await _context.Matriculas.FindAsync(salida.IdMatricula);
