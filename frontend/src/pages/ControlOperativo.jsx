@@ -193,8 +193,9 @@ const ControlOperativo = () => {
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
-                                <div className="flex items-center justify-between mb-10">
-                                    <h3 className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
+                                <div className="mb-8 px-2">
+                                    <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Registro de Salida</h3>
+                                    <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Identificación y Datos del Estudiante</p>
                                 </div>
 
                                 <div className="space-y-8">
@@ -293,8 +294,8 @@ const ControlOperativo = () => {
 
                                     {/* Selección Vehículo */}
                                     <div className="pt-6">
-                                        <div className="flex flex-col md:flex-row items-center justify-between mb-8 gap-4 px-2">
-                                            <div>
+                                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-8 gap-4 px-2">
+                                            <div className="text-left">
                                                 <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Selección de Vehículo</h3>
                                                 <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Unidades operativas disponibles</p>
                                             </div>
@@ -346,8 +347,8 @@ const ControlOperativo = () => {
                                     {/* Botón Final Salida */}
                                     <div className="pt-10 flex flex-col md:flex-row items-stretch justify-between gap-4 border-t border-[var(--apple-border)]">
                                         <div className="flex-1 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2.5rem] flex items-center gap-6 shadow-inner">
-                                            <div className="h-12 w-12 rounded-2xl bg-[var(--apple-primary)] flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
-                                                <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            <div className="text-[var(--apple-primary)] scale-110">
+                                                <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                             </div>
                                             <div>
                                                 <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Hora Actual</p>
@@ -406,8 +407,8 @@ const ControlOperativo = () => {
                                         <div className="mt-8 p-8 bg-[var(--apple-primary)]/5 border border-[var(--apple-primary)]/20 rounded-[2.5rem] animate-apple-in">
                                             <div className="flex flex-col md:flex-row items-stretch justify-between gap-4">
                                                 <div className="flex-1 bg-[var(--apple-card)] border-2 border-[var(--apple-border)] px-8 py-4 rounded-[2.5rem] flex items-center gap-6 shadow-inner">
-                                                    <div className="h-12 w-12 rounded-2xl bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-500/20">
-                                                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    <div className="text-emerald-500 scale-110">
+                                                        <svg className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     </div>
                                                     <div>
                                                         <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Retorno Proyectado</p>

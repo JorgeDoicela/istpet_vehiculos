@@ -107,8 +107,8 @@ const Sidebar = () => {
                             className={`
                                 flex flex-col items-center justify-center gap-0.5 transition-all duration-300 flex-1
                                 ${active
-                                    ? (theme === 'light' ? 'text-[var(--istpet-navy)]' : 'text-[var(--apple-primary)]') + ' scale-105'
-                                    : (theme === 'light' ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--apple-text-main)]')
+                                    ? 'text-[var(--istpet-gold)] scale-110 drop-shadow-[0_0_8px_rgba(181,148,74,0.3)]'
+                                    : 'text-slate-400 opacity-70'
                                 }
                             `}
                         >

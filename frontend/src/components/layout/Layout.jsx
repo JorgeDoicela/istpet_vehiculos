@@ -24,7 +24,7 @@ const Layout = ({ children }) => {
                                 `}
                         />
                         <div className="flex flex-col">
-                            <h2 className="text-xs lg:text-xl font-black tracking-[0.2em] text-[var(--istpet-navy)] leading-none mb-1 uppercase drop-shadow-sm">
+                            <h2 className="text-xs lg:text-xl font-black tracking-[0.2em] text-[var(--apple-text-main)] leading-none mb-1 uppercase drop-shadow-sm">
                                 Gestión Conducción
                             </h2>
                             <span className="text-xs lg:text-xl font-black tracking-tighter text-[var(--istpet-gold)] leading-none uppercase">
