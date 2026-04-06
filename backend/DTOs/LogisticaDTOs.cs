@@ -9,6 +9,7 @@ namespace backend.DTOs
         public string Paralelo { get; set; } = string.Empty;
         public string Jornada { get; set; } = string.Empty;
         public string TipoLicencia { get; set; } = string.Empty; // C, D, E
+        public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
         public int IdMatricula { get; set; }
     }
 
@@ -19,6 +20,7 @@ namespace backend.DTOs
         public int IdInstructorFijo { get; set; }
         public string InstructorNombre { get; set; } = string.Empty;
         public int KmActual { get; set; }
+        public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
     }
 
     public class InstructorLogisticaResponse

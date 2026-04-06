@@ -10,7 +10,7 @@ USE istpet_vehiculos;
 INSERT IGNORE INTO instructores (cedula, nombres, apellidos, telefono, email) VALUES
 ('1712345678', 'Marco Antonio', 'Pérez Salazar', '0991234567', 'marco.perez@istpet.edu.ec'),
 ('1712345679', 'Elena Sofía', 'Ramírez Cueva', '0991234568', 'elena.ramirez@istpet.edu.ec'),
-('1712345680', 'Jorge Luis', 'Vargas Méndez', '0991234569', 'jorge.vargas@istpet.edu.ec'),
+('1804561239', 'Richard Mauricio', 'Trujillo Redroban', '0987654321', 'richard.trujillo@istpet.edu.ec'),
 ('1712345681', 'Lucía Fernanda', 'Ortega Rojas', '0981234570', 'lucia.ortega@istpet.edu.ec');
 
 -- 2. ASIGNACIÓN DE LICENCIAS A INSTRUCTORES (Ignorar si ya existen)
@@ -18,12 +18,12 @@ INSERT IGNORE INTO instructor_licencias (id_instructor, id_tipo_licencia, fecha_
 (1, 1, '2020-05-15'), (1, 2, '2022-08-10'), (2, 1, '2019-11-20'), (3, 3, '2018-03-05'), (4, 2, '2021-06-12');
 
 -- 3. FLOTA DE VEHÍCULOS (Zenith Fleet)
-INSERT IGNORE INTO vehiculos (numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, km_actual, km_proximo_mantenimiento, estado_mecanico) VALUES
-(101, 'PBX-1234', 'Chevrolet', 'Sail 2024', 1, 1, 4850, 5000, 'OPERATIVO'),
-(102, 'PBA-5678', 'Hyundai', 'Accent 2025', 1, 2, 12000, 15000, 'OPERATIVO'),
-(201, 'PCX-9012', 'Hino', 'Bus City 2023', 2, 4, 45200, 45500, 'OPERATIVO'),
-(301, 'PTX-3456', 'Mercedes', 'Actros 2024', 3, 3, 25000, 30000, 'OPERATIVO'),
-(103, 'PBY-7890', 'Kia', 'Soluto 2024', 1, 1, 2500, 5000, 'MANTENIMIENTO');
+INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, km_actual, km_proximo_mantenimiento, estado_mecanico) VALUES
+(35, 35, 'PBA-1035', 'Chevrolet', 'Joy 2025', 1, 3, 500, 5000, 'OPERATIVO'),
+(101, 101, 'PBX-1234', 'Chevrolet', 'Sail 2024', 1, 1, 4850, 5000, 'OPERATIVO'),
+(102, 102, 'PBA-5678', 'Hyundai', 'Accent 2025', 1, 2, 12000, 15000, 'OPERATIVO'),
+(201, 201, 'PCX-9012', 'Hino', 'Bus City 2023', 2, 4, 45200, 45500, 'OPERATIVO'),
+(301, 301, 'PTX-3456', 'Mercedes', 'Actros 2024', 3, 3, 25000, 30000, 'OPERATIVO');
 
 -- 4. CURSOS ACADÉMICOS
 INSERT IGNORE INTO cursos (id_tipo_licencia, nombre, nivel, paralelo, periodo, fecha_inicio, fecha_fin, cupos_disponibles) VALUES

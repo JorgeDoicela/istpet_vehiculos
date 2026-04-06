@@ -38,6 +38,7 @@ namespace backend.Controllers
                                    Paralelo = c.Paralelo.ToUpper(),
                                    Jornada = c.Jornada.ToString().ToUpper(),
                                    TipoLicencia = tl.Codigo.ToUpper(),
+                                   IdTipoLicencia = c.IdTipoLicencia,
                                    Periodo = c.Periodo.ToUpper(),
                                    IdMatricula = m.Id_Matricula
                                }).FirstOrDefaultAsync();
@@ -106,6 +107,7 @@ namespace backend.Controllers
                     Paralelo = external.Paralelo.ToUpper(),
                     Jornada = external.Jornada.ToUpper(),
                     TipoLicencia = tlCode.ToUpper(),
+                    IdTipoLicencia = external.IdTipoLicencia,
                     Periodo = external.Periodo.ToUpper(),
                     IdMatricula = nuevaMatricula.Id_Matricula
                 }, "Sistema Central: Alumno sincronizado y matriculado automáticamente."));
@@ -130,7 +132,8 @@ namespace backend.Controllers
                                    VehiculoStr = $"{v.Placa} - #{v.NumeroVehiculo}",
                                    IdInstructorFijo = v.IdInstructorFijo,
                                    InstructorNombre = $"{i.Apellidos} {i.Nombres}".ToUpper(),
-                                   KmActual = v.KmActual
+                                   KmActual = v.KmActual,
+                                   IdTipoLicencia = v.IdTipoLicencia
                                }).ToListAsync();
 
             return Ok(ApiResponse<IEnumerable<VehiculoLogisticaResponse>>.Ok(query));

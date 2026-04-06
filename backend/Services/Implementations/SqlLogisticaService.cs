@@ -29,13 +29,17 @@ namespace backend.Services.Implementations
                 if (vehiculo == null || !vehiculo.Activo || vehiculo.EstadoMecanico != "OPERATIVO")
                     return "ERROR: Vehículo no disponible u operativo.";
 
-                // 2. Validar que el vehículo no esté ya en uso (sin llegada)
-                var clasesActivasVehiculo = await _context.ClasesActivas.AnyAsync(c => c.Id_Vehiculo == idVehiculo);
-                if (clasesActivasVehiculo) 
+                // 2. Validar que el vehículo no esté ya en uso (sin llegada registrada)
+                var vehiculoOcupado = await _context.RegistrosSalida
+                    .AnyAsync(s => s.IdVehiculo == idVehiculo && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
+                
+                if (vehiculoOcupado) 
                     return "VEHICULO_EN_USO";
 
-                // 3. Validar que el instructor no esté dando otra clase
-                var instructorOcupado = await _context.ClasesActivas.AnyAsync(c => c.Id_Instructor == idInstructor);
+                // 3. Validar que el instructor no esté ocupado (sin llegada registrada)
+                var instructorOcupado = await _context.RegistrosSalida
+                    .AnyAsync(s => s.IdInstructor == idInstructor && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
+                
                 if (instructorOcupado) 
                     return "INSTRUCTOR_OCUPADO";
 

@@ -271,14 +271,30 @@ const ControlOperativo = () => {
                                         
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                             {vehiculos.length > 0 ? (
-                                                vehiculos.map(v => (
-                                                    <VehicleCard 
-                                                        key={v.idVehiculo} 
-                                                        vehiculo={v} 
-                                                        isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
-                                                        onSelect={handleSeleccionarVehiculo}
-                                                    />
-                                                ))
+                                                (() => {
+                                                    const filteredVehicles = estudianteData 
+                                                        ? vehiculos.filter(v => v.idTipoLicencia === estudianteData.idTipoLicencia)
+                                                        : vehiculos;
+
+                                                    if (filteredVehicles.length === 0) {
+                                                        return (
+                                                            <div className="col-span-full py-8 px-6 text-center bg-amber-50 rounded-3xl border border-amber-100">
+                                                                <p className="text-amber-800 text-xs font-black uppercase tracking-widest leading-relaxed">
+                                                                    No hay vehículos disponibles tipo "{estudianteData?.tipoLicencia}" operando actualmente.
+                                                                </p>
+                                                            </div>
+                                                        );
+                                                    }
+
+                                                    return filteredVehicles.map(v => (
+                                                        <VehicleCard 
+                                                            key={v.idVehiculo} 
+                                                            vehiculo={v} 
+                                                            isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
+                                                            onSelect={handleSeleccionarVehiculo}
+                                                        />
+                                                    ));
+                                                })()
                                             ) : (
                                                 <div className="col-span-full py-12 text-center apple-glass rounded-3xl opacity-50">
                                                     <p className="text-slate-400 font-bold">Cargando flota disponible...</p>
