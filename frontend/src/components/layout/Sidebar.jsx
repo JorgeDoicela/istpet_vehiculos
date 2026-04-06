@@ -53,12 +53,7 @@ const Sidebar = () => {
         <>
             {/* Sidebar Desktop */}
             <aside className="fixed left-6 top-6 bottom-6 w-72 apple-glass rounded-[3rem] p-8 hidden lg:flex flex-col z-50">
-                <div className="mb-12 flex items-center gap-4 px-4">
-                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg border border-white/10 overflow-hidden p-2 backdrop-blur-md ${theme === 'dark' ? 'bg-white/10' : 'bg-[var(--istpet-navy)]'}`}>
-                        <img src={logoImg} alt="ISTPET Logo" className="w-full h-full object-contain scale-110" />
-                    </div>
-                    <h1 className="text-xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase text-[10px] leading-tight">ISTPET<br />ZENITH 2026</h1>
-                </div>
+
 
                 <nav className="flex-1 space-y-4">
                     {menuItems.map((item) => {

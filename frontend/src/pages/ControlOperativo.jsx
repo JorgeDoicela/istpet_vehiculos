@@ -195,7 +195,6 @@ const ControlOperativo = () => {
                             <div className="apple-card overflow-hidden">
                                 <div className="mb-8 px-2">
                                     <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Registro de Salida</h3>
-                                    <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Identificación y Datos del Estudiante</p>
                                 </div>
 
                                 <div className="space-y-8">
