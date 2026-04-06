@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import LogisticaHeader from '../components/logistica/LogisticaHeader';
 import logisticaService from '../services/logisticaService';
 import dashboardService from '../services/dashboardService';
 import StatusBadge from '../components/common/StatusBadge';
@@ -177,40 +176,25 @@ const ControlOperativo = () => {
 
             <div className="max-w-6xl mx-auto pt-10 pb-20 px-6">
                 {/* Header Seccion */}
-                <div className="mb-10 lg:mb-16 text-center animate-apple-in">
-                    <h1 className="text-4xl lg:text-6xl font-black tracking-tighter text-[var(--apple-text-main)] mb-2 lg:mb-4 bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)] uppercase">
-                        Logística Operativa
+                <div className="flex items-center justify-center gap-3 lg:gap-6 mb-6 lg:mb-10 text-center animate-apple-in">
+                    <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-r from-transparent to-[var(--apple-text-main)] opacity-10"></div>
+                    <h1 className="text-[10px] lg:text-xs font-black tracking-[0.4em] text-[var(--apple-text-main)] opacity-80 uppercase whitespace-nowrap">
+                        Gestión y Control de Unidades
                     </h1>
-                    <p className="text-[var(--apple-text-sub)] font-medium text-sm lg:text-xl tracking-tight opacity-70 italic">Despacho y Seguimiento de Unidades en Pista</p>
+                    <div className="hidden sm:block h-[1px] w-12 lg:w-24 bg-gradient-to-l from-transparent to-[var(--apple-text-main)] opacity-10"></div>
                 </div>
+
+                {/* El selector de pestañas interno ha sido eliminado por redundancia con el Sidebar/Tab-Bar global */}
+                <div className="mt-8 lg:mt-12"></div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                     {/* Panel Principal */}
                     <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
-                        
-                        <div className="flex bg-[var(--apple-bg)] p-1 rounded-3xl border border-[var(--apple-border)] mb-8 max-w-md mx-auto lg:mx-0">
-                            <button 
-                                onClick={() => setActiveTab('salida')}
-                                className={`flex-1 py-3 px-6 rounded-2xl text-xs font-black tracking-widest uppercase transition-all ${activeTab === 'salida' ? 'bg-[var(--apple-card)] text-[var(--istpet-gold)] shadow-sm shadow-black/5' : 'text-[var(--apple-text-sub)] opacity-60 hover:opacity-100'}`}
-                            >
-                                Registro Salida
-                            </button>
-                            <button 
-                                onClick={() => setActiveTab('llegada')}
-                                className={`flex-1 py-3 px-6 rounded-2xl text-xs font-black tracking-widest uppercase transition-all ${activeTab === 'llegada' ? 'bg-[var(--apple-card)] text-[var(--istpet-gold)] shadow-sm shadow-black/5' : 'text-[var(--apple-text-sub)] opacity-60 hover:opacity-100'}`}
-                            >
-                                Control Retorno
-                            </button>
-                        </div>
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
                                 <div className="flex items-center justify-between mb-10">
                                     <h3 className="text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
-                                    <div className="flex gap-2 items-center text-xs font-black text-[var(--apple-text-sub)] tracking-widest uppercase">
-                                        <div className="w-2 h-2 rounded-full bg-[var(--istpet-gold)] animate-pulse"></div>
-                                        PASO 1: IDENTIFICACIÓN
-                                    </div>
                                 </div>
 
                                 <div className="space-y-8">
@@ -285,7 +269,7 @@ const ControlOperativo = () => {
                                                                 <p className="text-sm font-bold">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora}</p>
                                                             </div>
                                                         </div>
-                                                        <button 
+                                                        <button
                                                             onClick={() => {
                                                                 const veh = vehiculos.find(v => v.idVehiculo === estudianteData.idPracticaCentral);
                                                                 const inst = instructores.find(i => i.fullName === estudianteData.practicaInstructor);
@@ -326,11 +310,11 @@ const ControlOperativo = () => {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                                             {vehiculos.length > 0 ? (
                                                 vehiculos.filter(v => !estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3)).map(v => (
-                                                    <VehicleCard 
-                                                        key={v.idVehiculo} 
-                                                        vehiculo={v} 
-                                                        isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo} 
-                                                        onSelect={handleSeleccionarVehiculo} 
+                                                    <VehicleCard
+                                                        key={v.idVehiculo}
+                                                        vehiculo={v}
+                                                        isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
+                                                        onSelect={handleSeleccionarVehiculo}
                                                     />
                                                 ))
                                             ) : (
@@ -446,12 +430,12 @@ const ControlOperativo = () => {
 
                     {/* Sidebar Widgets */}
                     <div className="lg:col-span-5 xl:col-span-4 space-y-6 animate-apple-in" style={{ animationDelay: '0.3s' }}>
-                        
+
                         <div className="apple-glass rounded-[2.5rem] p-8 border border-[var(--apple-border)] relative overflow-hidden group">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apple-primary)]/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-[var(--apple-primary)]/10 transition-colors duration-700"></div>
-                            
+
                             <h4 className="text-xs font-black text-[var(--apple-text-sub)] tracking-[0.2em] uppercase mb-8">Agenda SIGAFI Hoy</h4>
-                            
+
                             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                                 {agendadosHoy.length > 0 ? (
                                     agendadosHoy.map(ag => (
@@ -462,7 +446,7 @@ const ControlOperativo = () => {
                                             </div>
                                             <p className="text-[11px] font-bold text-[var(--apple-text-main)] uppercase truncate mb-1">{ag.alumnoNombre || ag.cedulaAlumno}</p>
                                             <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter truncate opacity-60 italic">{ag.profesorNombre}</p>
-                                            <button 
+                                            <button
                                                 onClick={() => {
                                                     setSalidaCedula(ag.cedulaAlumno);
                                                     showNotification('Cédula copiada al despacho');
