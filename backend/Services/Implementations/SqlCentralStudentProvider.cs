@@ -12,19 +12,20 @@ namespace backend.Services.Implementations
     public class SqlCentralStudentProvider : ICentralStudentProvider
     {
         private readonly AppDbContext _context;
-        private readonly string CENTRAL_DB_NAME;
+        private readonly string TABLE_PREFIX;
 
         public SqlCentralStudentProvider(AppDbContext context, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _context = context;
-            // Limpiamos posibles comillas accidentales de Render y espacios
+            // Modo Plug & Play:
+            // Si CentralDbName es "" (especialmente en Render/Vercel), usamos prefijo "ext_"
+            // Si CentralDbName tiene valor, lo usamos como esquema: "dbName."
             string dbName = (configuration["CentralDbName"] ?? "sigafi_es").Replace("\"", "").Trim();
             
-            // Solo añadimos el punto si hay un nombre de base de datos real
-            if (!string.IsNullOrWhiteSpace(dbName)) {
-                CENTRAL_DB_NAME = dbName + ".";
+            if (string.IsNullOrWhiteSpace(dbName)) {
+                TABLE_PREFIX = "ext_";
             } else {
-                CENTRAL_DB_NAME = "";
+                TABLE_PREFIX = dbName + ".";
             }
         }
 
@@ -49,11 +50,11 @@ namespace backend.Services.Implementations
                     c.Nivel AS CursoDetalle,
                     CAST(p.idPeriodo AS CHAR) AS Periodo,
                     TO_BASE64(a.foto) AS FotoBase64
-                FROM {CENTRAL_DB_NAME}alumnos a
-                JOIN {CENTRAL_DB_NAME}matriculas m ON m.idAlumno = a.idAlumno
-                JOIN {CENTRAL_DB_NAME}periodos p ON p.idPeriodo = m.idPeriodo
-                LEFT JOIN {CENTRAL_DB_NAME}cursos c ON c.idNivel = m.idNivel
-                LEFT JOIN {CENTRAL_DB_NAME}secciones s ON s.idSeccion = m.idSeccion
+                FROM {TABLE_PREFIX}alumnos a
+                JOIN {TABLE_PREFIX}matriculas m ON m.idAlumno = a.idAlumno
+                JOIN {TABLE_PREFIX}periodos p ON p.idPeriodo = m.idPeriodo
+                LEFT JOIN {TABLE_PREFIX}cursos c ON c.idNivel = m.idNivel
+                LEFT JOIN {TABLE_PREFIX}secciones s ON s.idSeccion = m.idSeccion
                 WHERE a.idAlumno = @p0 AND p.activo = 1
                 LIMIT 1";
 
@@ -82,7 +83,7 @@ namespace backend.Services.Implementations
                         celular AS Telefono,
                         email AS Email,
                         COALESCE(activo, 1) AS Activo
-                    FROM {CENTRAL_DB_NAME}profesores
+                    FROM {TABLE_PREFIX}profesores
                     WHERE idProfesor = @p0
                     LIMIT 1";
 
@@ -109,7 +110,7 @@ namespace backend.Services.Implementations
                         celular AS Telefono,
                         email AS Email,
                         COALESCE(activo, 1) AS Activo
-                    FROM {CENTRAL_DB_NAME}profesores";
+                    FROM {TABLE_PREFIX}profesores";
 
                 var list = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql).ToListAsync();
                 return list;
@@ -132,8 +133,8 @@ namespace backend.Services.Implementations
                         p.celular AS Telefono,
                         p.email AS Email,
                         COALESCE(p.activo, 1) AS Activo
-                    FROM {CENTRAL_DB_NAME}cond_alumnos_vehiculos v
-                    JOIN {CENTRAL_DB_NAME}profesores p ON p.idProfesor = v.idProfesor
+                    FROM {TABLE_PREFIX}cond_alumnos_vehiculos v
+                    JOIN {TABLE_PREFIX}profesores p ON p.idProfesor = v.idProfesor
                     WHERE v.idAlumno = @p0 AND v.activa = 1
                     LIMIT 1";
 
@@ -164,12 +165,12 @@ namespace backend.Services.Implementations
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
-                    FROM {CENTRAL_DB_NAME}cond_alumnos_practicas p
-                    JOIN {CENTRAL_DB_NAME}alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {CENTRAL_DB_NAME}vehiculos v ON v.idVehiculo = p.idvehiculo
-                    JOIN {CENTRAL_DB_NAME}profesores pr ON pr.idProfesor = p.idProfesor
+                    FROM {TABLE_PREFIX}cond_alumnos_practicas p
+                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idalumno
+                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.idalumno = @p0 
-                    AND p.fecha = (SELECT MAX(fecha) FROM {CENTRAL_DB_NAME}cond_alumnos_practicas)
+                    AND p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
                     ORDER BY p.hora_salida ASC
                     LIMIT 1";
 
@@ -200,11 +201,11 @@ namespace backend.Services.Implementations
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
-                    FROM {CENTRAL_DB_NAME}cond_alumnos_practicas p
-                    JOIN {CENTRAL_DB_NAME}alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {CENTRAL_DB_NAME}vehiculos v ON v.idVehiculo = p.idvehiculo
-                    JOIN {CENTRAL_DB_NAME}profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.fecha = (SELECT MAX(fecha) FROM {CENTRAL_DB_NAME}cond_alumnos_practicas)
+                    FROM {TABLE_PREFIX}cond_alumnos_practicas p
+                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idalumno
+                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
+                    WHERE p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
                     ORDER BY p.hora_salida ASC";
 
                 var list = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();

@@ -16,7 +16,7 @@ SELECT
     celular,
     email,
     COALESCE(activo, 1)
-FROM sigafi_es.profesores;
+FROM ext_profesores;
 
 -- 2. IMPORTAR VEHÍCULOS OPERATIVOS (Mapeo de Licencias)
 INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
@@ -36,7 +36,7 @@ SELECT
         WHEN v.activo = 1 THEN 'OPERATIVO'
         ELSE 'FUERA_SERVICIO'
     END
-FROM sigafi_es.vehiculos v;
+FROM ext_vehiculos v;
 
 -- 3. IMPORTAR USUARIOS Y CLAVES (BCRYPT BRIDGE)
 INSERT IGNORE INTO usuarios (usuario, password_hash, rol, nombre_completo, activo)
@@ -46,8 +46,8 @@ SELECT
     'guardia',
     CONCAT_WS(' ', p.apellidoPaterno, p.apellidoMaterno, p.primerNombre, p.segundoNombre),
     1
-FROM sigafi_es.usuario u
-JOIN sigafi_es.profesores p ON u.IdUsuario = CAST(p.idProfesor AS UNSIGNED) -- Mapeo idPersona a idProfesor
+FROM ext_usuario u
+JOIN ext_profesores p ON u.IdUsuario = CAST(p.idProfesor AS UNSIGNED) -- Mapeo idPersona a idProfesor
 WHERE u.Activo = 1;
 
 -- 4. IMPORTAR ESTUDIANTES Y MATRÍCULAS (Solo últimos 3 años de actividad)
@@ -59,8 +59,8 @@ SELECT
     celular,
     email,
     1
-FROM sigafi_es.alumnos
-WHERE idAlumno IN (SELECT idalumno FROM sigafi_es.cond_alumnos_practicas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR));
+FROM ext_alumnos
+WHERE idAlumno IN (SELECT idalumno FROM ext_cond_alumnos_practicas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR));
 
 INSERT IGNORE INTO matriculas (id_matricula, cedula_estudiante, id_curso, fecha_matricula, horas_completadas, estado)
 SELECT
@@ -70,7 +70,7 @@ SELECT
     COALESCE(m.fechaMatricula, CURDATE()),
     0,
     'ACTIVO'
-FROM sigafi_es.matriculas m
+FROM ext_matriculas m
 WHERE m.valida = 1 AND m.idAlumno COLLATE utf8mb4_general_ci IN (SELECT cedula FROM estudiantes);
 
 -- 5. IMPORTAR HISTORIAL DE PRÁCTICAS (Últimos 3 años)
@@ -84,7 +84,7 @@ SELECT
     CONCAT(p.fecha, ' ', COALESCE(p.hora_salida, '00:00:00')),
     CONCAT('IMPORTADO SIGAFI - User:', p.user_asigna),
     1
-FROM sigafi_es.cond_alumnos_practicas p
+FROM ext_cond_alumnos_practicas p
 JOIN matriculas m ON p.idalumno = m.cedula_estudiante
 JOIN vehiculos v ON p.idvehiculo = v.id_vehiculo
 JOIN instructores ins ON p.idProfesor = ins.cedula
@@ -97,7 +97,7 @@ SELECT
     CONCAT(p.fecha, ' ', p.hora_llegada),
     CONCAT('IMPORTADO SIGAFI - User:', p.user_llegada),
     1
-FROM sigafi_es.cond_alumnos_practicas p
+FROM ext_cond_alumnos_practicas p
 WHERE p.fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR)
 AND p.hora_llegada IS NOT NULL
 AND p.cancelado = 0
