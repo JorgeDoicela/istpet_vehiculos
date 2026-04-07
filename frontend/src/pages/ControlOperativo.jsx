@@ -38,6 +38,8 @@ const ControlOperativo = () => {
     const [agendadosHoy, setAgendadosHoy] = useState([]);
     const [agendadosLoading, setAgendadosLoading] = useState(false);
     const [showAgendaDrawer, setShowAgendaDrawer] = useState(false);
+    const [showInstructorMenu, setShowInstructorMenu] = useState(false);
+    const [filtroInstructor, setFiltroInstructor] = useState('');
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -236,7 +238,7 @@ const ControlOperativo = () => {
                     {/* Panel Principal */}
                     <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
                         {/* Saludo Simplificado */}
-                        <div className="px-2 mb-2 lg:mb-4">
+                        <div className="px-8 lg:px-10 mb-2 lg:mb-4">
                             <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-1">
                                 {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches'}
                             </p>
@@ -246,7 +248,7 @@ const ControlOperativo = () => {
                         </div>
 
                         {activeTab === 'salida' ? (
-                            <div className="apple-card overflow-hidden">
+                            <div className="apple-card">
                                 <div className="mb-5 px-2 flex items-center justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     {/* Reloj compacto integrado en el header */}
@@ -265,7 +267,7 @@ const ControlOperativo = () => {
                                         <div className="relative flex items-center gap-3">
                                             <input
                                                 type="text"
-                                                placeholder="Ej. 1722..."
+                                                placeholder="Ej. 172..."
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value.replace(/\D/g, ''))}
@@ -436,11 +438,19 @@ const ControlOperativo = () => {
                                                     </div>
                                                     <input
                                                         type="text"
-                                                        placeholder="BUSCAR..."
+                                                        placeholder="BUSCAR UNIDAD..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-4 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none"
                                                     />
+                                                    {filtroVehiculo && (
+                                                        <button 
+                                                            onClick={() => setFiltroVehiculo('')}
+                                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-red-500 transition-colors"
+                                                        >
+                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    )}
                                                 </div>
 
                                                 {/* Indicadores de Licencia Compactos */}
@@ -462,10 +472,12 @@ const ControlOperativo = () => {
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
                                                         const filtered = vehiculos.filter(v => {
+                                                            const term = filtroVehiculo.toLowerCase().trim();
                                                             const matchLicencia = !estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3);
-                                                            const matchFiltro = !filtroVehiculo ||
-                                                                v.placa?.toLowerCase().includes(filtroVehiculo.toLowerCase()) ||
-                                                                v.numero_vehiculo?.toString().includes(filtroVehiculo);
+                                                            const matchFiltro = !term ||
+                                                                v.placa?.toLowerCase().includes(term) ||
+                                                                v.numero_vehiculo?.toString().includes(term) ||
+                                                                v.numeroVehiculo?.toString().includes(term);
                                                             return matchLicencia && matchFiltro;
                                                         });
 
@@ -499,23 +511,78 @@ const ControlOperativo = () => {
                                         </div>
                                     </div>
 
-                                    {/* Selección Instructor - Más Compacto */}
-                                    <div className="pt-6 px-1">
+                                    {/* Selección Instructor - Integrated Combobox Search */}
+                                    <div className="pt-6 px-1 relative">
                                         <div className="mb-2">
                                             <p className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] px-2">Instructor Responsable</p>
                                         </div>
+
                                         <div className="relative group">
-                                            <select
-                                                value={instructorSeleccionado?.id_Instructor || ''}
-                                                onChange={(e) => setInstructorSeleccionado(instructores.find(i => i.id_Instructor.toString() === e.target.value))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
-                                            >
-                                                <option value="" disabled>-- SELECCIONE DOCENTE --</option>
-                                                {instructores.map(i => <option key={i.id_Instructor} value={i.id_Instructor}>{i.fullName}</option>)}
-                                            </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] pointer-events-none">
-                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value={showInstructorMenu ? filtroInstructor : (instructorSeleccionado?.fullName || '')}
+                                                    onChange={(e) => {
+                                                        const val = e.target.value.toUpperCase();
+                                                        setFiltroInstructor(val);
+                                                        if (!showInstructorMenu) setShowInstructorMenu(true);
+                                                    }}
+                                                    onClick={() => {
+                                                        if (!showInstructorMenu) {
+                                                            setShowInstructorMenu(true);
+                                                            setFiltroInstructor('');
+                                                        }
+                                                    }}
+                                                    placeholder="-- SELECCIONE DOCENTE --"
+                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--apple-primary)] ring-4 ring-[var(--apple-primary)]/10 shadow-lg' : 'border-[var(--apple-border)]'}`}
+                                                />
+                                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
+                                                    <svg className={`h-4 w-4 transition-transform duration-500 ease-in-out ${showInstructorMenu ? 'rotate-180 text-[var(--apple-primary)]' : 'text-[var(--apple-text-sub)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                                </div>
                                             </div>
+
+                                            {showInstructorMenu && (
+                                                <>
+                                                    {/* Backdrop invisible para cerrar al hacer clic fuera */}
+                                                    <div className="fixed inset-0 z-[140]" onClick={() => {
+                                                        setShowInstructorMenu(false);
+                                                        setFiltroInstructor('');
+                                                    }} />
+
+                                                    {/* Menú Flotante Estilo Apple (Compatible con Temas) */}
+                                                    <div className="absolute left-0 right-0 top-full mt-3 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2.2rem] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] z-[150] overflow-hidden animate-apple-in flex flex-col max-h-[300px] ring-1 ring-black/5">
+                                                        {/* Lista de Instructores con Scroll Optimizado */}
+                                                        <div className="flex-1 overflow-y-auto p-3 custom-scrollbar space-y-1">
+                                                            {instructores.filter(i =>
+                                                                !filtroInstructor || i.fullName.toUpperCase().includes(filtroInstructor)
+                                                            ).map((i) => (
+                                                                <div
+                                                                    key={i.id_Instructor}
+                                                                    onClick={() => {
+                                                                        setInstructorSeleccionado(i);
+                                                                        setShowInstructorMenu(false);
+                                                                        setFiltroInstructor('');
+                                                                    }}
+                                                                    className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all flex items-center justify-between rounded-2xl group/item ${instructorSeleccionado?.id_Instructor === i.id_Instructor ? 'bg-[var(--apple-primary)]/10' : ''}`}
+                                                                >
+                                                                    <p className={`text-[11px] font-black uppercase tracking-tight transition-all group-hover/item:translate-x-1 ${instructorSeleccionado?.id_Instructor === i.id_Instructor ? 'text-[var(--apple-primary)]' : 'text-[var(--apple-text-main)]'}`}>
+                                                                        {i.fullName}
+                                                                    </p>
+                                                                    {instructorSeleccionado?.id_Instructor === i.id_Instructor && (
+                                                                        <div className="h-1.5 w-1.5 rounded-full bg-[var(--apple-primary)] shadow-[0_0_8px_var(--apple-primary)]" />
+                                                                    )}
+                                                                </div>
+                                                            ))}
+                                                            {instructores.filter(i => !filtroInstructor || i.fullName.toUpperCase().includes(filtroInstructor)).length === 0 && (
+                                                                <div className="py-12 text-center opacity-30">
+                                                                    <p className="text-[10px] font-black uppercase tracking-widest">Sin resultados</p>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                        <div className="h-4 bg-gradient-to-t from-[var(--apple-bg)] to-transparent pointer-events-none absolute bottom-0 left-0 right-0"></div>
+                                                    </div>
+                                                </>
+                                            )}
                                         </div>
                                     </div>
 

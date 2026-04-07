@@ -40,7 +40,6 @@ const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
                     <span className={`text-lg lg:text-xl font-black tracking-tighter transition-colors ${isSelected ? 'text-[var(--apple-primary)]' : 'text-[var(--apple-text-main)]'}`}>
                         #{numero}
                     </span>
-                    <div className={`w-1 h-1 rounded-full shrink-0 ${isOperativo ? 'bg-emerald-500 animate-pulse' : 'bg-[var(--apple-border)]'}`}></div>
                 </div>
                 {/* Placa si está disponible, si no UNIDAD */}
                 <p className={`text-[5px] lg:text-[7px] font-black uppercase tracking-[0.15em] leading-none transition-colors ${isSelected ? 'text-[var(--apple-primary)]/70' : 'text-[var(--apple-text-sub)]'}`}>
