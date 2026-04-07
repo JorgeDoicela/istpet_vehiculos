@@ -33,7 +33,7 @@ CREATE TABLE cursos (
     nombre VARCHAR(100)
 );
 
-CREATE TABLE vehiculo (
+CREATE TABLE vehiculos (
     IdVehiculo INT PRIMARY KEY,
     NumeroVehiculo INT, Placa VARCHAR(15), Marca VARCHAR(50), Modelo VARCHAR(50), IdTipoVehiculo INT, Estado INT DEFAULT 0
 );
@@ -75,7 +75,7 @@ INSERT INTO profesores VALUES
 ('1700000001', 'JUAN', 'CARLOS', 'LOPEZ', 'MENDOZA', '0988888881', 'juan.lopez@mail.com', 1),
 ('1700000002', 'MARIA', 'FERNANDA', 'GARCIA', 'SALAZAR', '0988888882', 'maria.garcia@mail.com', 1);
 
-INSERT INTO vehiculo VALUES
+INSERT INTO vehiculos VALUES
 (35, 35, 'PBA-1234', 'CHEVROLET', 'AVEO', 1, 0),
 (36, 1, 'PBA-1001', 'CHEVROLET', 'AVEO', 1, 0),
 (37, 2, 'PBA-1002', 'HYUNDAI', 'ACCENT', 1, 0);

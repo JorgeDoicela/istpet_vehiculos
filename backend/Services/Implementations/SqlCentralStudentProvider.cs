@@ -17,13 +17,14 @@ namespace backend.Services.Implementations
         public SqlCentralStudentProvider(AppDbContext context, Microsoft.Extensions.Configuration.IConfiguration configuration)
         {
             _context = context;
-            // Si no existe la configuración, usamos "sigafi_es" por defecto (Local).
-            // En Render, puedes configurar "CentralDbName" como "" para TiDB Cloud.
-            CENTRAL_DB_NAME = configuration["CentralDbName"] ?? "sigafi_es";
+            // Limpiamos posibles comillas accidentales de Render y espacios
+            string dbName = (configuration["CentralDbName"] ?? "sigafi_es").Replace("\"", "").Trim();
             
-            // Si el nombre no está vacío, le ponemos el punto para el query cross-database
-            if (!string.IsNullOrEmpty(CENTRAL_DB_NAME)) {
-                CENTRAL_DB_NAME = CENTRAL_DB_NAME + ".";
+            // Solo añadimos el punto si hay un nombre de base de datos real
+            if (!string.IsNullOrWhiteSpace(dbName)) {
+                CENTRAL_DB_NAME = dbName + ".";
+            } else {
+                CENTRAL_DB_NAME = "";
             }
         }
 
