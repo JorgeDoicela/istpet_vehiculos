@@ -195,7 +195,7 @@ namespace backend.Services.Implementations
                     JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
                     JOIN {CENTRAL_DB_NAME}.vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.fecha = CURDATE()
+                    WHERE p.fecha = (SELECT MAX(fecha) FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas)
                     ORDER BY p.hora_salida ASC";
 
                 var list = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
