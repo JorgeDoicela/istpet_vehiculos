@@ -4,7 +4,7 @@
 -- ============================================================
 
 DROP DATABASE IF EXISTS sigafi_es;
-CREATE DATABASE sigafi_es CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
+CREATE DATABASE sigafi_es CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE sigafi_es;
 
 -- 1. ESTRUCTURA (SIGAFI ORIGINAL)
