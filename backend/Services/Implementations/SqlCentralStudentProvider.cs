@@ -170,7 +170,7 @@ namespace backend.Services.Implementations
                     JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.idAlumno = @p0
-                    AND p.fecha >= CURDATE() - INTERVAL 1 DAY
+                    AND (p.fecha >= CURDATE() - INTERVAL 1 DAY OR p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas))
                     ORDER BY p.fecha ASC, p.hora_salida ASC
                     LIMIT 1";
 
@@ -205,7 +205,8 @@ namespace backend.Services.Implementations
                     JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idAlumno
                     JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.fecha >= CURDATE() - INTERVAL 1 DAY
+                    WHERE p.fecha >= CURDATE() - INTERVAL 1 DAY 
+                       OR p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
                     ORDER BY p.fecha ASC, p.hora_salida ASC
                     LIMIT 100";
 
