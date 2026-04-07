@@ -21,23 +21,22 @@ FROM sigafi_es.profesores;
 -- 2. IMPORTAR VEHÍCULOS OPERATIVOS (Mapeo de Licencias)
 INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
 SELECT
-    v.IdVehiculo,
-    v.NumeroVehiculo,
-    v.Placa,
-    v.Marca,
-    v.Modelo,
+    v.idVehiculo,
+    v.numero_vehiculo,
+    v.placa,
+    v.marca,
+    v.modelo,
     CASE
-        WHEN v.IdTipoVehiculo = 1 THEN 1 -- Sedan -> C
-        WHEN v.IdTipoVehiculo IN (4, 5) THEN 2 -- Pesado/Bus -> D/E (Ajuste según dump)
+        WHEN v.idCategoria = 1 THEN 1 -- Sedan -> C
+        WHEN v.idCategoria IN (4, 5) THEN 2 -- Pesado/Bus -> D/E (Ajuste según dump)
         ELSE 1
     END,
     1, -- Default Instructor (Admin) - Se puede ajustar manualmente después
     CASE
-        WHEN v.Estado = 0 THEN 'OPERATIVO'
-        WHEN v.Estado = 1 THEN 'MANTENIMIENTO'
+        WHEN v.activo = 1 THEN 'OPERATIVO'
         ELSE 'FUERA_SERVICIO'
     END
-FROM sigafi_es.vehiculo v;
+FROM sigafi_es.vehiculos v;
 
 -- 3. IMPORTAR USUARIOS Y CLAVES (BCRYPT BRIDGE)
 INSERT IGNORE INTO usuarios (usuario, password_hash, rol, nombre_completo, activo)

@@ -27,16 +27,18 @@ namespace backend.Services.Implementations
              * Realizamos un query cross-database (hacia otra BD en el mismo servidor).
              * En EF Core 8 SqlQueryRaw requiere que el resultado mapee todas las propiedades del DTO.
              */
+            try
+            {
             string sql = $@"
                 SELECT
                     a.idAlumno AS Cedula,
                     a.primerNombre AS Nombres,
                     a.apellidoPaterno AS Apellidos,
                     m.paralelo AS Paralelo,
-                    s.nombre AS Jornada,
+                    s.seccion AS Jornada,
                     CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
-                    CONCAT(c.nombre, ', PARALELO:', m.paralelo, ' ', s.nombre) AS DetalleRaw,
-                    c.nombre AS CursoDetalle,
+                    CONCAT(c.Nivel, ', PARALELO:', m.paralelo, ' ', s.seccion) AS DetalleRaw,
+                    c.Nivel AS CursoDetalle,
                     CAST(p.idPeriodo AS CHAR) AS Periodo,
                     TO_BASE64(a.foto) AS FotoBase64
                 FROM {CENTRAL_DB_NAME}.alumnos a
@@ -47,10 +49,17 @@ namespace backend.Services.Implementations
                 WHERE a.idAlumno = @p0 AND p.activo = 1
                 LIMIT 1";
 
-            var result = await _context.Database.SqlQueryRaw<CentralStudentDto>(sql, cedula)
-                .FirstOrDefaultAsync();
+                var result = await _context.Database.SqlQueryRaw<CentralStudentDto>(sql, cedula)
+                    .FirstOrDefaultAsync();
 
-            return result;
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR GetFromCentralAsync ({cedula}): {ex.Message}");
+                if(ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
+                return null;
+            }
         }
 
         public async Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula)
@@ -96,8 +105,9 @@ namespace backend.Services.Implementations
 
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"ERROR GetAssignedTutorAsync: {ex.Message}");
                 return null;
             }
         }
@@ -115,11 +125,11 @@ namespace backend.Services.Implementations
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
-                        CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
                     JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
+                    JOIN {CENTRAL_DB_NAME}.vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.idalumno = @p0 AND p.fecha = CURDATE()
                     ORDER BY p.hora_salida ASC
@@ -130,8 +140,10 @@ namespace backend.Services.Implementations
 
                 return result;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"ERROR GetScheduledPracticeAsync: {ex.Message}");
+                if(ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
                 return null;
             }
         }
@@ -148,11 +160,11 @@ namespace backend.Services.Implementations
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
-                        CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
                     JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
+                    JOIN {CENTRAL_DB_NAME}.vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN {CENTRAL_DB_NAME}.profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.fecha = CURDATE()
                     ORDER BY p.hora_salida ASC";
@@ -160,8 +172,10 @@ namespace backend.Services.Implementations
                 var list = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
                 return list;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Console.WriteLine($"ERROR GetSchedulesForTodayAsync: {ex.Message}");
+                if(ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
                 return new List<ScheduledPracticeDto>();
             }
         }
