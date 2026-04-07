@@ -14,10 +14,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      {/* Test de Seguridad: Si ves este mensaje, React está funcionando */}
-      <div className="fixed bottom-4 right-4 z-[999] opacity-20 pointer-events-none">
-          <p className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">ISTPET_CORE_OK</p>
-      </div>
+
 
       <div className="min-h-screen w-full overflow-x-hidden bg-[var(--apple-bg)]">
         <Routes>

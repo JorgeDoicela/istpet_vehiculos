@@ -260,7 +260,7 @@ const ControlOperativo = () => {
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card">
-                                <div className="mb-5 px-2 flex items-center justify-between">
+                                <div className="mb-10 px-2 flex items-center justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     {/* Reloj compacto integrado en el header */}
                                     <div className="flex flex-col items-end leading-tight">
@@ -818,13 +818,10 @@ const ControlOperativo = () => {
                         </div>
 
                         {/* Header Premium */}
-                        <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center justify-between px-6 py-5">
                             <div>
-                                <div className="flex items-center gap-2 mb-0.5">
-                                    <div className="w-1.5 h-4 rounded-full bg-[var(--istpet-gold)]" />
-                                    <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-widest">Agenda Hoy</h3>
-                                </div>
-                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] pl-3.5">
+                                <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda Hoy</h3>
+                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] mt-0.5">
                                     <span className="text-[var(--istpet-gold)] font-black">{agendadosHoy.length}</span> estudiantes programados
                                 </p>
                             </div>
@@ -836,17 +833,17 @@ const ControlOperativo = () => {
                             </button>
                         </div>
 
-                        {/* Lista */}
-                        <div className="overflow-y-auto flex-1 px-4 pb-8 space-y-2.5 custom-scrollbar">
+                        {/* Lista con Estética iOS (Separadores Parciales) */}
+                        <div className="overflow-y-auto flex-1 custom-scrollbar pb-10">
                             {agendadosHoy.length > 0 ? agendadosHoy.map((ag, idx) => (
                                 <div
                                     key={ag.idPractica}
-                                    className="relative bg-[var(--apple-card)] rounded-[1.5rem] border border-[var(--apple-border)] overflow-hidden group"
+                                    className="px-6 group active:bg-[var(--apple-border)]/20 transition-colors"
                                     style={{ animationDelay: `${idx * 0.05}s` }}
                                 >
-                                    <div className="flex items-center gap-3 p-4">
+                                    <div className={`flex items-start gap-3 py-5 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40' : ''}`}>
                                         {/* Número de Orden */}
-                                        <div className="shrink-0 w-9 h-9 rounded-[0.9rem] bg-[var(--apple-bg)] border border-[var(--apple-border)] flex items-center justify-center">
+                                        <div className="shrink-0 w-8 flex items-center justify-center -mt-[2px]">
                                             <span className="text-[11px] font-black text-[var(--istpet-gold)]">{String(idx + 1).padStart(2,'0')}</span>
                                         </div>
 
@@ -855,34 +852,38 @@ const ControlOperativo = () => {
                                             <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate leading-tight">
                                                 {ag.alumnoNombre || ag.cedulaAlumno}
                                             </p>
-                                            <div className="flex items-center gap-2 mt-1">
-                                                <span className="flex items-center gap-1 text-[10px] font-black text-[var(--istpet-gold)]">
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="flex items-center gap-1 text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">
                                                     <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     {ag.horaSalida?.substring(0, 5)}
                                                 </span>
-                                                <span className="text-[var(--apple-border)]">·</span>
-                                                <span className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-tight">{ag.vehiculoDetalle}</span>
+                                                <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase tracking-tight">
+                                                    #{ag.vehiculoDetalle}
+                                                </span>
                                             </div>
                                         </div>
 
-                                        {/* Botón Cargar */}
+                                        {/* Botón Cargar - Optimizado */}
                                         <button
                                             onClick={() => {
                                                 setSalidaCedula(ag.cedulaAlumno);
                                                 setShowAgendaDrawer(false);
                                                 showNotification('Cédula cargada al despacho');
                                             }}
-                                            className="shrink-0 px-4 py-2.5 bg-[var(--istpet-navy)] text-white rounded-[1rem] text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-sm"
+                                            className="shrink-0 px-5 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md active:shadow-none"
                                         >
                                             Cargar
                                         </button>
                                     </div>
-                                    {/* Accent line */}
-                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--istpet-gold)]/30 group-hover:bg-[var(--istpet-gold)] transition-colors duration-300" />
                                 </div>
                             )) : (
-                                <div className="py-16 text-center opacity-40">
-                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">Sin agendas hoy</p>
+                                <div className="py-20 text-center opacity-40">
+                                    <div className="mb-3">
+                                        <svg className="h-10 w-10 mx-auto text-[var(--apple-text-sub)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                    </div>
+                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">Sin agendas para hoy</p>
                                 </div>
                             )}
                         </div>
