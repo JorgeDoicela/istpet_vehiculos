@@ -53,18 +53,14 @@ if (connectionString.Contains("tidbcloud.com") && !connectionString.Contains("Ss
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-var app = builder.Build();
+// 🛡️ CONFIGURACION DE PUERTO PARA RENDER (Solo si existe la variable PORT)
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrEmpty(port))
+{
+    builder.WebHost.UseUrls($"http://*:{port}");
+}
 
-// 🛡️ CONFIGURACION DE PUERTO: Forzar según entorno
-if (!app.Environment.IsDevelopment())
-{
-    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-    app.Urls.Add($"http://*:{port}");
-}
-else
-{
-    app.Urls.Add("http://localhost:5112");
-}
+var app = builder.Build();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
