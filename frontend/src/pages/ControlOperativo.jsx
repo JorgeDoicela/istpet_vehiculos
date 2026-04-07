@@ -37,6 +37,7 @@ const ControlOperativo = () => {
     const [horaRetorno, setHoraRetorno] = useState('');
     const [agendadosHoy, setAgendadosHoy] = useState([]);
     const [agendadosLoading, setAgendadosLoading] = useState(false);
+    const [showAgendaDrawer, setShowAgendaDrawer] = useState(false);
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -55,12 +56,11 @@ const ControlOperativo = () => {
 
     // Carga de datos base
     useEffect(() => {
+        cargarClasesActivas(); // Cargamos siempre para saber quién está en pista
         if (activeTab === 'salida') {
             cargarVehiculosDisponibles();
             cargarInstructores();
             cargarAgendadosHoy();
-        } else {
-            cargarClasesActivas();
         }
     }, [activeTab]);
 
@@ -94,10 +94,11 @@ const ControlOperativo = () => {
                 const localeMatch = agendadosHoy.filter(ag =>
                     ag.cedulaAlumno.startsWith(salidaCedula) ||
                     ag.alumnoNombre?.toLowerCase().includes(salidaCedula.toLowerCase())
-                ).map(ag => ({ 
-                    cedula: ag.cedulaAlumno, 
-                    nombreCompleto: ag.alumnoNombre, 
+                ).map(ag => ({
+                    cedula: ag.cedulaAlumno,
+                    nombreCompleto: ag.alumnoNombre,
                     esAgendado: true,
+                    isBusy: clasesActivas.some(ca => ca.cedula === ag.cedulaAlumno),
                     hora: ag.horaSalida?.split(':').slice(0, 2).join(':'),
                     vehiculo: ag.vehiculoDetalle,
                     instructor: ag.profesorNombre
@@ -111,7 +112,10 @@ const ControlOperativo = () => {
                     const combined = [...localeMatch];
                     serverMatch.forEach(sm => {
                         if (!combined.find(c => c.cedula === sm.cedula)) {
-                            combined.push(sm);
+                            combined.push({
+                                ...sm,
+                                isBusy: sm.isBusy || clasesActivas.some(ca => ca.cedula === sm.cedula)
+                            });
                         }
                     });
 
@@ -134,7 +138,7 @@ const ControlOperativo = () => {
             if (salidaCedula.length === 10 && activeTab === 'salida') {
                 // EVITAR DOBLE CARGA: Si ya tenemos la data de esta cédula, no recargar
                 if (estudianteData?.cedula === salidaCedula) return;
-                
+
                 setMostrarSugerencias(false);
                 ejecutarBusquedaEstudiante();
             }
@@ -227,31 +231,45 @@ const ControlOperativo = () => {
                 </div>
             )}
 
-            <div className="max-w-6xl mx-auto pt-4 lg:pt-8 pb-20 px-6">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
+            <div className="max-w-6xl mx-auto pt-2 lg:pt-6 pb-24 px-3 lg:px-6">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-8 items-start">
                     {/* Panel Principal */}
                     <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
+                        {/* Saludo Simplificado */}
+                        <div className="px-2 mb-2 lg:mb-4">
+                            <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-1">
+                                {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches'}
+                            </p>
+                            <h2 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase">
+                                Bienvenido
+                            </h2>
+                        </div>
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
-                                <div className="mb-8 px-2">
-                                    <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] mb-1">Registro de Salida</h3>
+                                <div className="mb-5 px-2 flex items-center justify-between">
+                                    <h3 className="text-base lg:text-xl font-black text-[var(--apple-text-main)]">Registro de Salida</h3>
+                                    {/* Reloj compacto integrado en el header */}
+                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
+                                        <svg className="h-3.5 w-3.5 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                        <span className="text-sm font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-8">
-                                    {/* Campo Cédula */}
+                                    {/* Campo Cédula - Más compacto */}
                                     <div className="relative group">
-                                        <label className="absolute left-6 -top-4 px-4 bg-[var(--apple-card)] backdrop-blur-md text-[10px] font-black text-[var(--istpet-gold)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--apple-primary)] z-10">
+                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--istpet-gold)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--apple-primary)] z-10">
                                             Cédula del Estudiante
                                         </label>
-                                        <div className="relative flex items-center gap-4">
+                                        <div className="relative flex items-center gap-3">
                                             <input
                                                 type="text"
                                                 placeholder="Ej. 1722..."
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value.replace(/\D/g, ''))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2rem] px-6 lg:px-8 py-3 lg:py-5 text-lg lg:text-xl font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-base lg:text-lg font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                             />
 
                                             {/* GESTIÓN CONDUCCIÓN AUTO-COMPLETE POPUP */}
@@ -271,12 +289,12 @@ const ControlOperativo = () => {
                                                                 <p className="text-[15px] font-black text-[#1a2544] uppercase tracking-tight leading-none mb-1.5">
                                                                     {s.nombreCompleto}
                                                                 </p>
-                                                                
+
                                                                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                                                                     <p className="text-[11px] font-black text-[var(--apple-text-sub)] tracking-[0.2em]">
                                                                         {s.cedula}
                                                                     </p>
-                                                                    
+
                                                                     {s.esAgendado ? (
                                                                         <div className="flex items-center gap-2">
                                                                             <span className="text-[10px] font-black text-emerald-700 flex items-center gap-1">
@@ -286,14 +304,27 @@ const ControlOperativo = () => {
                                                                             <span className="text-[9px] font-bold text-slate-500 uppercase">
                                                                                 {s.vehiculo}
                                                                             </span>
-                                                                            <span className="text-[9px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse">
-                                                                                HOY
-                                                                            </span>
+                                                                            {s.isBusy ? (
+                                                                                <span className="text-[9px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse uppercase">
+                                                                                    EN PISTA
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-[9px] font-black bg-emerald-500 text-white px-2 py-0.5 rounded-full shadow-sm animate-pulse">
+                                                                                    HOY
+                                                                                </span>
+                                                                            )}
                                                                         </div>
                                                                     ) : (
-                                                                        <span className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase">
-                                                                            {s.carrera || 'ESTUDIANTE REGULAR'}
-                                                                        </span>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <span className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase">
+                                                                                {s.carrera || 'ESTUDIANTE REGULAR'}
+                                                                            </span>
+                                                                            {s.isBusy && (
+                                                                                <span className="text-[9px] font-black bg-rose-500 text-white px-2 py-0.5 rounded-full shadow-sm animate-bounce-slow uppercase">
+                                                                                    EN PISTA
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
                                                                     )}
                                                                 </div>
                                                             </div>
@@ -324,6 +355,11 @@ const ControlOperativo = () => {
                                                             <span className="shrink-0 px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
                                                                 {estudianteData.periodo}
                                                             </span>
+                                                            {estudianteData.isBusy && (
+                                                                <span className="shrink-0 px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
+                                                                    Ya en pista
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide opacity-60">
                                                             {estudianteData.cursoDetalle}
@@ -370,7 +406,7 @@ const ControlOperativo = () => {
                                                                 if (inst) setInstructorSeleccionado(inst);
                                                                 showNotification('Agenda cargada');
                                                             }}
-                                                            className="relative z-10 px-3 py-1.5 bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-xl text-[9px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-md shrink-0"
+                                                            className="relative z-10 px-4 py-2 bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-full text-[9px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-md shrink-0"
                                                         >
                                                             Cargar Sugerencia
                                                         </button>
@@ -387,10 +423,10 @@ const ControlOperativo = () => {
 
                                     {/* Selección Vehículo */}
                                     <div className="pt-6">
-                                            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 lg:mb-8 gap-4 px-2">
-                                                <div className="flex-1 text-left min-w-0 flex items-center gap-4">
-                                                    <h3 className="text-lg lg:text-xl font-black text-[var(--apple-text-main)] truncate leading-none">Vehículo</h3>
-                                                </div>
+                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1">
+                                            <div className="flex-1 text-left min-w-0 flex items-center gap-3">
+                                                <h3 className="text-sm lg:text-base font-black text-[var(--apple-text-main)] truncate leading-none">Selecciona Vehículo</h3>
+                                            </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
                                                 {/* Buscador Rápido (Compacto) */}
@@ -403,12 +439,12 @@ const ControlOperativo = () => {
                                                         placeholder="BUSCAR..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-xl pl-9 pr-2 py-2 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-4 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none"
                                                     />
                                                 </div>
 
                                                 {/* Indicadores de Licencia Compactos */}
-                                                <div className="flex bg-[var(--apple-bg)] p-1 rounded-xl border border-[var(--apple-border)] shadow-sm shrink-0">
+                                                <div className="flex bg-[var(--apple-bg)] p-1.5 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
                                                     {['C', 'D', 'E'].map(lic => (
                                                         <div
                                                             key={lic}
@@ -421,8 +457,8 @@ const ControlOperativo = () => {
                                             </div>
                                         </div>
 
-                                        <div className="max-h-[380px] overflow-y-auto pr-2 custom-scrollbar -mr-2">
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                                        <div className="max-h-[380px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-4">
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
                                                         const filtered = vehiculos.filter(v => {
@@ -463,60 +499,56 @@ const ControlOperativo = () => {
                                         </div>
                                     </div>
 
-                                    {/* Selección Instructor (Compacto) */}
-                                    <div className="pt-4 px-2">
-                                        <div className="flex items-center gap-3 mb-3">
+                                    {/* Selección Instructor - Más Compacto */}
+                                    <div className="pt-6 px-1">
+                                        <div className="flex items-center gap-2 mb-2">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                            <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Instructor Responsable</p>
+                                            <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Instructor Responsable</p>
                                         </div>
                                         <div className="relative group">
                                             <select
                                                 value={instructorSeleccionado?.id_Instructor || ''}
                                                 onChange={(e) => setInstructorSeleccionado(instructores.find(i => i.id_Instructor.toString() === e.target.value))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-6 py-3 text-xs lg:text-sm font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
                                             >
                                                 <option value="" disabled>-- SELECCIONE DOCENTE --</option>
                                                 {instructores.map(i => <option key={i.id_Instructor} value={i.id_Instructor}>{i.fullName}</option>)}
                                             </select>
-                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] pointer-events-none">
-                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] pointer-events-none">
+                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                             </div>
                                         </div>
                                     </div>
 
-                                    {/* Barra de Acción Unificada (Reloj + Botón) */}
-                                    <div className="pt-6 border-t border-[var(--apple-border)]">
-                                        <div className="flex items-stretch gap-3">
-                                            {/* Reloj Compacto */}
-                                            <div className="flex-1 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] px-4 lg:px-6 py-3 lg:py-4 rounded-3xl flex items-center gap-3 lg:gap-4 shadow-inner">
-                                                <div className="text-[var(--apple-primary)]">
-                                                    <svg className="h-5 w-5 lg:h-6 lg:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest leading-none mb-0.5">Hora</p>
-                                                    <p className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter">{horaRetorno || '--:--:--'}</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Botón Confirmar */}
-                                            <button
-                                                onClick={procesarSalida}
-                                                disabled={!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado}
-                                                className={`flex-[2] py-3 lg:py-5 rounded-3xl text-sm lg:text-base font-black transition-all ${(!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.02]'}`}
-                                            >
-                                                Confirmar Salida
-                                            </button>
-                                        </div>
+                                    {/* Barra de Acción Unificada */}
+                                    <div className="pt-6 border-t border-[var(--apple-border)] mt-4">
+                                        <button
+                                            onClick={procesarSalida}
+                                            disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
+                                            className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.01]'}`}
+                                        >
+                                            {!estudianteData ? 'Ingrese cédula del estudiante' :
+                                                estudianteData.isBusy ? 'Estudiante ya en pista' :
+                                                    !vehiculoSeleccionado ? 'Seleccione un vehículo' :
+                                                        !instructorSeleccionado ? 'Seleccione un instructor' :
+                                                            '✓ Confirmar Salida'}
+                                        </button>
                                     </div>
                                 </div>
                             </div>
                         ) : (
                             <div className="apple-card">
-                                <div className="flex items-center justify-between mb-10">
-                                    <h3 className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
-                                    <div className="flex gap-2 items-center text-xs font-black text-emerald-500 uppercase tracking-widest">
-                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-                                        UNIDADES EN PISTA
+                                <div className="flex items-center justify-between mb-5">
+                                    <h3 className="text-base lg:text-xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
+                                    <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
+                                            <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                            <span className="text-sm font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
+                                        </div>
+                                        <div className="flex gap-1.5 items-center text-[9px] font-black text-emerald-500 uppercase tracking-widest">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                                            EN PISTA
+                                        </div>
                                     </div>
                                 </div>
 
@@ -528,9 +560,9 @@ const ControlOperativo = () => {
                                                     <div
                                                         key={c.id_Registro}
                                                         onClick={() => setClaseSeleccionada(c)}
-                                                        className={`p-4 rounded-3xl border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--apple-primary)]/10 border-[var(--apple-primary)] shadow-md ring-4 ring-blue-500/10' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
+                                                        className={`p-4 rounded-[2.5rem] border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--apple-primary)]/10 border-[var(--apple-primary)] shadow-md ring-4 ring-blue-500/10' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
                                                     >
-                                                        <div className="flex justify-between items-start mb-3">
+                                                        <div className="flex justify-between items-start mb-3 px-2 pt-1">
                                                             <div className="px-2 py-0.5 bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-lg text-[10px] font-black text-[var(--apple-text-main)]">#{c.numeroVehiculo}</div>
                                                             <StatusBadge status="En Pista" />
                                                         </div>
@@ -564,7 +596,7 @@ const ControlOperativo = () => {
                                                 </div>
                                                 <button
                                                     onClick={procesarLlegada}
-                                                    className="flex-[2] py-3 lg:py-5 bg-[var(--istpet-gold)] text-white rounded-3xl text-sm lg:text-base font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                                                    className="flex-[2] py-3 lg:py-5 bg-[var(--istpet-gold)] text-white rounded-full text-sm lg:text-base font-black shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all"
                                                 >
                                                     Confirmar Retorno
                                                 </button>
@@ -576,13 +608,16 @@ const ControlOperativo = () => {
                         )}
                     </div>
 
-                    {/* Sidebar Widgets */}
-                    <div className="lg:col-span-5 xl:col-span-4 space-y-6 animate-apple-in" style={{ animationDelay: '0.3s' }}>
+                    {/* Sidebar Widgets - Oculto en móvil, visible en desktop */}
+                    <div className="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-6 animate-apple-in" style={{ animationDelay: '0.3s' }}>
 
-                        <div className="apple-glass rounded-[2.5rem] p-8 border border-[var(--apple-border)] relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-[var(--apple-primary)]/5 rounded-full -translate-y-12 translate-x-12 blur-3xl group-hover:bg-[var(--apple-primary)]/10 transition-colors duration-700"></div>
+                        <div className="apple-glass rounded-[2rem] p-5 border border-[var(--apple-border)] relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--apple-primary)]/5 rounded-full -translate-y-10 translate-x-10 blur-3xl group-hover:bg-[var(--apple-primary)]/10 transition-colors duration-700"></div>
 
-                            <h4 className="text-xs font-black text-[var(--apple-text-sub)] tracking-[0.2em] uppercase mb-8">Agenda SIGAFI Hoy</h4>
+                            <div className="flex items-center justify-between mb-4">
+                                <h4 className="text-[10px] font-black text-[var(--apple-text-sub)] tracking-[0.2em] uppercase">Agenda SIGAFI Hoy</h4>
+                                <span className="text-[9px] font-black text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendadosHoy.length} pendientes</span>
+                            </div>
 
                             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                                 {agendadosHoy.length > 0 ? (
@@ -622,6 +657,73 @@ const ControlOperativo = () => {
                     </div>
                 </div>
             </div>
+
+            {/* === MOBILE AGENDA DRAWER === */}
+            {/* Botón flotante para abrir en móvil */}
+            {activeTab === 'salida' && (
+                <button
+                    onClick={() => setShowAgendaDrawer(true)}
+                    className="lg:hidden fixed bottom-20 right-4 z-50 flex items-center gap-2 bg-[var(--istpet-navy)] text-white px-5 py-3 rounded-full shadow-2xl shadow-navy-900/30 text-[10px] font-black uppercase tracking-widest animate-apple-in"
+                >
+                    <svg className="h-4 w-4 text-[var(--istpet-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    Agenda
+                    {agendadosHoy.length > 0 && (
+                        <span className="bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-full px-1.5 py-0.5 text-[8px] font-black">
+                            {agendadosHoy.length}
+                        </span>
+                    )}
+                </button>
+            )}
+
+            {/* Drawer de Agenda - Móvil */}
+            {showAgendaDrawer && (
+                <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end animate-apple-in">
+                    {/* Overlay */}
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAgendaDrawer(false)} />
+
+                    {/* Panel */}
+                    <div className="relative bg-[var(--apple-bg)] rounded-t-[2rem] p-5 max-h-[75vh] flex flex-col shadow-2xl border-t border-[var(--apple-border)]">
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-tight">Agenda SIGAFI Hoy</h3>
+                                <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest opacity-60">{agendadosHoy.length} programados</p>
+                            </div>
+                            <button onClick={() => setShowAgendaDrawer(false)} className="p-2 rounded-xl bg-[var(--apple-border)]/30 text-[var(--apple-text-sub)]">
+                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+                        <div className="overflow-y-auto flex-1 space-y-2 custom-scrollbar pr-1">
+                            {agendadosHoy.length > 0 ? agendadosHoy.map(ag => (
+                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-3 rounded-2xl border border-[var(--apple-border)] flex items-center justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[11px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.alumnoNombre || ag.cedulaAlumno}</p>
+                                        <div className="flex items-center gap-2 mt-0.5">
+                                            <span className="text-[9px] font-black text-[var(--apple-primary)]">{ag.horaSalida?.substring(0, 5)}</span>
+                                            <span className="text-[8px] font-bold text-[var(--apple-text-sub)] uppercase">{ag.vehiculoDetalle}</span>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            setSalidaCedula(ag.cedulaAlumno);
+                                            setShowAgendaDrawer(false);
+                                            showNotification('Cédula cargada al despacho');
+                                        }}
+                                        className="shrink-0 px-3 py-1.5 bg-[var(--apple-primary)] text-white rounded-xl text-[8px] font-black uppercase tracking-widest"
+                                    >
+                                        Cargar
+                                    </button>
+                                </div>
+                            )) : (
+                                <div className="py-10 text-center opacity-40">
+                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">Sin agendas hoy</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </Layout>
     );
 };

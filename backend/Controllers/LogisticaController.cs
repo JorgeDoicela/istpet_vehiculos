@@ -48,12 +48,10 @@ namespace backend.Controllers
 
             if (localStudent != null)
             {
-                // --- DETECCION DE PRACTICA PROGRAMADA (PROACTIVO) ---
-                var scheduledLocal = await _centralProvider.GetScheduledPracticeAsync(cedula);
-                localStudent.IdPracticaCentral = scheduledLocal?.IdPractica;
-                localStudent.PracticaVehiculo = scheduledLocal?.VehiculoDetalle;
-                localStudent.PracticaInstructor = scheduledLocal?.ProfesorNombre;
-                localStudent.PracticaHora = scheduledLocal?.HoraSalida?.ToString(@"hh\:mm");
+                // --- DETECCION DE DISPONIBILIDAD (SISTEMA LOCAL) ---
+                localStudent.IsBusy = await _context.RegistrosSalida
+                    .AnyAsync(s => s.IdMatricula == localStudent.IdMatricula 
+                               && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Alumno localizado (Local)."));
             }
@@ -164,11 +162,10 @@ namespace backend.Controllers
                     Periodo = centralData.Periodo ?? "2026-I",
                     IdMatricula = nuevaMatricula.Id_Matricula,
                     FotoBase64 = centralData.FotoBase64,
-                    // Datos de práctica si existen
-                    IdPracticaCentral = scheduled?.IdPractica,
-                    PracticaVehiculo = scheduled?.VehiculoDetalle,
-                    PracticaInstructor = scheduled?.ProfesorNombre,
-                    PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm")
+                    // Datos de disponibilidad
+                    IsBusy = await _context.RegistrosSalida
+                        .AnyAsync(s => s.IdMatricula == nuevaMatricula.Id_Matricula 
+                                   && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
                 }, "Sincronizado: Alumno localizado mediante el Puente Híbrido Universal."));
             }
             catch (Exception ex)
@@ -181,11 +178,12 @@ namespace backend.Controllers
         [HttpGet("vehiculos-disponibles")]
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoLogisticaResponse>>>> GetVehiculosDisponibles()
         {
-            // Filtramos vehículos operativos y QUE NO ESTÉN EN PISTA (no tengan salida activa)
+            // Filtramos vehículos operativos y QUE NO ESTÉN EN PISTA (no tengan salida activa sin llegada)
             var query = await (from v in _context.Vehiculos
                                join i in _context.Instructores on v.IdInstructorFijo equals i.Id_Instructor
                                where v.EstadoMecanico == "OPERATIVO" && v.Activo
-                               && !_context.ClasesActivas.Any(ca => ca.Id_Vehiculo == v.Id_Vehiculo)
+                               && !_context.RegistrosSalida.Any(s => s.IdVehiculo == v.Id_Vehiculo 
+                                  && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
                                select new VehiculoLogisticaResponse
                                {
                                    IdVehiculo = v.Id_Vehiculo,
@@ -202,8 +200,10 @@ namespace backend.Controllers
         [HttpGet("instructores")]
         public async Task<ActionResult<ApiResponse<IEnumerable<InstructorLogisticaResponse>>>> GetInstructores()
         {
+            // Filtramos instructores activos Y QUE NO ESTÉN EN PISTA
             var query = await _context.Instructores
-                .Where(i => i.Activo)
+                .Where(i => i.Activo && !_context.RegistrosSalida.Any(s => s.IdInstructor == i.Id_Instructor 
+                           && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro)))
                 .Select(i => new InstructorLogisticaResponse
                 {
                     Id_Instructor = i.Id_Instructor,
@@ -283,7 +283,10 @@ namespace backend.Controllers
                 .Select(e => new {
                     Cedula = e.Cedula,
                     NombreCompleto = $"{e.Apellidos} {e.Nombres}".ToUpper(),
-                    // Intentamos obtener la carrera de su matrícula más reciente
+                    IsBusy = _context.RegistrosSalida.Any(s => s.IdMatricula == _context.Matriculas
+                        .Where(m => m.CedulaEstudiante == e.Cedula && m.Estado == "ACTIVO")
+                        .Select(m => m.Id_Matricula).FirstOrDefault()
+                        && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro)),
                     Carrera = _context.Matriculas
                         .Where(m => m.CedulaEstudiante == e.Cedula)
                         .Join(_context.Cursos, m => m.IdCurso, c => c.Id_Curso, (m, c) => c.Nombre)

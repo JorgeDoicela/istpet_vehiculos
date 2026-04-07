@@ -72,7 +72,8 @@
 
   /* Tarjetas Apple Widget */
   .apple-card {
-    @apply rounded-[2.5rem] apple-glass p-8 transition-all duration-700 hover:shadow-2xl hover:scale-[1.01];
+    @apply rounded-[2rem] apple-glass p-6 lg:p-8 transition-all duration-700 hover:shadow-[0_20px_50px_rgba(26,37,68,0.08)];
+    box-shadow: 0 10px 30px rgba(26, 37, 68, 0.04), 0 4px 10px rgba(26, 37, 68, 0.02);
   }
 
   /* Esqueletos de Carga Gestión Conducción */

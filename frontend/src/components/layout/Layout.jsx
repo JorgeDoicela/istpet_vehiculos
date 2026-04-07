@@ -13,21 +13,21 @@ const Layout = ({ children }) => {
             {/* Área de Contenido Principal */}
             <main className="flex-1 lg:ml-80 transition-all duration-700">
                 {/* Header Fijo Zenith 2026 */}
-                <header className="fixed top-0 left-0 lg:left-80 right-0 z-40 bg-[var(--apple-bg)]/80 backdrop-blur-2xl border-b border-[var(--apple-border)] px-4 lg:px-6 py-3 lg:py-6 flex items-center justify-between transition-all duration-500 animate-apple-in">
-                    <div className="flex items-center gap-3 lg:gap-5 hover:opacity-90 transition-all cursor-pointer">
+                <header className="fixed top-0 left-0 lg:left-80 right-0 z-40 bg-[var(--apple-bg)]/80 backdrop-blur-2xl border-b border-[var(--apple-border)] px-4 lg:px-6 py-2 lg:py-4 flex items-center justify-between transition-all duration-500 animate-apple-in">
+                    <div className="flex items-center gap-2 lg:gap-5 hover:opacity-90 transition-all cursor-pointer">
                         <img
                             src={logoImg}
                             alt="Logo ISTPET"
                             className={`
-                                    w-14 h-14 lg:w-24 lg:h-24 object-contain transition-all duration-700 hover:scale-105 active:scale-95
+                                    w-9 h-9 lg:w-16 lg:h-16 object-contain transition-all duration-700 hover:scale-105 active:scale-95
                                     ${theme === 'light' ? 'brightness-0 contrast-200 opacity-90' : 'drop-shadow-[0_4px_20px_rgba(255,255,255,0.15)]'}
                                 `}
                         />
                         <div className="flex flex-col">
-                            <h2 className="text-xs lg:text-xl font-black tracking-[0.2em] text-[var(--apple-text-main)] leading-none mb-1 uppercase drop-shadow-sm">
+                            <h2 className="text-[10px] lg:text-base font-black tracking-[0.15em] text-[var(--apple-text-main)] leading-none mb-0.5 uppercase drop-shadow-sm">
                                 Gestión Conducción
                             </h2>
-                            <span className="text-xs lg:text-xl font-black tracking-tighter text-[var(--istpet-gold)] leading-none uppercase">
+                            <span className="text-[10px] lg:text-base font-black tracking-tighter text-[var(--istpet-gold)] leading-none uppercase">
                                 ISTPET
                             </span>
                         </div>
@@ -75,7 +75,7 @@ const Layout = ({ children }) => {
                     </div>
                 </header>
 
-                <div className="p-4 lg:p-12 pt-24 lg:pt-36">
+                <div className="p-3 lg:p-12 pt-16 lg:pt-28">
                     {children}
                 </div>
             </main>
