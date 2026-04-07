@@ -11,10 +11,10 @@ namespace backend.DTOs
         public T? Data { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public static ApiResponse<T> Ok(T data, string message = "Operación exitosa") 
+        public static ApiResponse<T> Ok(T data, string message = "Operación exitosa")
             => new ApiResponse<T> { Success = true, Data = data, Message = message };
 
-        public static ApiResponse<T> Fail(string message) 
+        public static ApiResponse<T> Fail(string message)
             => new ApiResponse<T> { Success = false, Message = message };
     }
 }

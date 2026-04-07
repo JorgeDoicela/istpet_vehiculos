@@ -24,7 +24,7 @@ namespace backend.Controllers
         [HttpGet("clases-activas")]
         public async Task<ActionResult<ApiResponse<IEnumerable<ClaseActiva>>>> GetClasesActivas()
         {
-            try 
+            try
             {
                 var clases = await _context.ClasesActivas.ToListAsync();
                 return Ok(ApiResponse<IEnumerable<ClaseActiva>>.Ok(clases));
@@ -38,7 +38,7 @@ namespace backend.Controllers
         [HttpGet("alertas-mantenimiento")]
         public async Task<ActionResult<ApiResponse<IEnumerable<AlertaMantenimiento>>>> GetAlertasMantenimiento()
         {
-            try 
+            try
             {
                 var alertas = await _context.AlertasMantenimiento.ToListAsync();
                 return Ok(ApiResponse<IEnumerable<AlertaMantenimiento>>.Ok(alertas));

@@ -22,8 +22,8 @@ FROM ext_profesores;
 INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
 SELECT
     v.IdVehiculo,
-    v.NumeroVehiculo,
-    v.Placa,
+    v.numero_vehiculo,
+    v.placa,
     v.Marca,
     v.Modelo,
     CASE
@@ -60,7 +60,7 @@ SELECT
     email,
     1
 FROM ext_alumnos
-WHERE idAlumno IN (SELECT idalumno FROM ext_cond_alumnos_practicas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR));
+WHERE idAlumno IN (SELECT idAlumno FROM ext_cond_alumnos_practicas WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR));
 
 INSERT IGNORE INTO matriculas (id_matricula, cedula_estudiante, id_curso, fecha_matricula, horas_completadas, estado)
 SELECT
@@ -85,8 +85,8 @@ SELECT
     CONCAT('IMPORTADO SIGAFI - User:', p.user_asigna),
     1
 FROM ext_cond_alumnos_practicas p
-JOIN matriculas m ON p.idalumno = m.cedula_estudiante
-JOIN vehiculos v ON p.idvehiculo = v.id_vehiculo
+JOIN matriculas m ON p.idAlumno = m.cedula_estudiante
+JOIN vehiculos v ON p.idVehiculo = v.id_vehiculo
 JOIN instructores ins ON p.idProfesor = ins.cedula
 WHERE p.fecha >= DATE_SUB(CURDATE(), INTERVAL 3 YEAR);
 

@@ -32,15 +32,15 @@ namespace backend.Services.Implementations
                 // 2. Validar que el vehículo no esté ya en uso (sin llegada registrada)
                 var vehiculoOcupado = await _context.RegistrosSalida
                     .AnyAsync(s => s.IdVehiculo == idVehiculo && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
-                
-                if (vehiculoOcupado) 
+
+                if (vehiculoOcupado)
                     return "VEHICULO_EN_USO";
 
                 // 3. Validar que el instructor no esté ocupado (sin llegada registrada)
                 var instructorOcupado = await _context.RegistrosSalida
                     .AnyAsync(s => s.IdInstructor == idInstructor && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
-                
-                if (instructorOcupado) 
+
+                if (instructorOcupado)
                     return "INSTRUCTOR_OCUPADO";
 
                 // 4. Validar que el estudiante no esté ya en pista
@@ -49,7 +49,7 @@ namespace backend.Services.Implementations
                     .Where(s => s.IdMatricula == idMatricula && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
                     .AnyAsync();
 
-                if (estudianteOcupado) 
+                if (estudianteOcupado)
                     return "ESTUDIANTE_EN_PISTA";
 
                 // 5. Registrar salida
@@ -83,12 +83,12 @@ namespace backend.Services.Implementations
             {
                 // 1. Obtener registro de salida
                 var salida = await _context.RegistrosSalida.FindAsync(idRegistro);
-                if (salida == null) 
+                if (salida == null)
                     return "ERROR: Registro de salida no encontrado.";
 
                 // 2. Validar que no tenga llegada ya
                 var tieneLlegada = await _context.RegistrosLlegada.AnyAsync(l => l.IdRegistro == idRegistro);
-                if (tieneLlegada) 
+                if (tieneLlegada)
                     return "ERROR: Este registro ya fue cerrado.";
 
                 // 3. Registrar Llegada
@@ -99,7 +99,7 @@ namespace backend.Services.Implementations
                     ObservacionesLlegada = observaciones,
                     RegistradoPor = registradoPor
                 };
-                
+
                 _context.RegistrosLlegada.Add(llegada);
 
                 // 6. Actualizar Horas Completadas del Estudiante (Matrícula)

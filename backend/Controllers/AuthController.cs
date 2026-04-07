@@ -32,17 +32,17 @@ namespace backend.Controllers
             bool isValid = false;
 
             // --- PUENTE HÍBRIDO DE SEGURIDAD (Zenith Auth Bridge) ---
-            
+
             // 1. Detección de Hash Legacy (SIGAFI BCrypt)
             if (user.PasswordHash.StartsWith("$2a$") || user.PasswordHash.StartsWith("$2b$"))
             {
-                try 
+                try
                 {
                     isValid = BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash);
                 }
                 catch { isValid = false; }
             }
-            else 
+            else
             {
                 // 2. Validación de Hash Moderno (SHA-256 Hex)
                 // Usado para registros nuevos o el admin inicial del SQL_SCHEMA

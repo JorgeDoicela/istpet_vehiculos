@@ -22,7 +22,7 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoDto>>>> Get()
         {
             var vehiculos = await _vehiculoService.GetVehiculosAsync();
-            
+
             // 🤖 AUTOMÁTICO: Conversión mágica de colecciones
             var dtoList = _mapper.Map<IEnumerable<VehiculoDto>>(vehiculos);
 

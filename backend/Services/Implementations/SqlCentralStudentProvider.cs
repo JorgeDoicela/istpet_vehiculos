@@ -21,7 +21,7 @@ namespace backend.Services.Implementations
             // Si CentralDbName es "" (especialmente en Render/Vercel), usamos prefijo "ext_"
             // Si CentralDbName tiene valor, lo usamos como esquema: "dbName."
             string dbName = (configuration["CentralDbName"] ?? "sigafi_es").Replace("\"", "").Trim();
-            
+
             if (string.IsNullOrWhiteSpace(dbName)) {
                 TABLE_PREFIX = "ext_";
             } else {
@@ -158,18 +158,18 @@ namespace backend.Services.Implementations
                 string sql = $@"
                     SELECT
                         p.idPractica AS IdPractica,
-                        p.idalumno AS CedulaAlumno,
-                        p.idvehiculo AS IdVehiculo,
+                        p.idAlumno AS CedulaAlumno,
+                        p.idVehiculo AS IdVehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {TABLE_PREFIX}cond_alumnos_practicas p
-                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idAlumno
+                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.idalumno = @p0 
+                    WHERE p.idAlumno = @p0
                     AND p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
                     ORDER BY p.hora_salida ASC
                     LIMIT 1";
@@ -194,16 +194,16 @@ namespace backend.Services.Implementations
                 string sql = $@"
                     SELECT
                         p.idPractica AS IdPractica,
-                        p.idalumno AS CedulaAlumno,
-                        p.idvehiculo AS IdVehiculo,
+                        p.idAlumno AS CedulaAlumno,
+                        p.idVehiculo AS IdVehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {TABLE_PREFIX}cond_alumnos_practicas p
-                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idalumno
-                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idAlumno
+                    JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
                     ORDER BY p.hora_salida ASC";

@@ -32,14 +32,14 @@ CREATE TABLE IF NOT EXISTS ext_cursos (
 );
 
 CREATE TABLE IF NOT EXISTS ext_vehiculos (
-    IdVehiculo INT PRIMARY KEY,
-    NumeroVehiculo INT, Placa VARCHAR(15), Marca VARCHAR(50), Modelo VARCHAR(50), IdTipoVehiculo INT, Estado INT DEFAULT 0
+    idVehiculo INT PRIMARY KEY,
+    numero_vehiculo INT, placa VARCHAR(15), Marca VARCHAR(50), Modelo VARCHAR(50), IdTipoVehiculo INT, Estado INT DEFAULT 0
 );
 
 -- 2. ESTRUCTURA LOGÍSTICA (COND con prefijo ext_)
 CREATE TABLE IF NOT EXISTS ext_cond_alumnos_practicas (
     idPractica INT PRIMARY KEY AUTO_INCREMENT,
-    idalumno VARCHAR(15), idvehiculo INT, idProfesor VARCHAR(15),
+    idAlumno VARCHAR(15), idVehiculo INT, idProfesor VARCHAR(15),
     fecha DATE, hora_salida TIME, hora_llegada TIME, cancelado INT DEFAULT 0, user_asigna VARCHAR(20), user_llegada VARCHAR(20)
 );
 
@@ -95,7 +95,7 @@ INSERT IGNORE INTO ext_matriculas (idAlumno, idPeriodo, idNivel, idSeccion, fech
 ('1750000002', 2, 102, 1, CURDATE(), 'A');
 
 -- Agenda de HOY (Detección automática con MAX(fecha) en el backend)
-INSERT IGNORE INTO ext_cond_alumnos_practicas (idalumno, idvehiculo, idProfesor, fecha, hora_salida, user_asigna)
+INSERT IGNORE INTO ext_cond_alumnos_practicas (idAlumno, idVehiculo, idProfesor, fecha, hora_salida, user_asigna)
 VALUES
 ('1725555377', 35, '1712345678', CURDATE(), '08:00:00', 'ADMIN'),
 ('1750000001', 36, '1700000001', CURDATE(), '09:00:00', 'ADMIN'),

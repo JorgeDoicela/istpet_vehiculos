@@ -33,10 +33,10 @@ namespace backend.Services.Implementations
         public async Task<SyncLog> SyncInstructorsAsync()
         {
             _logger.LogInformation("Iniciando Sincronización Automática de Instructores (SIGAFI)...");
-            
-            var log = new SyncLog 
-            { 
-                Modulo = "Instructores", 
+
+            var log = new SyncLog
+            {
+                Modulo = "Instructores",
                 Origen = "SIGAFI_SQL_BRIDGE",
                 Fecha = DateTime.Now,
                 RegistrosProcesados = 0,
@@ -52,7 +52,7 @@ namespace backend.Services.Implementations
                     try
                     {
                         var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == ci.Cedula);
-                        
+
                         if (existing == null)
                         {
                             _context.Instructores.Add(new Instructor
@@ -107,10 +107,10 @@ namespace backend.Services.Implementations
         public async Task<SyncLog> SyncExternalStudentsAsync(List<JsonElement> externalData)
         {
             _logger.LogInformation("Iniciando Ingesta Protegida de Datos...");
-            
-            var log = new SyncLog 
-            { 
-                Modulo = "Estudiantes", 
+
+            var log = new SyncLog
+            {
+                Modulo = "Estudiantes",
                 Origen = "DYNAMIC_JSON_API",
                 RegistrosProcesados = 0,
                 RegistrosFallidos = 0
@@ -170,10 +170,10 @@ namespace backend.Services.Implementations
             }
 
             await _context.SaveChangesAsync();
-            
+
             log.Estado = log.RegistrosFallidos > 0 ? "ADVERTENCIA" : "OK";
             log.Mensaje = $"Proceso finalizado. Éxito: {log.RegistrosProcesados}, Fallidos: {log.RegistrosFallidos}";
-            
+
             _context.SyncLogs.Add(log);
             await _context.SaveChangesAsync();
 

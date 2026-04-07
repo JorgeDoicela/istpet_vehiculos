@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: zenith_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: zenith_root_2026
+      MYSQL_DATABASE: istpet_vehiculos
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./docs/Scripts:/docker-entrypoint-initdb.d
+      - db_data:/var/lib/mysql
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: zenith_backend
+    restart: always
+    depends_on:
+      - db
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_HTTP_PORTS=8080
+      - "ConnectionStrings__DefaultConnection=Server=${DATABASE_SERVER};Port=${DATABASE_PORT};Database=${DATABASE_NAME};Uid=${DATABASE_USER};Pwd=${DATABASE_PASS};"
+      - "ConnectionStrings__CentralDbName=${CENTRAL_DB_NAME}"
+    ports:
+      - "5112:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=http://localhost:5112
+    container_name: zenith_frontend
+    restart: always
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    environment:
+      - VITE_API_URL=http://localhost:5112
+
+volumes:
+  db_data:

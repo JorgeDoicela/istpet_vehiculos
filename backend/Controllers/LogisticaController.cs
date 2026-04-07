@@ -56,7 +56,7 @@ namespace backend.Controllers
                 // --- DETECCION DE INSTRUCTOR / PRÁCTICA (Cerebro de Sugerencia) ---
                 var scheduled = await _centralProvider.GetScheduledPracticeAsync(localStudent.Cedula);
                 CentralInstructorDto? tutor = null;
-                if (scheduled == null) 
+                if (scheduled == null)
                     tutor = await _centralProvider.GetAssignedTutorAsync(localStudent.Cedula);
 
                 string? profCedula = (scheduled?.CedulaProfesor ?? tutor?.Cedula)?.Trim();
@@ -65,8 +65,8 @@ namespace backend.Controllers
                     var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == profCedula);
                     if (localProf == null)
                     {
-                        var cp = scheduled != null 
-                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" } 
+                        var cp = scheduled != null
+                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" }
                             : tutor;
 
                         if (cp != null)
@@ -94,7 +94,7 @@ namespace backend.Controllers
 
                 // --- DETECCION DE DISPONIBILIDAD (SISTEMA LOCAL) ---
                 localStudent.IsBusy = await _context.RegistrosSalida
-                    .AnyAsync(s => s.IdMatricula == localStudent.IdMatricula 
+                    .AnyAsync(s => s.IdMatricula == localStudent.IdMatricula
                                && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Alumno localizado (Local)."));
@@ -108,10 +108,10 @@ namespace backend.Controllers
             }
 
             // 3. AUTO-REGISTRO Y MATRÍCULA (PUENTE HÍBRIDO UNIVERSAL)
-            try 
+            try
             {
                 // -- LÓGICA DE PRIORIDAD (DATOS LIMPIOS > SMART PARSING) --
-                
+
                 string finalNombres = "S/N";
                 string finalApellidos = "S/N";
                 string finalParalelo = "A";
@@ -162,11 +162,11 @@ namespace backend.Controllers
                 var eBase = await _context.Estudiantes.FindAsync(centralData.Cedula);
                 if (eBase == null)
                 {
-                    eBase = new backend.Models.Estudiante 
-                    { 
-                        Cedula = centralData.Cedula, 
-                        Nombres = finalNombres.ToUpper(), 
-                        Apellidos = finalApellidos.ToUpper() 
+                    eBase = new backend.Models.Estudiante
+                    {
+                        Cedula = centralData.Cedula,
+                        Nombres = finalNombres.ToUpper(),
+                        Apellidos = finalApellidos.ToUpper()
                     };
                     _context.Estudiantes.Add(eBase);
                 }
@@ -175,7 +175,7 @@ namespace backend.Controllers
                 var cursoLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.IdTipoLicencia == 1 && c.Estado == "ACTIVO")
                                  ?? await _context.Cursos.FirstOrDefaultAsync(c => c.Estado == "ACTIVO");
 
-                if (cursoLocal == null) 
+                if (cursoLocal == null)
                     return BadRequest(ApiResponse<EstudianteLogisticaResponse>.Fail("Central: No hay cursos locales activos para automatizar el ingreso."));
 
                 var nuevaMatricula = new backend.Models.Matricula
@@ -186,15 +186,15 @@ namespace backend.Controllers
                     Estado = "ACTIVO"
                 };
                 _context.Matriculas.Add(nuevaMatricula);
-                
+
                 if (cursoLocal.CuposDisponibles > 0) cursoLocal.CuposDisponibles -= 1;
 
                 await _context.SaveChangesAsync();
-                
+
                 // --- DETECCION DE INSTRUCTOR / PRÁCTICA (Cerebro de Sugerencia) ---
                 var scheduled = await _centralProvider.GetScheduledPracticeAsync(eBase.Cedula);
                 CentralInstructorDto? tutor = null;
-                if (scheduled == null) 
+                if (scheduled == null)
                     tutor = await _centralProvider.GetAssignedTutorAsync(eBase.Cedula);
 
                 // Mapeo a Instructor Local (Auto-Sincronización)
@@ -207,8 +207,8 @@ namespace backend.Controllers
                     var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == profCedula);
                     if (localProf == null)
                     {
-                        var cp = scheduled != null 
-                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" } 
+                        var cp = scheduled != null
+                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" }
                             : tutor;
 
                         if (cp != null)
@@ -250,7 +250,7 @@ namespace backend.Controllers
                     PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm"),
                     // Disponibilidad
                     IsBusy = await _context.RegistrosSalida
-                        .AnyAsync(s => s.IdMatricula == nuevaMatricula.Id_Matricula 
+                        .AnyAsync(s => s.IdMatricula == nuevaMatricula.Id_Matricula
                                    && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
                 }, "Sincronizado: Alumno localizado mediante el Puente Híbrido Universal."));
             }
@@ -268,7 +268,7 @@ namespace backend.Controllers
             var query = await (from v in _context.Vehiculos
                                join i in _context.Instructores on v.IdInstructorFijo equals i.Id_Instructor
                                where v.EstadoMecanico == "OPERATIVO" && v.Activo
-                               && !_context.RegistrosSalida.Any(s => s.IdVehiculo == v.Id_Vehiculo 
+                               && !_context.RegistrosSalida.Any(s => s.IdVehiculo == v.Id_Vehiculo
                                   && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
                                select new VehiculoLogisticaResponse
                                {
@@ -299,7 +299,7 @@ namespace backend.Controllers
 
             // Filtramos instructores activos Y QUE NO ESTÉN EN PISTA
             var query = await _context.Instructores
-                .Where(i => i.Activo && !_context.RegistrosSalida.Any(s => s.IdInstructor == i.Id_Instructor 
+                .Where(i => i.Activo && !_context.RegistrosSalida.Any(s => s.IdInstructor == i.Id_Instructor
                            && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro)))
                 .Select(i => new InstructorLogisticaResponse
                 {
@@ -374,7 +374,7 @@ namespace backend.Controllers
                 return Ok(ApiResponse<IEnumerable<dynamic>>.Ok(new List<dynamic>()));
 
             var term = query.ToUpper();
-            
+
             var sugerencias = await _context.Estudiantes
                 .Where(e => e.Cedula.StartsWith(term) || e.Apellidos.Contains(term) || e.Nombres.Contains(term))
                 .Select(e => new {
