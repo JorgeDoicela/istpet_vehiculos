@@ -1,45 +1,128 @@
-# Búnker de Datos e Integridad ISTPET
+# Seguridad y Protección de Datos — ISTPET
 
-Este documento describe la capa de protección diseñada para recibir, filtrar y sanitizar datos provenientes de fuentes externas inciertas.
+## Modelo de Seguridad
 
-## Flujo de Seguridad de Datos
-```mermaid
-graph TD
-    A[Fuente de Datos Externa] --> B{Mapeo de Campos}
-    B -- Desconocido --> C[Registro Descartado]
-    B -- Mapeado --> D[Aduana Digital de Validación]
-    D -- Cédula/Email Inválido --> E[Registro Rechazado]
-    D -- Datos Íntegros --> F[Sanitización y Limpieza]
-    E --> G[Log de Auditoría de Error]
-    F --> H[Persistencia en MySQL (11 Tablas)]
-    H --> I[Log de Auditoría de Éxito]
+El sistema implementa tres capas de protección independientes:
+
+```
+[Capa 1: Autenticación Híbrida]  →  [Capa 2: Middleware de Errores]  →  [Capa 3: Data Shield]
+     AuthController                   ErrorHandlingMiddleware              DataValidator + DataSyncService
 ```
 
-## Propósito
-El objetivo es permitir que el sistema ISTPET "beba" información de otras bases de datos o servicios (APIs) sin poner en riesgo la integridad de las 11 tablas locales ni la estabilidad del servidor.
+---
 
-## Componentes del Escudo
+## Capa 1: Autenticación — Puente Híbrido de Seguridad
 
-### 1. La "Aduana Digital" (DataValidator)
-Cada registro extranjero debe pasar por una inspección rigurosa antes de ser procesado:
-- **Validación de Cédula**: Se rechazan registros con cédula mal formada o vacía.
-- **Limpieza de Nombres**: Se eliminan caracteres especiales e intentos de inyección de datos de texto.
-- **Validación de Formato**: Verificación sintáctica de correos electrónicos y otros campos clave.
+El sistema debe coexistir con usuarios provenientes del sistema SIGAFI (que usan contraseñas hasheadas con **BCrypt**) y usuarios nativos nuevos (que usan **SHA-256**). El `AuthController` detecta automáticamente el algoritmo correcto.
 
-### 2. Mapeo Adaptable (SyncMapping)
-En lugar de depender de campos fijos, el sistema usa un adaptador:
-- Si la fuente externa cambia el nombre de `email` a `correo_univ`, el adaptador lo traduce al campo `Email` de ISTPET de forma aislada.
-- **Protección de Esquema**: Impide que el sistema intente insertar columnas inexistentes, protegiendo el script SQL original.
+```mermaid
+flowchart TD
+    A["POST /api/auth/login"] --> B{¿Usuario existe y activo?}
+    B -- No --> C["401: Usuario no encontrado"]
+    B -- Sí --> D{¿Hash empieza con '$2a$' o '$2b$'?}
+    D -- Sí --> E["Verificar con BCrypt.Verify()"]
+    D -- No --> F["Calcular SHA-256 del password\ny comparar"]
+    E --> G{¿Válido?}
+    F --> G
+    G -- No --> H["401: Contraseña incorrecta"]
+    G -- Sí --> I["200 OK: {idUsuario, usuario, nombre, rol}"]
+```
 
-### 3. Bitácora de Auditoría (SyncLogs)
-Cada intento de sincronización queda registrado para trazabilidad:
-- **RegistrosProcesados**: Cantidad de datos guardados exitosamente.
-- **RegistrosFallidos**: Cantidad de datos rechazados por no cumplir el estándar de calidad.
-- **Bitácora de Errores**: Explicación técnica de por qué un registro fue rechazado por la aduana.
+### Hash SHA-256 (Usuarios Nativos)
+```sql
+-- Así se crea el hash en el SQL inicial:
+INSERT INTO usuarios (usuario, password_hash, ...)
+VALUES ('admin_istpet', SHA2('istpet2026', 256), ...);
+```
 
-## Seguridad en la API
-- **Global Exception Handling**: Evita que se filtren rutas internas o detalles técnicos de .NET al exterior en caso de fallo, devolviendo siempre un `ApiResponse` controlado.
-- **CORS Restricted (Ready)**: Configurado para permitir solo los orígenes autorizados del frontend.
+### Hash BCrypt (Usuarios Migrados de SIGAFI)
+Los usuarios con contraseñas almacenadas como BCrypt en SIGAFI pueden autenticarse directamente sin necesidad de restablecer su contraseña. El sistema detecta el hash por su prefijo `$2a$` o `$2b$`.
 
-## Estado de Seguridad
-- **Vulnerabilidades**: Los paquetes NuGet han sido auditados y el sistema utiliza versiones estables con supresión de advertencias falsas de auditoría (`NoWarn: NU1903`).
+> **Nota:** El sistema actual no implementa JWT ni sesiones. La autenticación retorna los datos del usuario para gestión en el frontend. En el Roadmap se contempla la implementación de JWT Bearer Tokens.
+
+---
+
+## Capa 2: Middleware Global de Errores
+
+`ErrorHandlingMiddleware.cs` actúa como el último recurso ante cualquier excepción no controlada. Garantiza que el cliente nunca reciba:
+- Mensajes de error de .NET crudos (stack traces)
+- Información del servidor o de la base de datos
+
+**Toda excepción no capturada resulta en:**
+```json
+{
+  "success": false,
+  "message": "Error interno del servidor. Consulte soporte técnico.",
+  "data": null
+}
+```
+
+El error real se registra en los logs del servidor (`ILogger`) sin exponerlo al cliente.
+
+---
+
+## Capa 3: Data Shield — Sanitización de Datos Externos
+
+Implementado en `DataValidator.cs` y `DataSyncService.cs`. Protege la base de datos ante la ingesta de datos externos de calidad variable (provenientes de sistemas terceros vía `POST /api/sync/students`).
+
+### Reglas de Validación
+
+| Regla | Implementación | Acción si falla |
+| :--- | :--- | :--- |
+| **Cédula válida** | `Regex: ^\d{10,15}$` | Registro rechazado, `registros_fallidos++` |
+| **Email válido** | `Regex: ^[^@\s]+@[^@\s]+\.[^@\s]+$` | Email guardado como `NULL` (campo opcional) |
+| **Nombre limpio** | `Regex.Replace(name, @"[^a-zA-Z\s]", "")` | Caracteres especiales eliminados antes de persistir |
+
+### Flujo de Ingesta Protegida
+
+```mermaid
+flowchart LR
+    A[JSON Externo] --> B{Validar Cédula}
+    B -- Inválida --> C[Registrar fallo\nContinuar siguiente]
+    B -- Válida --> D[Limpiar nombre\nValidar email]
+    D --> E{¿Ya existe en DB?}
+    E -- Sí --> F[Omitir - No duplicar]
+    E -- No --> G[INSERT en #estudiantes]
+    G --> H[registros_procesados++]
+    C --> I[Guardar SyncLog]
+    F --> I
+    H --> I
+    I --> J["Retornar SyncLog\n{procesados, fallidos, estado}"]
+```
+
+---
+
+## Protección de la BD Central SIGAFI
+
+El acceso a `sigafi_es` es estrictamente de **solo lectura**. El usuario de MySQL configurado solo tiene permisos `SELECT` sobre esa base de datos. Nunca se realizan `INSERT`, `UPDATE` o `DELETE` sobre SIGAFI desde este sistema.
+
+---
+
+## Configuración CORS
+
+En el entorno actual (desarrollo), CORS permite cualquier origen:
+
+```csharp
+policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
+```
+
+> **Para producción:** Restringir a los dominios específicos del frontend.
+
+```csharp
+// Ejemplo para producción:
+policy.WithOrigins("https://istpet.edu.ec")
+      .AllowAnyMethod()
+      .AllowAnyHeader();
+```
+
+---
+
+## Consideraciones de Producción
+
+| Aspecto | Estado Actual | Recomendación |
+| :--- | :--- | :--- |
+| Autenticación | Hash directo (sin sesión) | Implementar JWT Bearer Tokens |
+| Autorización por rol | No implementada en controladores | Implementar `[Authorize(Roles="admin")]` |
+| CORS | `AllowAll` (desarrollo) | Restringir a dominio de producción |
+| HTTPS | No forzado | Habilitar `app.UseHttpsRedirection()` |
+| Contraseña en config | `appsettings.json` en texto plano | Usar variables de entorno o Azure Key Vault |

@@ -1,54 +1,111 @@
-# ISTPET Management System: Estado del Arte 2026
+# Estado del Sistema — ISTPET Logística (2026)
 
-Este documento detalla la arquitectura, las capacidades actuales y la visión futurista del sistema modernizado para la Escuela de Conducción Profesional ISTPET.
-
-## 1. Arquitectura de Blindaje Zenith
-Hemos implementado una infraestructura desacoplada de alto rendimiento:
-
-- **Backend (.NET 8 Enterprise)**:
-    - **Clean Architecture**: Capas separadas para asegurar que la lógica de negocio sea independiente de la base de datos.
-    - **Grand Mapping 2026**: Uso de Fluent API en AppDbContext para mapear de forma explícita propiedades de C# a columnas de MySQL (snake_case), eliminando errores de sincronización.
-    - **Standard Response Layer**: Implementación de ApiResponse, un envoltorio que estandariza todas las salidas del servidor, facilitando la telemetría en el frontend.
-- **Frontend (React 19 + Vite + Tailwind)**:
-    - **Diseño Apple Light 2026**: Estética de vanguardia con Glassmorphism, gradientes de malla y tipografía de precisión.
-    - **Capa de Servicios Resiliente**: Servicios de red con desempaquetado automático de datos y blindaje contra valores nulos o indefinidos.
-
-## 2. Capacidades Implementadas (Hitos Logrados)
-Actualmente, el sistema ya es capaz de:
-
-### A. Gestión de Flota Inteligente
-- **Inventario Maestro**: Control total de vehículos, placas y marcas operativas.
-- **Monitor de Salud Mecánica**: Seguimiento en tiempo real del estado (OPERATIVO, MANTENIMIENTO, FUERA_SERVICIO).
-- **Alertas de Taller**: Sistema de notificación para unidades marcadas en reparación o mantenimiento preventivo manual.
-
-### B. Dashboard de Control Logístico
-- **Monitor En Ruta**: Visualización dinámica de clases activas mediante la vista v_clases_activas, integrando datos de estudiante, instructor, vehículo y hora de salida.
-- **Telemetría de Red**: Logs inyectados en la consola del navegador para diagnóstico inmediato de la salud del sistema.
-
-### C. Ecosistema de Datos (SQL Integrity)
-- **Esquema de 11 Tablas**: Sincronización absoluta entre modelos e identidad de base de datos.
-- **Lógica en Base de Datos**: Triggers para control de cupos y Procedimientos Almacenados (sp_registrar_salida, sp_registrar_llegada) para asegurar la consistencia del flujo operativo.
-- **Tooling de Recuperación**: Existencia de SQL_HEALER y SQL_SEEDER para mantenimiento preventivo y carga de datos de prueba.
-
-## 3. Hoja de Ruta: Próximos Pasos (Visión 2026)
-Basándonos en la solidez actual, el sistema evolucionará en las siguientes fases:
-
-### Fase 1: Seguridad y Acceso (JWT Zenith)
-- **Autenticación**: Implementación de Tokens JWT para proteger los endpoints.
-- **RBAC (Role Based Access Control)**: Definición estricta de permisos para Administradores (acceso total) y Guardias (solo registro de salidas/llegadas).
-
-### Fase 2: Registro de Actividad Operativa
-- **Formularios de Flujo**: Creación de la interfaz para que el guardia registre la salida de vehículos con un solo clic, validando que el instructor y el estudiante estén libres.
-- **Control de Retorno**: Interfaz de llegada con actualización del estado operativo del vehículo y horas prácticas del estudiante.
-
-### Fase 3: Portal Académico
-- **Ficha del Estudiante**: Vista detallada de progreso con barra de porcentaje de horas completadas.
-- **Gestión de Matrículas**: Proceso digital para asignar estudiantes a cursos y tipos de licencia específicos.
-
-### Fase 4: Reportes y Analítica
-- **Generación de PDFs**: Reportes de mantenimiento y certificados de asistencia.
-- **Gráficos de Uso**: Visualización de la eficiencia de la flota y horas pico de entrenamiento.
+**Fecha de corte:** Abril 2026
 
 ---
-> [!IMPORTANT]
-> El sistema ha pasado de ser una aplicación básica a un ecosistema de gestión robusto, estético e indestructible. La base de datos es ahora el espejo exacto del código fuente.
+
+## Estado General del Proyecto
+
+| Área | Estado | Cobertura |
+| :--- | :--- | :--- |
+| Control Operativo (Salida/Llegada) | Funcional | 100% |
+| Puente Híbrido SIGAFI | Funcional | 100% |
+| Dashboard de Monitoreo | Funcional | 80% (sin auto-refresh) |
+| Catálogos (Estudiantes, Vehículos) | Funcional (solo lectura) | 60% (sin CRUD completo) |
+| Autenticación | Parcial | 40% (login sin JWT) |
+| Gestión Administrativa (CRUD) | Pendiente | 10% |
+| Pruebas Unitarias | Pendiente | 0% |
+
+---
+
+## Lo Que Está Implementado
+
+### Backend (.NET 8)
+
+- **7 Controladores REST:** Auth, Dashboard, Estudiantes, Logistica, Sync, TipoLicencia, Vehiculos.
+- **Puente Híbrido Universal:** Búsqueda de estudiantes e instructores con fallback automático a la BD SIGAFI.
+- **Lógica Transaccional:** `SqlLogisticaService` ejecuta validaciones de negocio dentro de transacciones MySQL atómicas.
+- **Autenticación Dual:** Soporta BCrypt (usuarios SIGAFI) y SHA-256 (usuarios nativos) simultáneamente.
+- **Data Shield:** `DataSyncService` con `DataValidator` para ingesta segura de datos externos.
+- **Middleware Global de Errores:** Todo error no controlado devuelve un `ApiResponse` limpio.
+- **AutoMapper:** Perfiles configurados para `Estudiante → EstudianteDto` y `Vehiculo → VehiculoDto`.
+- **Swagger:** Disponible en desarrollo en `/swagger`.
+
+### Base de Datos (MySQL)
+
+- **11 tablas** + **1 tabla de auditoría** (`sync_logs`) = 12 tablas totales.
+- **2 vistas SQL:** `v_clases_activas` y `v_alerta_mantenimiento`.
+- **Integridad referencial completa** con constraints FK en todas las relaciones.
+- **Collation español:** `utf8mb4_spanish_ci` para soporte nativo de tildes.
+- **Script completo de creación:** `docs/Scripts/SQL_SCHEMA.sql`.
+- **Script de simulación SIGAFI:** `docs/Scripts/MOCK_SIGAFI_ES.sql`.
+
+### Frontend (React 19 + Vite)
+
+- **4 páginas:** ControlOperativo, Home (Dashboard), Students, Vehicles.
+- **11 componentes** organizados en `common/`, `features/`, `layout/`, `logistica/`.
+- **Design System personalizado:** Variables CSS (`--apple-*`, `--istpet-*`) con modo claro/oscuro.
+- **Autocompletado predictivo:** Debounce + fusión de resultados locales (SIGAFI) e históricos (BD local).
+- **Detección de agenda:** Si el estudiante tiene práctica hoy en SIGAFI, se muestra y pre-selecciona el vehículo.
+- **Reloj en tiempo real:** Actualización cada segundo para los formularios de salida/llegada.
+- **Servicios Axios modularizados:** Un archivo `.js` por módulo de negocio.
+
+### DevOps (GitHub Actions)
+
+- **2 Pipelines:** Backend CI (build + publish en .NET 8), Frontend CI (npm install + Vite build).
+- **Paths filtrados:** Los pipelines solo corren cuando hay cambios en su área (`backend/**` o `frontend/**`).
+- **Ramas protegidas:** Pipelines activos en `main` y `develop`.
+
+---
+
+## Inventario de Archivos Clave
+
+```
+backend/
+├── Controllers/          7 archivos
+├── DTOs/                 4 archivos (ApiResponse, Auth, Domain, Logistica)
+├── Data/                 AppDbContext.cs (182 líneas, 14 DbSets)
+├── Mappings/             MappingProfile.cs
+├── Middleware/           ErrorHandlingMiddleware.cs
+├── Models/               13 modelos de dominio
+└── Services/
+    ├── Helpers/          DataValidator.cs
+    ├── Interfaces/       4 contratos de servicio
+    └── Implementations/  5 implementaciones
+
+frontend/src/
+├── pages/    4 páginas (ControlOperativo: 627 líneas)
+├── components/ 10+ componentes
+└── services/ 5 clientes Axios
+
+docs/Scripts/
+├── SQL_SCHEMA.sql        Script principal (213 líneas)
+├── SQL_MIGRATION_2026.sql Script de migración
+└── MOCK_SIGAFI_ES.sql    Simulador de BD Central (98 líneas)
+```
+
+---
+
+## Dependencias NuGet Actuales
+
+| Paquete | Versión | Uso |
+| :--- | :--- | :--- |
+| `AutoMapper` | 12.0.1 | Mapeo automático Entity → DTO |
+| `AutoMapper.Extensions.Microsoft.DependencyInjection` | 12.0.1 | Integración DI |
+| `BCrypt.Net-Next` | 4.1.0 | Validación de hashes BCrypt (cuentas SIGAFI) |
+| `Microsoft.AspNetCore.OpenApi` | 8.0.0 | Soporte OpenAPI / Swagger |
+| `Microsoft.EntityFrameworkCore.Design` | 8.0.0 | Herramientas de migraciones |
+| `Microsoft.EntityFrameworkCore.Relational` | 8.0.0 | Soporte SQL relacional |
+| `Pomelo.EntityFrameworkCore.MySql` | 8.0.0 | Provider MySQL para EF Core |
+| `Swashbuckle.AspNetCore` | 8.0.0 | Interfaz Swagger UI |
+
+## Dependencias npm Actuales
+
+| Paquete | Versión | Uso |
+| :--- | :--- | :--- |
+| `react` + `react-dom` | 19.2 | Framework de UI |
+| `react-router-dom` | 7.13 | Routing SPA |
+| `axios` | 1.14 | Cliente HTTP |
+| `vite` | 8.0 | Bundler y dev server |
+| `tailwindcss` | 3.4 | Framework CSS |
+| `@vitejs/plugin-react` | 6.0 | Plugin React para Vite |

@@ -1,23 +1,54 @@
-# Hoja de Ruta ISTPET: Próximos Pasos
+# Hoja de Ruta (Roadmap) — ISTPET Logística
 
-Este documento describe la visión futura y las funcionalidades recomendadas para el escalamiento del sistema de gestión de la escuela de conducción.
+Estado actual del sistema: **Operacional** (Control de salida/llegada, Puente SIGAFI, Dashboard).
 
-## Fase 1: Seguridad Avanzada
-- **Login con JWT**: Implementación de autenticación segura utilizando la tabla `usuarios` del script original.
-- **Roles y Permisos Dinámicos**: Control de acceso a nivel de componente para administradores vs guardias.
-- **Refresh Tokens**: Sesiones persistentes de larga duración.
+---
 
-## Fase 2: Automatización e IA
-- **Integración GPS Real**: Conexión con trackers en los vehículos para actualizar la vista `v_clases_activas` mediante coordenadas reales.
-- **Predicción de Mantenimiento**: Algoritmo que analice la frecuencia de uso para avisar de mantenimientos antes de que se cumpla el kilometraje crítico.
-- **Reportes Inteligentes**: Exportación automática de logs de sincronización a formatos Excel/PDF.
+## Funcionalidades Pendientes
 
-## Fase 3: Ecosistema y Escalabilidad
-- **API Externa de Consulta**: Abrir el "Sync Hub" para que otras instituciones puedan consultar el estado académico de sus alumnos en ISTPET.
-- **Notificaciones Push**: Alertas automáticas al instructor cuando su vehículo asignado requiera mantenimiento.
-- **App Móvil**: Cliente nativo para reporte de salida/llegada directamente desde el vehículo.
+### Prioridad Alta
 
-## Mejoras Técnicas Continuas
-- **Unit Testing**: Incremento de cobertura de pruebas en la capa de servicios.
-- **Dockerization**: Empaquetado del sistema en contenedores para despliegue en cualquier proveedor de nube (AWS, Azure, DigitalOcean).
-- **Caché Distribuida**: Implementación de Redis para acelerar las consultas a las vistas de monitoreo más pesadas.
+| Funcionalidad | Descripción | Módulo |
+| :--- | :--- | :--- |
+| **Autenticación JWT** | Implementar JWT Bearer Tokens para proteger todos los endpoints. Actualmente no hay sesión ni autorización por rol en los controladores. | Backend + Frontend |
+| **Autorización por Rol** | Agregar `[Authorize(Roles="admin")]` a los endpoints de gestión (vehiculos, instructores, cursos). Los guardias solo deberían acceder al Control Operativo. | Backend |
+| **Gestión de Instructores (CRUD)** | La tabla `instructores` tiene CRUD parcial. Falta la UI para agregar, editar y desactivar instructores. | Frontend |
+| **Gestión de Cursos (CRUD)** | Los cursos se pueden agregar solo via SQL directamente. Se necesita una UI administrativa. | Frontend |
+| **Gestión de Vehículos (CRUD)** | Similar a instructores y cursos — solo vista de catálogo, sin edición. | Frontend |
+
+---
+
+### Prioridad Media
+
+| Funcionalidad | Descripción | Módulo |
+| :--- | :--- | :--- |
+| **Registro de Mantenimiento** | La tabla `mantenimientos` existe pero no hay UI ni endpoint para agregar registros. | Backend + Frontend |
+| **Historial por Estudiante** | Vista de todos los registros de salida/llegada de un estudiante con horas acumuladas. | Backend + Frontend |
+| **Historial por Vehículo** | Registro de kilómetros y mantenimientos históricos por unidad. | Backend + Frontend |
+| **Pruebas Unitarias** | Implementar `xUnit` para el backend y reemplazar el `echo` actual en el pipeline CI. | Backend + CI |
+| **HTTPS en Producción** | Habilitar `app.UseHttpsRedirection()` y configurar certificado TLS. | Backend |
+| **Variables de Entorno** | Mover la cadena de conexión de `appsettings.json` a variables de entorno para producción. | Backend |
+
+---
+
+### Prioridad Baja / Visión Futura
+
+| Funcionalidad | Descripción |
+| :--- | :--- |
+| **Reportes de Horas por Período** | Generar reportes PDF/Excel de horas de práctica completadas por estudiante por período. |
+| **Notificaciones en Tiempo Real** | Usar SignalR o WebSockets para que el panel de monitoreo se actualice automáticamente sin necesidad de refrescar. |
+| **App Móvil** | Versión responsiva o PWA para uso desde tablets en la garita. |
+| **Estadísticas de Flota** | Métricas de utilización de vehículos: horas de uso, kilómetros acumulados, frecuencia de mantenimiento. |
+| **Integración GPS** | Rastreo en tiempo real de la posición de los vehículos durante las prácticas. |
+| **Alertas Automáticas de Mantenimiento** | Notificación cuando un vehículo supera un umbral de horas de uso. |
+
+---
+
+## Deuda Técnica Identificada
+
+| Ítem | Descripción |
+| :--- | :--- |
+| **CORS `AllowAll`** | La configuración actual permite cualquier origen. Debe restringirse al dominio de producción antes del despliegue. |
+| **`registradoPor` hardcodeado** | En `logisticaService.js`, el campo `registradoPor` siempre se envía como `1`. Debe usar el `idUsuario` de la sesión activa una vez implementado JWT. |
+| **Sin refresh automático** | El dashboard y el monitor de llegadas requieren recargar la página manualmente. Implementar polling o WebSockets. |
+| **AutoMapper subutilizado** | El perfil de AutoMapper está configurado pero los mapeos se hacen con proyecciones LINQ directamente en los controladores. Unificar el enfoque. |

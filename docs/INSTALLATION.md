@@ -1,65 +1,158 @@
-# Guía de Instalación y Despliegue ISTPET System
+# Guía de Instalación y Configuración — ISTPET Logística
 
-Este documento explica los pasos necesarios para instalar, configurar y ejecutar el sistema de gestión vehicular de ISTPET.
+## Requisitos del Sistema
 
-## Requisitos Previos
-- **Backend**: .NET 8 SDK instalado.
-- **Base de Datos**: MySQL Server (v8.0+) o MariaDB.
-- **Frontend**: Node.js (v20+) y npm.
+| Componente | Versión Mínima | Notas |
+| :--- | :--- | :--- |
+| .NET SDK | 8.0 | [Descargar](https://dotnet.microsoft.com/download/dotnet/8) |
+| Node.js | 20 LTS | Para el frontend |
+| MySQL / MariaDB | 8.0 / 11+ | Servidor local o remoto |
+| Navegador | Moderno | Chrome, Edge, Firefox |
 
-## Configuración Inicial
+---
 
-### 1. Base de Datos (MySQL)
-Ejecuta el script SQL `istpet_vehiculos` en tu servidor MySQL para crear las 11 tablas, las vistas y los procedimientos almacenados originales.
+## Paso 1: Clonar el Repositorio
 
-### 2. Configuración del Backend
-Edita el archivo `backend/appsettings.json` con tus credenciales de base de datos:
+```bash
+git clone https://github.com/JorgeDoicela/istpet_vehiculos.git
+cd istpet_vehiculos
+```
+
+---
+
+## Paso 2: Configurar la Base de Datos
+
+### 2.1 Crear la Base de Datos Principal
+
+Abrir MySQL Workbench o el cliente de línea de comandos y ejecutar:
+
+```bash
+mysql -u root -p < docs/Scripts/SQL_SCHEMA.sql
+```
+
+Esto crea la base de datos `istpet_vehiculos` con sus 11 tablas, 2 vistas, el usuario administrador inicial y un curso de prueba.
+
+**Credenciales iniciales:**
+| Campo | Valor |
+| :--- | :--- |
+| Usuario | `admin_istpet` |
+| Contraseña | `istpet2026` |
+
+### 2.2 (Opcional) Simular la Base de Datos Central SIGAFI
+
+Si no tienes acceso al servidor real de SIGAFI, ejecuta el script de simulación para desarrollo:
+
+```bash
+mysql -u root -p < docs/Scripts/MOCK_SIGAFI_ES.sql
+```
+
+Este script crea la base de datos `sigafi_es` con datos de prueba, incluyendo un alumno, un profesor, un vehículo y una práctica agendada para hoy.
+
+---
+
+## Paso 3: Configurar el Backend
+
+### 3.1 Cadena de Conexión
+
+Editar `backend/appsettings.json`:
+
 ```json
-"ConnectionStrings": {
-  "DefaultConnection": "Server=localhost;Database=istpet_vehiculos;User=root;Password=tu_password;"
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost;Database=istpet_vehiculos;User=root;Password=TU_PASSWORD;"
+  }
 }
 ```
 
-## Ejecución del Sistema
+**Parámetros de la cadena de conexión:**
 
-### Iniciar el Backend (.NET 8)
-1. Abre una terminal en la carpeta `backend/`.
-2. Restaura los paquetes y compila con:
-   ```bash
-   dotnet restore
-   dotnet build
-   ```
-3. Inicia el servidor API (puerto 5112 bloqueado por el frontend):
-   ```bash
-   dotnet run
-   ```
+| Parámetro | Descripción | Ejemplo |
+| :--- | :--- | :--- |
+| `Server` | Hostname del servidor MySQL | `localhost` o `192.168.1.5` |
+| `Database` | Nombre de la BD principal | `istpet_vehiculos` |
+| `User` | Usuario MySQL | `root` o `istpet_user` |
+| `Password` | Contraseña del usuario MySQL | `****` |
+| `Port` | Puerto (omitir si es el default 3306) | `3307` |
 
-### Iniciar el Frontend (React + Vite)
-1. Abre una terminal en la carpeta `frontend/`.
-2. Instala las dependencias profesionales (Axios, Lucide, Tailwind):
-   ```bash
-   npm install
-   ```
-3. Inicia el servidor de desarrollo en modo responsivo:
-   ```bash
-   npm run dev
-   ```
-4. Abre tu navegador en `http://localhost:5173`.
+### 3.2 Ejecutar el Backend
 
-## Despliegue en Producción
-
-### Generar Build de Frontend
-```bash
-cd frontend
-npm run build
-```
-
-### Generar Publish de Backend
 ```bash
 cd backend
-dotnet publish -c Release -o ./publish
+dotnet restore
+dotnet run
 ```
 
-## Mantenimiento Continuo
-- **Sincronización**: Utiliza el botón "Ejecutar Sincronización Segura" en el Dashboard para ingerir datos externos una vez configuradas las fuentes.
-- **Logs**: Revisa la tabla `sync_logs` para auditorías técnicas de la integridad de los datos.
+La API estará disponible en:
+- API: `http://localhost:5000`
+- Swagger UI: `http://localhost:5000/swagger`
+
+> En producción, usar `dotnet publish -c Release` y servir con IIS, nginx o como servicio de Windows.
+
+---
+
+## Paso 4: Configurar el Frontend
+
+### 4.1 URL de la API
+
+La URL base de la API se configura en `frontend/src/services/api.js`. Por defecto apunta a `http://localhost:5000/api`.
+
+Si el backend corre en un puerto diferente, editar ese archivo:
+
+```javascript
+// frontend/src/services/api.js
+const api = axios.create({
+  baseURL: 'http://localhost:5000/api',  // Cambiar aquí
+});
+```
+
+### 4.2 Instalar y Ejecutar
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+La interfaz estará disponible en `http://localhost:5173`.
+
+---
+
+## Paso 5: Verificar la Instalación
+
+1. Abrir `http://localhost:5173` en el navegador.
+2. Aparecerá la pantalla de **Control Operativo**.
+3. Las listas de vehículos e instructores deben cargarse desde el menú de Salida.
+4. Ir a `http://localhost:5000/swagger` para verificar que la API responde correctamente.
+5. Probar el endpoint `GET /api/dashboard/clases-activas` — debe devolver `[]` si no hay clases activas.
+
+---
+
+## Estructura de Archivos de Configuración
+
+| Archivo | Propósito |
+| :--- | :--- |
+| `backend/appsettings.json` | Configuración base (connection string, logging) |
+| `backend/appsettings.Development.json` | Sobrescritura para entorno de desarrollo |
+| `frontend/vite.config.js` | Configuración del servidor de desarrollo de Vite |
+| `frontend/tailwind.config.js` | Configuración de Tailwind CSS |
+
+---
+
+## Solución de Problemas Comunes
+
+### Error: "Cannot connect to database"
+- Verificar que el servicio de MySQL esté corriendo.
+- Comprobar usuario y contraseña en `appsettings.json`.
+- Asegurarse de que la base de datos `istpet_vehiculos` fue creada ejecutando el script SQL.
+
+### Error: "Table 'sync_logs' doesn't exist"
+La tabla `sync_logs` se crea en el script SQL. Verificar que el script se ejecutó completamente. También puede ser causado por ejecutar el proyecto antes de correr el script.
+
+### Error CORS en el navegador
+Verificar que el backend está corriendo antes de acceder al frontend. La configuración CORS en `Program.cs` permite todos los orígenes en desarrollo.
+
+### El widget "Agenda SIGAFI Hoy" no carga datos
+Si no se instaló `MOCK_SIGAFI_ES.sql`, la BD `sigafi_es` no existe. El sistema lo maneja sin error — simplemente mostrará la lista vacía. Para habilitar esta funcionalidad, ejecutar el script de simulación o conectarse al servidor real de SIGAFI.
+
+### Las fotos de los alumnos no cargan
+La foto solo se muestra si el alumno viene del puente SIGAFI (que incluye `TO_BASE64(a.foto)`). Alumnos registrados localmente no tienen foto.

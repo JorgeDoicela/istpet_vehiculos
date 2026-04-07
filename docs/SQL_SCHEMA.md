@@ -1,51 +1,198 @@
-# Especificación Técnica del Script de Base de Datos
+# Esquema SQL Comentado — ISTPET Logística
 
-Este documento detalla la estructura, lógica y reglas de negocio contenidas en el script original `istpet_vehiculos`.
+> Archivo fuente: `docs/Scripts/SQL_SCHEMA.sql`
 
-## Información General
-- **Base de Datos**: `istpet_vehiculos`
-- **Codificación**: `utf8mb4_spanish_ci` (Soporte completo para tildes y caracteres especiales)
-- **Sujeto**: Gestión de Escuela de Conducción ISTPET
-- **Licencias Soportadas**: C (Profesional - Taxis), D (Buses), E (Camiones)
+Este documento explica las decisiones de diseño detrás del esquema de base de datos.
 
-## 1. Seguridad y Acceso
-- **Tabla `usuarios`**: Control de acceso centralizado.
-- **Roles**: `admin` (Gestión total) y `guardia` (Control de entrada/salida).
-- **Seguridad**: Las contraseñas se gestionan mediante `password_hash` (en el script se inicializan con SHA2).
+---
 
-## 2. Gestión de Recursos (RRHH y Flota)
-- **Capa Maestros**: Tablas `tipo_licencia` e `instructores`.
-- **Relaciones N:M**: `instructor_licencias` permite que un instructor maneje múltiples categorías de licencias.
-- **Flota de Vehículos**: Tabla `vehiculos` vincula cada unidad con un tipo de licencia necesaria y un instructor fijo. Incluye control de `estado_mecanico`.
-- **Mantenimientos**: Registro detallado de intervenciones mecánicas y costos asociados.
+## Configuración del Motor
 
-## 3. Estructura Académica
-- **cursos**: Gestión de paralelos, jornadas (Matutina, Vespertina, Nocturna, FDS) y cupos.
-- **estudiantes**: Registro único de personas por cédula.
-- **matriculas**: Vínculo académico que rastrea las `horas_completadas` de práctica.
+```sql
+CREATE DATABASE istpet_vehiculos CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
+```
 
-## 4. Control Logístico y Operativo
-Es el núcleo transaccional del sistema:
-- **registros_salida**: Registra el inicio de una clase práctica.
-- **registros_llegada**: Documenta el retorno del vehículo y finaliza la sesión operativa.
+**Decisión:** `utf8mb4_spanish_ci` garantiza soporte completo para caracteres acentuados del español (á, é, ñ...) sin errores de codificación. `utf8mb4` es el superconjunto de UTF-8 que soporta emojis y caracteres fuera del BMP.
 
-## 5. Lógica de Negocio Automatizada (Triggers y Procesos)
+---
 
-### Trigger: `tg_actualizar_cupos_after_matricula`
-Automatiza el control de cupos. Al insertar una nueva matrícula, disminuye automáticamente los `cupos_disponibles` del curso correspondiente.
+## Bloque 1: Seguridad y Acceso — `usuarios`
 
-### Procedimiento: `sp_registrar_salida`
-Incluye una lógica de validación experta antes de permitir que un vehículo salga a pista:
-- Se verifica que el vehículo esté `OPERATIVO`.
-- Se valida que el vehículo NO esté actualmente en uso.
-- Se asegura que el instructor NO esté en otra clase simultánea.
-- Se confirma que el estudiante NO tenga otra clase activa en ese momento.
+```sql
+CREATE TABLE usuarios (
+    id_usuario      INT            NOT NULL AUTO_INCREMENT,
+    usuario         VARCHAR(50)    NOT NULL UNIQUE,
+    password_hash   VARCHAR(255)   NOT NULL,
+    rol             ENUM('admin', 'guardia', 'estacionable') NOT NULL DEFAULT 'guardia',
+    nombre_completo VARCHAR(100),
+    activo          TINYINT(1)     NOT NULL DEFAULT 1,
+    creado_en       DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id_usuario)
+);
+```
 
-### Procedimiento: `sp_registrar_llegada`
-Gestiona el cierre de la jornada de práctica:
-- Calcula automáticamente las horas de práctica realizadas basándose en el tiempo transcurrido.
-- Suma las horas al registro del estudiante en `matriculas`.
+**Decisiones:**
+- `password_hash VARCHAR(255)`: Size suficiente para BCrypt (60 chars) y SHA-256 (64 chars hex).
+- `rol ENUM`: Restricción a nivel de base de datos — imposible insertar un rol inválido.
+- `activo TINYINT(1)`: Patrón de **soft delete** — no se eliminan usuarios, solo se desactivan.
 
-## 6. Monitoreo Inteligente (Vistas)
-- **`v_clases_activas`**: Dashboard en tiempo real de quién está en pista, con qué vehículo y qué instructor.
-- **`v_alerta_mantenimiento`**: Sistema de alerta para vehículos marcados en reparación o fuera de servicio.
+---
+
+## Bloque 2: Parametrización — `tipo_licencia`
+
+```sql
+CREATE TABLE tipo_licencia (
+    id_tipo     INT          NOT NULL AUTO_INCREMENT,
+    codigo      VARCHAR(5)   NOT NULL UNIQUE,
+    descripcion VARCHAR(200) NOT NULL,
+    activo      TINYINT(1)   NOT NULL DEFAULT 1,
+    PRIMARY KEY (id_tipo)
+);
+```
+
+**Datos iniciales:** `C` (livianos), `D` (buses), `E` (carga pesada).
+
+**Decisión:** Separar en tabla maestra permite agregar nuevas categorías de licencia sin modificar el código, y garantiza integridad referencial.
+
+---
+
+## Bloque 3: Recursos Humanos
+
+```sql
+CREATE TABLE instructores (
+    cedula   VARCHAR(15) NOT NULL UNIQUE,
+    ...
+    PRIMARY KEY (id_instructor)
+);
+
+CREATE TABLE instructor_licencias (
+    id_instructor    INT NOT NULL,
+    id_tipo_licencia INT NOT NULL,
+    PRIMARY KEY (id_instructor, id_tipo_licencia),
+    CONSTRAINT fk_rel_instructor FOREIGN KEY (id_instructor)
+        REFERENCES instructores (id_instructor) ON DELETE CASCADE
+);
+```
+
+**Decisión:** `instructor_licencias` usa **llave primaria compuesta** para evitar duplicados sin necesidad de índices adicionales. `ON DELETE CASCADE` garantiza que al eliminar un instructor, sus habilitaciones se limpian automáticamente.
+
+---
+
+## Bloque 4: Gestión de Flota
+
+```sql
+CREATE TABLE vehiculos (
+    numero_vehiculo  INT  NOT NULL UNIQUE,
+    placa            VARCHAR(15) NOT NULL UNIQUE,
+    estado_mecanico  ENUM('OPERATIVO', 'MANTENIMIENTO', 'FUERA_SERVICIO') DEFAULT 'OPERATIVO',
+    id_tipo_licencia INT NOT NULL,
+    id_instructor_fijo INT NOT NULL,
+    ...
+);
+```
+
+**Decisiones:**
+- `numero_vehiculo UNIQUE` + `placa UNIQUE`: Doble garantía de unicidad del vehículo.
+- `estado_mecanico ENUM`: Solo 3 estados posibles, controlados a nivel de BD.
+- `id_instructor_fijo`: Relación fija instructor-vehículo para simplificar el despacho — el guardia ya sabe qué instructor corresponde a cada unidad.
+
+```sql
+CREATE TABLE mantenimientos (
+    costo DECIMAL(10,2) DEFAULT 0.00
+);
+```
+
+**Decisión:** `DECIMAL` para el costo evita errores de redondeo de punto flotante.
+
+---
+
+## Bloque 5: Módulo Académico
+
+```sql
+CREATE TABLE estudiantes (
+    cedula VARCHAR(15) NOT NULL,
+    PRIMARY KEY (cedula)  -- Sin AUTO_INCREMENT
+);
+```
+
+**Decisión crítica:** La cédula es la PK directamente, sin `id` auto-incremental. Esto garantiza que no exista el mismo estudiante con dos cédulas distintas y simplifica las joins.
+
+```sql
+CREATE TABLE matriculas (
+    horas_completadas DECIMAL(5,2) DEFAULT 0.00,
+    estado            VARCHAR(20) NOT NULL DEFAULT 'ACTIVO'
+);
+```
+
+**Decisión:** `horas_completadas` en la matrícula se actualiza automáticamente en C# (`SqlLogisticaService.RegistrarLlegadaAsync`) cada vez que un vehículo retorna.
+
+---
+
+## Bloque 6: Control Logístico
+
+```sql
+CREATE TABLE registros_salida (
+    id_matricula INT NOT NULL,  -- FK -> matriculas
+    id_vehiculo  INT NOT NULL,  -- FK -> vehiculos
+    id_instructor INT NOT NULL, -- FK -> instructores
+    ...
+);
+
+CREATE TABLE registros_llegada (
+    id_registro INT NOT NULL UNIQUE,  -- Relación 1:1 con registros_salida
+    ...
+);
+```
+
+**Decisión clave — Detección de "En Pista":** La lógica no usa campos booleanos. Un vehículo está "en pista" si y solo si tiene un `registro_salida` sin `registro_llegada` correspondiente. Esto evita estados inconsistentes:
+```sql
+-- Vista v_clases_activas: vehículos sin llegada
+LEFT JOIN registros_llegada rl ON rs.id_registro = rl.id_registro
+WHERE rl.id_llegada IS NULL;
+```
+
+El `UNIQUE` en `registros_llegada.id_registro` garantiza a nivel de base de datos que un registro de salida **no puede cerrarse dos veces**.
+
+---
+
+## Bloque 7: Objetivos de Negocio Implementados en C#
+
+El comentario en el SQL es importante:
+```sql
+-- Nota: La lógica de negocio (SP, Triggers) ha sido migrada
+-- al Backend (C# EF Core) para mayor seguridad y mantenimiento.
+```
+
+Las validaciones que en la versión original usaban Stored Procedures ahora viven en `SqlLogisticaService.cs`:
+
+| Validación | Implementación |
+| :--- | :--- |
+| Vehículo OPERATIVO | `vehiculo.EstadoMecanico != "OPERATIVO"` → error |
+| Vehículo no en pista | Query sobre `RegistrosSalida` sin `RegistrosLlegada` |
+| Instructor no ocupado | Mismo patrón para `id_instructor` |
+| Estudiante no duplicado | Mismo patrón para `id_matricula` |
+| Transacción atómica | `BeginTransactionAsync()` + `CommitAsync()` / `RollbackAsync()` |
+
+---
+
+## Datos Iniciales del Script
+
+```sql
+-- Tipos de licencia
+INSERT INTO tipo_licencia (codigo, descripcion) VALUES
+('C', 'Profesional (Taxis, autos livianos)'),
+('D', 'Profesional (Buses de pasajeros)'),
+('E', 'Profesional (Camiones y carga pesada)');
+
+-- Usuario administrador (password: istpet2026 en SHA-256)
+INSERT INTO usuarios (usuario, password_hash, rol, nombre_completo)
+VALUES ('admin_istpet', SHA2('istpet2026', 256), 'admin', 'Administrador General ISTPET');
+
+-- Curso contenedor para el Puente Híbrido (auto-registro de SIGAFI)
+INSERT INTO cursos (id_curso, id_tipo_licencia, nombre, nivel, paralelo, jornada, periodo,
+                    fecha_inicio, fecha_fin, cupo_maximo, cupos_disponibles, horas_practica_total, estado)
+VALUES (1, 1, 'CURSO PROFESIONAL TIPO C', 'INICIAL', 'A', 'MATUTINA', '2026-I',
+        '2026-01-01', '2026-12-31', 500, 500, 15, 'ACTIVO');
+```
+
+El **curso con `id_curso = 1`** es el contenedor genérico al que se asignan automáticamente los estudiantes traídos desde SIGAFI si no existe un curso local más específico. Tiene cupo de 500 intencionalmente para funcionar como "curso abierto".
