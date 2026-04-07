@@ -205,8 +205,41 @@ INSERT INTO tipo_licencia (codigo, descripcion) VALUES
 
 -- Admin Initial: istpet2026
 INSERT INTO usuarios (usuario, password_hash, rol, nombre_completo)
-VALUES ('admin_istpet', SHA2('istpet2026', 256), 'admin', 'Administrador General ISTPET');
+VALUES ('admin_istpet', SHA2('istpet2026', 256), 'admin', 'Administrador General ISTPET'),
+       ('guardia_1', SHA2('guardia2026', 256), 'guardia', 'Carlos Perez - Guardia Turno 1'),
+       ('guardia_2', SHA2('guardia2026', 256), 'guardia', 'Roberto Gomez - Guardia Turno 2');
 
 -- Curso Inicial para Auto-Registro (SIGAFI BRIDGE)
 INSERT INTO cursos (id_curso, id_tipo_licencia, nombre, nivel, paralelo, jornada, periodo, fecha_inicio, fecha_fin, cupo_maximo, cupos_disponibles, horas_practica_total, estado)
-VALUES (1, 1, 'CURSO PROFESIONAL TIPO C', 'INICIAL', 'A', 'MATUTINA', '2026-I', '2026-01-01', '2026-12-31', 500, 500, 15, 'ACTIVO');
+VALUES (1, 1, 'CURSO PROFESIONAL TIPO C', 'INICIAL', 'A', 'MATUTINA', '2026-I', '2026-01-01', '2026-12-31', 500, 500, 15, 'ACTIVO'),
+       (2, 2, 'CURSO PROFESIONAL TIPO D', 'INICIAL', 'B', 'NOCTURNA', '2026-I', '2026-01-01', '2026-12-31', 300, 300, 20, 'ACTIVO');
+
+-- Instructores
+INSERT INTO instructores (cedula, nombres, apellidos, telefono, email, activo)
+VALUES ('1700000001', 'JUAN', 'LOPEZ', '0988888881', 'juan.lopez@istpet.edu.ec', 1),
+       ('1700000002', 'MARIA', 'GARCIA', '0988888882', 'maria.garcia@istpet.edu.ec', 1),
+       ('1700000003', 'PEDRO', 'MARTINEZ', '0988888883', 'pedro.martinez@istpet.edu.ec', 1);
+
+-- Instructor Licencias
+INSERT INTO instructor_licencias (id_instructor, id_tipo_licencia, fecha_obtencion)
+VALUES (1, 1, '2020-05-15'), (1, 2, '2021-08-20'),
+       (2, 1, '2019-10-10'),
+       (3, 3, '2018-02-28');
+
+-- Vehículos
+INSERT INTO vehiculos (numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico, activo)
+VALUES (1, 'PBA-1001', 'CHEVROLET', 'AVEO', 1, 1, 'OPERATIVO', 1),
+       (2, 'PBA-1002', 'HYUNDAI', 'ACCENT', 1, 2, 'OPERATIVO', 1),
+       (3, 'PBA-2001', 'HINO', 'BUS', 2, 3, 'OPERATIVO', 1);
+
+-- Estudiantes
+INSERT INTO estudiantes (cedula, nombres, apellidos, telefono, email, activo)
+VALUES ('1750000001', 'LUIS', 'FERNANDEZ', '0990000001', 'luis.fernandez@mail.com', 1),
+       ('1750000002', 'ANA', 'TORRES', '0990000002', 'ana.torres@mail.com', 1),
+       ('1750000003', 'CARLOS', 'RUIZ', '0990000003', 'carlos.ruiz@mail.com', 1);
+
+-- Matriculas
+INSERT INTO matriculas (cedula_estudiante, id_curso, fecha_matricula, horas_completadas, estado)
+VALUES ('1750000001', 1, CURDATE(), 0.00, 'ACTIVO'),
+       ('1750000002', 1, CURDATE(), 2.50, 'ACTIVO'),
+       ('1750000003', 2, CURDATE(), 0.00, 'ACTIVO');
