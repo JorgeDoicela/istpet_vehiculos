@@ -55,9 +55,16 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 var app = builder.Build();
 
-// Forzar el puerto si Render lo inyecta (Opcional, .NET 8 ya lee ASPNETCORE_HTTP_PORTS)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
-app.Urls.Add($"http://*:{port}");
+// 🛡️ CONFIGURACION DE PUERTO: Forzar según entorno
+if (!app.Environment.IsDevelopment())
+{
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
+    app.Urls.Add($"http://*:{port}");
+}
+else
+{
+    app.Urls.Add("http://localhost:5112");
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
