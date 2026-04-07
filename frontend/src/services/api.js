@@ -1,3 +1,4 @@
+//Deploy
 import axios from 'axios';
 
 /**
@@ -5,8 +6,8 @@ import axios from 'axios';
  * Port: 5112 (Development)
  */
 const api = axios.create({
-    baseURL: 'http://localhost:5112/api',
-    timeout: 8000,
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5112/api',
+    timeout: 10000,
     headers: {
         'Content-Type': 'application/json'
     }
@@ -29,7 +30,7 @@ api.interceptors.response.use(
     (response) => {
         try {
             console.log(`[API RESPONSE SUCCESS] ${response?.config?.url || 'OK'}`);
-        } catch (e) {}
+        } catch (e) { }
         return response;
     },
     (error) => {

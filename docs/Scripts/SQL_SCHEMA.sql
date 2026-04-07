@@ -1,15 +1,16 @@
+--Deploy
 -- ============================================================
 --  BASE DE DATOS: istpet_vehiculos
 --  Licencias: C, D, E (Escuela de Conducción ISTPET)
 -- ============================================================
 
 DROP DATABASE IF EXISTS istpet_vehiculos;
-CREATE DATABASE istpet_vehiculos CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_ci;
+CREATE DATABASE istpet_vehiculos CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 USE istpet_vehiculos;
 
 SET NAMES utf8mb4;
 SET CHARACTER SET utf8mb4;
-SET collation_connection = 'utf8mb4_spanish_ci';
+SET collation_connection = 'utf8mb4_general_ci';
 
 -- ------------------------------------------------------------
 -- 1. SEGURIDAD Y ACCESO
@@ -170,7 +171,7 @@ CREATE TABLE registros_llegada (
 -- 8. VISTAS
 -- ------------------------------------------------------------
 CREATE OR REPLACE VIEW v_clases_activas AS
-SELECT 
+SELECT
     rs.id_registro,
     v.id_vehiculo,
     e.cedula,
