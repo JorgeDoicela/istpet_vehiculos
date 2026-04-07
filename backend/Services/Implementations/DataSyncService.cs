@@ -9,6 +9,7 @@ namespace backend.Services.Interfaces
     public interface IDataSyncService
     {
         Task<SyncLog> SyncExternalStudentsAsync(List<JsonElement> externalData);
+        Task<SyncLog> SyncInstructorsAsync();
     }
 }
 
@@ -20,11 +21,83 @@ namespace backend.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly ILogger<DataSyncService> _logger;
+        private readonly ICentralStudentProvider _centralProvider;
 
-        public DataSyncService(AppDbContext context, ILogger<DataSyncService> logger)
+        public DataSyncService(AppDbContext context, ILogger<DataSyncService> logger, ICentralStudentProvider centralProvider)
         {
             _context = context;
             _logger = logger;
+            _centralProvider = centralProvider;
+        }
+
+        public async Task<SyncLog> SyncInstructorsAsync()
+        {
+            _logger.LogInformation("Iniciando Sincronización Automática de Instructores (SIGAFI)...");
+            
+            var log = new SyncLog 
+            { 
+                Modulo = "Instructores", 
+                Origen = "SIGAFI_SQL_BRIDGE",
+                Fecha = DateTime.Now,
+                RegistrosProcesados = 0,
+                RegistrosFallidos = 0
+            };
+
+            try
+            {
+                var centralInstructors = await _centralProvider.GetAllInstructorsFromCentralAsync();
+
+                foreach (var ci in centralInstructors)
+                {
+                    try
+                    {
+                        var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == ci.Cedula);
+                        
+                        if (existing == null)
+                        {
+                            _context.Instructores.Add(new Instructor
+                            {
+                                Cedula = ci.Cedula,
+                                Nombres = ci.Nombres.ToUpper(),
+                                Apellidos = ci.Apellidos.ToUpper(),
+                                Telefono = ci.Telefono?.Length > 50 ? ci.Telefono.Substring(0, 50) : ci.Telefono,
+                                Email = ci.Email,
+                                Activo = ci.Activo
+                            });
+                            log.RegistrosProcesados++;
+                        }
+                        else
+                        {
+                            // Actualizamos datos existentes para mantener consistencia
+                            existing.Nombres = ci.Nombres.ToUpper();
+                            existing.Apellidos = ci.Apellidos.ToUpper();
+                            existing.Telefono = ci.Telefono?.Length > 50 ? ci.Telefono.Substring(0, 50) : ci.Telefono;
+                            existing.Email = ci.Email;
+                            existing.Activo = ci.Activo;
+                            log.RegistrosProcesados++;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        log.RegistrosFallidos++;
+                        _logger.LogError("Error sincronizando instructor {cedula}: {message}", ci.Cedula, ex.Message);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                log.Estado = "OK";
+                log.Mensaje = $"Sincronización de instructores completada. Procesados: {log.RegistrosProcesados}";
+            }
+            catch (Exception ex)
+            {
+                log.Estado = "ERROR";
+                log.Mensaje = $"Fallo crítico en sincronización: {ex.Message}";
+                _logger.LogError(ex, "Fallo crítico en sincronización de instructores.");
+            }
+
+            _context.SyncLogs.Add(log);
+            await _context.SaveChangesAsync();
+            return log;
         }
 
         /**

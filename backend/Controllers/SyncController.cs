@@ -44,5 +44,19 @@ namespace backend.Controllers
                 return StatusCode(500, ApiResponse<SyncLog>.Fail($"Fallo de integración crítica: {ex.Message}"));
             }
         }
+
+        [HttpPost("instructors")]
+        public async Task<ActionResult<ApiResponse<SyncLog>>> SyncInstructors()
+        {
+            try
+            {
+                var syncLog = await _syncService.SyncInstructorsAsync();
+                return Ok(ApiResponse<SyncLog>.Ok(syncLog, "Sincronización de instructores (SIGAFI) finalizada."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<SyncLog>.Fail($"Error en sincronización manual: {ex.Message}"));
+            }
+        }
     }
 }

@@ -70,9 +70,12 @@ namespace backend.Services.Implementations
                     SELECT
                         idProfesor AS Cedula,
                         CONCAT_WS(' ', primerNombre, segundoNombre) AS Nombres,
-                        CONCAT_WS(' ', primerApellido, segundoApellido) AS Apellidos
+                        CONCAT_WS(' ', primerApellido, segundoApellido) AS Apellidos,
+                        celular AS Telefono,
+                        email AS Email,
+                        COALESCE(activo, 1) AS Activo
                     FROM {CENTRAL_DB_NAME}.profesores
-                    WHERE idProfesor = @p0 AND activo = 1
+                    WHERE idProfesor = @p0
                     LIMIT 1";
 
                 var result = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql, cedula)
@@ -86,6 +89,29 @@ namespace backend.Services.Implementations
             }
         }
 
+        public async Task<IEnumerable<CentralInstructorDto>> GetAllInstructorsFromCentralAsync()
+        {
+            try
+            {
+                string sql = $@"
+                    SELECT
+                        idProfesor AS Cedula,
+                        CONCAT_WS(' ', primerNombre, segundoNombre) AS Nombres,
+                        CONCAT_WS(' ', primerApellido, segundoApellido) AS Apellidos,
+                        celular AS Telefono,
+                        email AS Email,
+                        COALESCE(activo, 1) AS Activo
+                    FROM {CENTRAL_DB_NAME}.profesores";
+
+                var list = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql).ToListAsync();
+                return list;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR GetAllInstructorsFromCentralAsync: {ex.Message}");
+                return new List<CentralInstructorDto>();
+            }
+        }
         public async Task<CentralInstructorDto?> GetAssignedTutorAsync(string cedula)
         {
             try
@@ -94,7 +120,10 @@ namespace backend.Services.Implementations
                     SELECT
                         p.idProfesor AS Cedula,
                         CONCAT_WS(' ', p.primerNombre, p.segundoNombre) AS Nombres,
-                        CONCAT_WS(' ', p.primerApellido, p.segundoApellido) AS Apellidos
+                        CONCAT_WS(' ', p.primerApellido, p.segundoApellido) AS Apellidos,
+                        p.celular AS Telefono,
+                        p.email AS Email,
+                        COALESCE(p.activo, 1) AS Activo
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_vehiculos v
                     JOIN {CENTRAL_DB_NAME}.profesores p ON p.idProfesor = v.idProfesor
                     WHERE v.idAlumno = @p0 AND v.activa = 1

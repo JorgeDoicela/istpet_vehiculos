@@ -20,7 +20,7 @@ namespace backend.Models
         [MaxLength(100)]
         public string Apellidos { get; set; } = string.Empty;
 
-        [MaxLength(15)]
+        [MaxLength(50)]
         public string? Telefono { get; set; }
 
         [MaxLength(100)]

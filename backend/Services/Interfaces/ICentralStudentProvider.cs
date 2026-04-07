@@ -30,6 +30,9 @@ namespace backend.Services.Interfaces
         public string Cedula { get; set; } = string.Empty;
         public string Nombres { get; set; } = string.Empty;
         public string Apellidos { get; set; } = string.Empty;
+        public string? Telefono { get; set; }
+        public string? Email { get; set; }
+        public bool Activo { get; set; } = true;
     }
 
     public class ScheduledPracticeDto
@@ -48,6 +51,7 @@ namespace backend.Services.Interfaces
     {
         Task<CentralStudentDto?> GetFromCentralAsync(string cedula);
         Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula);
+        Task<IEnumerable<CentralInstructorDto>> GetAllInstructorsFromCentralAsync();
         Task<CentralInstructorDto?> GetAssignedTutorAsync(string cedula);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();

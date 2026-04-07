@@ -16,12 +16,14 @@ namespace backend.Controllers
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
+        private readonly IDataSyncService _syncService;
 
-        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider)
+        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider, IDataSyncService syncService)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
+            _syncService = syncService;
         }
 
         [HttpGet("estudiante/{cedula}")]
@@ -284,6 +286,17 @@ namespace backend.Controllers
         [HttpGet("instructores")]
         public async Task<ActionResult<ApiResponse<IEnumerable<InstructorLogisticaResponse>>>> GetInstructores()
         {
+            // Sincronización automática con SIGAFI (Blindada para evitar caídas del sistema)
+            try
+            {
+                await _syncService.SyncInstructorsAsync();
+            }
+            catch (Exception ex)
+            {
+                // Solo logeamos el error, permitimos que el flujo continúe con los datos locales
+                Console.WriteLine($"WARNING: Sincronización automática fallida: {ex.Message}");
+            }
+
             // Filtramos instructores activos Y QUE NO ESTÉN EN PISTA
             var query = await _context.Instructores
                 .Where(i => i.Activo && !_context.RegistrosSalida.Any(s => s.IdInstructor == i.Id_Instructor 
