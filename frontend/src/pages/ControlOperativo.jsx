@@ -248,7 +248,7 @@ const ControlOperativo = () => {
                         {activeTab === 'salida' ? (
                             <div className="apple-card overflow-hidden">
                                 <div className="mb-5 px-2 flex items-center justify-between">
-                                    <h3 className="text-base lg:text-xl font-black text-[var(--apple-text-main)]">Registro de Salida</h3>
+                                    <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     {/* Reloj compacto integrado en el header */}
                                     <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
                                         <svg className="h-3.5 w-3.5 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -259,7 +259,7 @@ const ControlOperativo = () => {
                                 <div className="space-y-8">
                                     {/* Campo Cédula - Más compacto */}
                                     <div className="relative group">
-                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--istpet-gold)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--apple-primary)] z-10">
+                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--apple-primary)] z-10">
                                             Cédula del Estudiante
                                         </label>
                                         <div className="relative flex items-center gap-3">
@@ -424,8 +424,8 @@ const ControlOperativo = () => {
                                     {/* Selección Vehículo */}
                                     <div className="pt-6">
                                         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1">
-                                            <div className="flex-1 text-left min-w-0 flex items-center gap-3">
-                                                <h3 className="text-sm lg:text-base font-black text-[var(--apple-text-main)] truncate leading-none">Selecciona Vehículo</h3>
+                                            <div className="flex-1 text-left min-w-0">
+                                                <h3 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] mb-2 px-2">Selecciona Vehículo</h3>
                                             </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
@@ -501,15 +501,14 @@ const ControlOperativo = () => {
 
                                     {/* Selección Instructor - Más Compacto */}
                                     <div className="pt-6 px-1">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                                            <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">Instructor Responsable</p>
+                                        <div className="mb-2">
+                                            <p className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] px-2">Instructor Responsable</p>
                                         </div>
                                         <div className="relative group">
                                             <select
                                                 value={instructorSeleccionado?.id_Instructor || ''}
                                                 onChange={(e) => setInstructorSeleccionado(instructores.find(i => i.id_Instructor.toString() === e.target.value))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] focus:border-emerald-500 focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner appearance-none cursor-pointer"
                                             >
                                                 <option value="" disabled>-- SELECCIONE DOCENTE --</option>
                                                 {instructores.map(i => <option key={i.id_Instructor} value={i.id_Instructor}>{i.fullName}</option>)}
@@ -539,7 +538,7 @@ const ControlOperativo = () => {
                         ) : (
                             <div className="apple-card">
                                 <div className="flex items-center justify-between mb-5">
-                                    <h3 className="text-base lg:text-xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
+                                    <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
                                     <div className="flex items-center gap-2">
                                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
                                             <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -590,7 +589,7 @@ const ControlOperativo = () => {
                                                         <svg className="h-5 w-5 lg:h-6 lg:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                                                     </div>
                                                     <div className="min-w-0">
-                                                        <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest leading-none mb-0.5">Retorno Proyectado</p>
+                                                        <p className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] leading-none mb-1.5">Retorno Proyectado</p>
                                                         <p className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase">{horaRetorno || 'LIVE'}</p>
                                                     </div>
                                                 </div>
@@ -615,7 +614,7 @@ const ControlOperativo = () => {
                             <div className="absolute top-0 right-0 w-24 h-24 bg-[var(--apple-primary)]/5 rounded-full -translate-y-10 translate-x-10 blur-3xl group-hover:bg-[var(--apple-primary)]/10 transition-colors duration-700"></div>
 
                             <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-[10px] font-black text-[var(--apple-text-sub)] tracking-[0.2em] uppercase">Agenda SIGAFI Hoy</h4>
+                                <h4 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI Hoy</h4>
                                 <span className="text-[9px] font-black text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendadosHoy.length} pendientes</span>
                             </div>
 
@@ -687,7 +686,7 @@ const ControlOperativo = () => {
                     <div className="relative bg-[var(--apple-bg)] rounded-t-[2rem] p-5 max-h-[75vh] flex flex-col shadow-2xl border-t border-[var(--apple-border)]">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-tight">Agenda SIGAFI Hoy</h3>
+                                <h3 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI Hoy</h3>
                                 <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest opacity-60">{agendadosHoy.length} programados</p>
                             </div>
                             <button onClick={() => setShowAgendaDrawer(false)} className="p-2 rounded-xl bg-[var(--apple-border)]/30 text-[var(--apple-text-sub)]">
