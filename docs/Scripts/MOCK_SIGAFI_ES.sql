@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS ext_vehiculos (
 CREATE TABLE IF NOT EXISTS ext_cond_alumnos_practicas (
     idPractica INT PRIMARY KEY AUTO_INCREMENT,
     idalumno VARCHAR(15), idvehiculo INT, idProfesor VARCHAR(15),
-    fecha DATE, hora_salida TIME, cancelado INT DEFAULT 0, user_asigna VARCHAR(20)
+    fecha DATE, hora_salida TIME, hora_llegada TIME, cancelado INT DEFAULT 0, user_asigna VARCHAR(20), user_llegada VARCHAR(20)
 );
 
 CREATE TABLE IF NOT EXISTS ext_cond_alumnos_vehiculos (

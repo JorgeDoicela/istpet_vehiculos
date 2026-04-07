@@ -12,7 +12,7 @@ INSERT IGNORE INTO instructores (cedula, nombres, apellidos, telefono, email, ac
 SELECT
     idProfesor,
     CONCAT_WS(' ', primerNombre, segundoNombre),
-    CONCAT_WS(' ', apellidoPaterno, apellidoMaterno),
+    CONCAT_WS(' ', primerApellido, segundoApellido),
     celular,
     email,
     COALESCE(activo, 1)
@@ -21,19 +21,19 @@ FROM ext_profesores;
 -- 2. IMPORTAR VEHÍCULOS OPERATIVOS (Mapeo de Licencias)
 INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
 SELECT
-    v.idVehiculo,
-    v.numero_vehiculo,
-    v.placa,
-    v.marca,
-    v.modelo,
+    v.IdVehiculo,
+    v.NumeroVehiculo,
+    v.Placa,
+    v.Marca,
+    v.Modelo,
     CASE
-        WHEN v.idCategoria = 1 THEN 1 -- Sedan -> C
-        WHEN v.idCategoria IN (4, 5) THEN 2 -- Pesado/Bus -> D/E (Ajuste según dump)
+        WHEN v.IdTipoVehiculo = 1 THEN 1 -- Sedan -> C
+        WHEN v.IdTipoVehiculo IN (4, 5) THEN 2 -- Pesado/Bus -> D/E
         ELSE 1
     END,
     1, -- Default Instructor (Admin) - Se puede ajustar manualmente después
     CASE
-        WHEN v.activo = 1 THEN 'OPERATIVO'
+        WHEN v.Estado = 0 THEN 'OPERATIVO'
         ELSE 'FUERA_SERVICIO'
     END
 FROM ext_vehiculos v;
@@ -44,7 +44,7 @@ SELECT
     p.idProfesor, -- Usamos cédula como login inicial
     u.Contrasenia, -- Preservamos el hash BCrypt
     'guardia',
-    CONCAT_WS(' ', p.apellidoPaterno, p.apellidoMaterno, p.primerNombre, p.segundoNombre),
+    CONCAT_WS(' ', p.primerApellido, p.segundoApellido, p.primerNombre, p.segundoNombre),
     1
 FROM ext_usuario u
 JOIN ext_profesores p ON u.IdUsuario = CAST(p.idProfesor AS UNSIGNED) -- Mapeo idPersona a idProfesor

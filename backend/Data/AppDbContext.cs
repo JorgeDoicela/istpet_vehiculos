@@ -175,6 +175,13 @@ namespace backend.Data
                 entity.ToTable("sync_logs");
                 entity.HasKey(e => e.Id_Log);
                 entity.Property(e => e.Id_Log).HasColumnName("id_log");
+                entity.Property(e => e.Fecha).HasColumnName("fecha");
+                entity.Property(e => e.Modulo).HasColumnName("modulo");
+                entity.Property(e => e.Origen).HasColumnName("origen");
+                entity.Property(e => e.Estado).HasColumnName("estado");
+                entity.Property(e => e.Mensaje).HasColumnName("mensaje");
+                entity.Property(e => e.RegistrosProcesados).HasColumnName("registros_procesados");
+                entity.Property(e => e.RegistrosFallidos).HasColumnName("registros_fallidos");
             });
         }
     }

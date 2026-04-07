@@ -6,23 +6,33 @@ namespace backend.Models
      * Bitácora de Sincronización Profesional
      * Registra cada trago de datos externos para auditoría.
      */
+    using System.ComponentModel.DataAnnotations.Schema;
+
     public class SyncLog
     {
         [Key]
+        [Column("id_log")]
         public int Id_Log { get; set; }
         
+        [Column("fecha")]
         public DateTime Fecha { get; set; } = DateTime.UtcNow;
         
-        public string Modulo { get; set; } = string.Empty; // Ej: "Estudiantes", "Vehiculos"
+        [Column("modulo")]
+        public string Modulo { get; set; } = string.Empty; 
         
+        [Column("origen")]
         public string Origen { get; set; } = "API_EXTERNA";
         
-        public string Estado { get; set; } = "OK"; // OK, ERROR, ADVERTENCIA
+        [Column("estado")]
+        public string Estado { get; set; } = "OK"; 
         
-        public string Mensaje { get; set; } = string.Empty; // Ej: "Sincronizados 5, Rechazados 2 por formato inválido"
+        [Column("mensaje")]
+        public string Mensaje { get; set; } = string.Empty; 
         
+        [Column("registros_procesados")]
         public int RegistrosProcesados { get; set; }
         
+        [Column("registros_fallidos")]
         public int RegistrosFallidos { get; set; }
     }
 }
