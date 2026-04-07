@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useTheme } from '../components/common/ThemeContext';
 import Layout from '../components/layout/Layout';
 import logisticaService from '../services/logisticaService';
 import dashboardService from '../services/dashboardService';
@@ -7,6 +8,7 @@ import StatusBadge from '../components/common/StatusBadge';
 import VehicleCard from '../components/logistica/VehicleCard';
 
 const ControlOperativo = () => {
+    const { theme } = useTheme();
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
@@ -777,21 +779,27 @@ const ControlOperativo = () => {
             </div>
 
             {/* === MOBILE AGENDA DRAWER === */}
-            {/* Botón flotante para abrir en móvil */}
+            {/* Botón flotante para abrir en móvil - Minimalista / Adaptable al Tema */}
             {activeTab === 'salida' && (
                 <button
                     onClick={() => setShowAgendaDrawer(true)}
-                    className="lg:hidden fixed bottom-20 right-4 z-50 flex items-center gap-2 bg-[var(--istpet-navy)] text-white px-5 py-3 rounded-full shadow-2xl shadow-navy-900/30 text-[10px] font-black uppercase tracking-widest animate-apple-in"
+                    className={`lg:hidden fixed bottom-20 right-4 z-50 h-14 w-14 flex items-center justify-center rounded-[1.4rem] transition-all duration-500 active:scale-90 animate-apple-in shadow-2xl
+                        ${theme === 'light' 
+                            ? 'bg-white/80 backdrop-blur-xl border border-slate-200/60 text-[var(--istpet-navy)] shadow-slate-200/50' 
+                            : 'bg-[var(--istpet-navy)] text-white border border-white/10 shadow-black/40'}
+                    `}
                 >
-                    <svg className="h-4 w-4 text-[var(--istpet-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                    </svg>
-                    Agenda
-                    {agendadosHoy.length > 0 && (
-                        <span className="bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-full px-1.5 py-0.5 text-[8px] font-black">
-                            {agendadosHoy.length}
-                        </span>
-                    )}
+                    <div className="relative">
+                        <svg className={`h-6 w-6 transition-colors duration-500 ${theme === 'light' ? 'text-[var(--istpet-gold)]' : 'text-[var(--istpet-gold)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        
+                        {agendadosHoy.length > 0 && (
+                            <span className="absolute -top-2.5 -right-2.5 flex items-center justify-center text-[13px] font-black text-[var(--istpet-gold)] drop-shadow-sm">
+                                {agendadosHoy.length}
+                            </span>
+                        )}
+                    </div>
                 </button>
             )}
 
@@ -799,42 +807,81 @@ const ControlOperativo = () => {
             {showAgendaDrawer && (
                 <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end animate-apple-in">
                     {/* Overlay */}
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAgendaDrawer(false)} />
+                    <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowAgendaDrawer(false)} />
 
                     {/* Panel */}
-                    <div className="relative bg-[var(--apple-bg)] rounded-t-[2rem] p-5 max-h-[75vh] flex flex-col shadow-2xl border-t border-[var(--apple-border)]">
-                        <div className="flex items-center justify-between mb-4">
+                    <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[80vh] flex flex-col shadow-[0_-20px_60px_rgba(0,0,0,0.15)] overflow-hidden">
+                        
+                        {/* Handle */}
+                        <div className="flex justify-center pt-3 pb-1">
+                            <div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" />
+                        </div>
+
+                        {/* Header Premium */}
+                        <div className="flex items-center justify-between px-6 py-4">
                             <div>
-                                <h3 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI Hoy</h3>
-                                <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest opacity-60">{agendadosHoy.length} programados</p>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                    <div className="w-1.5 h-4 rounded-full bg-[var(--istpet-gold)]" />
+                                    <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-widest">Agenda Hoy</h3>
+                                </div>
+                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] pl-3.5">
+                                    <span className="text-[var(--istpet-gold)] font-black">{agendadosHoy.length}</span> estudiantes programados
+                                </p>
                             </div>
-                            <button onClick={() => setShowAgendaDrawer(false)} className="p-2 rounded-xl bg-[var(--apple-border)]/30 text-[var(--apple-text-sub)]">
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                            <button
+                                onClick={() => setShowAgendaDrawer(false)}
+                                className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)] hover:bg-[var(--apple-border)] transition-all"
+                            >
+                                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
-                        <div className="overflow-y-auto flex-1 space-y-2 custom-scrollbar pr-1">
-                            {agendadosHoy.length > 0 ? agendadosHoy.map(ag => (
-                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-3 rounded-2xl border border-[var(--apple-border)] flex items-center justify-between gap-3">
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-[11px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.alumnoNombre || ag.cedulaAlumno}</p>
-                                        <div className="flex items-center gap-2 mt-0.5">
-                                            <span className="text-[9px] font-black text-[var(--apple-primary)]">{ag.horaSalida?.substring(0, 5)}</span>
-                                            <span className="text-[8px] font-bold text-[var(--apple-text-sub)] uppercase">{ag.vehiculoDetalle}</span>
+
+                        {/* Lista */}
+                        <div className="overflow-y-auto flex-1 px-4 pb-8 space-y-2.5 custom-scrollbar">
+                            {agendadosHoy.length > 0 ? agendadosHoy.map((ag, idx) => (
+                                <div
+                                    key={ag.idPractica}
+                                    className="relative bg-[var(--apple-card)] rounded-[1.5rem] border border-[var(--apple-border)] overflow-hidden group"
+                                    style={{ animationDelay: `${idx * 0.05}s` }}
+                                >
+                                    <div className="flex items-center gap-3 p-4">
+                                        {/* Número de Orden */}
+                                        <div className="shrink-0 w-9 h-9 rounded-[0.9rem] bg-[var(--apple-bg)] border border-[var(--apple-border)] flex items-center justify-center">
+                                            <span className="text-[11px] font-black text-[var(--istpet-gold)]">{String(idx + 1).padStart(2,'0')}</span>
                                         </div>
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate leading-tight">
+                                                {ag.alumnoNombre || ag.cedulaAlumno}
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="flex items-center gap-1 text-[10px] font-black text-[var(--istpet-gold)]">
+                                                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                    {ag.horaSalida?.substring(0, 5)}
+                                                </span>
+                                                <span className="text-[var(--apple-border)]">·</span>
+                                                <span className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-tight">{ag.vehiculoDetalle}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Botón Cargar */}
+                                        <button
+                                            onClick={() => {
+                                                setSalidaCedula(ag.cedulaAlumno);
+                                                setShowAgendaDrawer(false);
+                                                showNotification('Cédula cargada al despacho');
+                                            }}
+                                            className="shrink-0 px-4 py-2.5 bg-[var(--istpet-navy)] text-white rounded-[1rem] text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-sm"
+                                        >
+                                            Cargar
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => {
-                                            setSalidaCedula(ag.cedulaAlumno);
-                                            setShowAgendaDrawer(false);
-                                            showNotification('Cédula cargada al despacho');
-                                        }}
-                                        className="shrink-0 px-3 py-1.5 bg-[var(--apple-primary)] text-white rounded-xl text-[8px] font-black uppercase tracking-widest"
-                                    >
-                                        Cargar
-                                    </button>
+                                    {/* Accent line */}
+                                    <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-[var(--istpet-gold)]/30 group-hover:bg-[var(--istpet-gold)] transition-colors duration-300" />
                                 </div>
                             )) : (
-                                <div className="py-10 text-center opacity-40">
+                                <div className="py-16 text-center opacity-40">
                                     <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">Sin agendas hoy</p>
                                 </div>
                             )}
@@ -842,6 +889,7 @@ const ControlOperativo = () => {
                     </div>
                 </div>
             )}
+
         </Layout>
     );
 };
