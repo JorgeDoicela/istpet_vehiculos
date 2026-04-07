@@ -32,12 +32,12 @@ builder.Services.AddScoped<IDataSyncService, DataSyncService>();
 builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
 
 
-// 🤖 AUTOMATIZACIÓN: Registrar AutoMapper
+// AUTOMATIZACIÓN: Registrar AutoMapper
 builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
 
-// Configurar DbContext con MySQL / TiDB Cloud
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                    ?? Environment.GetEnvironmentVariable("DATABASE_URL");
+// Configurar DbContext con MySQL / TiDB Cloud (Prioridad: Nube > Local)
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
 if (string.IsNullOrEmpty(connectionString))
 {
