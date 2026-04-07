@@ -48,6 +48,7 @@ namespace backend.Services.Interfaces
     {
         Task<CentralStudentDto?> GetFromCentralAsync(string cedula);
         Task<CentralInstructorDto?> GetInstructorFromCentralAsync(string cedula);
+        Task<CentralInstructorDto?> GetAssignedTutorAsync(string cedula);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
     }

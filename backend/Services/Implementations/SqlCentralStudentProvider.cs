@@ -12,7 +12,7 @@ namespace backend.Services.Implementations
     public class SqlCentralStudentProvider : ICentralStudentProvider
     {
         private readonly AppDbContext _context;
-        // CONFIGURACIÓN: El nombre de la BD Central encontrado en el dump SQL.
+        // CONFIGURACIÓN: El nombre de la BD Central externa provista por el DBA.
         private const string CENTRAL_DB_NAME = "sigafi_es";
 
         public SqlCentralStudentProvider(AppDbContext context)
@@ -61,9 +61,34 @@ namespace backend.Services.Implementations
                     SELECT
                         idProfesor AS Cedula,
                         CONCAT_WS(' ', primerNombre, segundoNombre) AS Nombres,
-                        CONCAT_WS(' ', apellidoPaterno, apellidoMaterno) AS Apellidos
+                        CONCAT_WS(' ', primerApellido, segundoApellido) AS Apellidos
                     FROM {CENTRAL_DB_NAME}.profesores
                     WHERE idProfesor = @p0 AND activo = 1
+                    LIMIT 1";
+
+                var result = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql, cedula)
+                    .FirstOrDefaultAsync();
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        public async Task<CentralInstructorDto?> GetAssignedTutorAsync(string cedula)
+        {
+            try
+            {
+                string sql = $@"
+                    SELECT
+                        p.idProfesor AS Cedula,
+                        CONCAT_WS(' ', p.primerNombre, p.segundoNombre) AS Nombres,
+                        CONCAT_WS(' ', p.primerApellido, p.segundoApellido) AS Apellidos
+                    FROM {CENTRAL_DB_NAME}.cond_alumnos_vehiculos v
+                    JOIN {CENTRAL_DB_NAME}.profesores p ON p.idProfesor = v.idProfesor
+                    WHERE v.idAlumno = @p0 AND v.activa = 1
                     LIMIT 1";
 
                 var result = await _context.Database.SqlQueryRaw<CentralInstructorDto>(sql, cedula)
@@ -91,7 +116,7 @@ namespace backend.Services.Implementations
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
-                        CONCAT(pr.apellidos, ' ', pr.nombres) AS ProfesorNombre
+                        CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
                     JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
                     JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
@@ -124,7 +149,7 @@ namespace backend.Services.Implementations
                         p.idProfesor AS CedulaProfesor,
                         p.hora_salida AS HoraSalida,
                         CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
-                        CONCAT_WS(' ', pr.apellidoPaterno, pr.apellidoMaterno, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
+                        CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
                     FROM {CENTRAL_DB_NAME}.cond_alumnos_practicas p
                     JOIN {CENTRAL_DB_NAME}.alumnos a ON a.idAlumno = p.idalumno
                     JOIN {CENTRAL_DB_NAME}.vehiculo v ON v.IdVehiculo = p.idvehiculo
@@ -132,7 +157,8 @@ namespace backend.Services.Implementations
                     WHERE p.fecha = CURDATE()
                     ORDER BY p.hora_salida ASC";
 
-                return await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
+                var list = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
+                return list;
             }
             catch (Exception)
             {

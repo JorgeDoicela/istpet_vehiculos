@@ -62,7 +62,9 @@ Busca un estudiante por número de cédula. Implementa la lógica del **Puente H
 1. Búsqueda local en `estudiantes` + `matriculas` (estado ACTIVO).
 2. Si no existe, consulta la BD Central SIGAFI (`sigafi_es`).
 3. Si lo encuentra en SIGAFI, lo auto-registra localmente y retorna los datos.
-4. En ambos casos, consulta si tiene práctica agendada para hoy en SIGAFI.
+4. En ambos casos, consulta si tiene práctica agendada para hoy en SIGAFI (`cond_alumnos_practicas`).
+5. Si no hay agenda hoy, consulta si tiene un tutor fijo asignado (`cond_alumnos_vehiculos`).
+6. Si el instructor detectado en SIGAFI no existe localmente, el sistema lo **auto-registra programáticamente** (Name Normalization incluido) antes de retornar la respuesta.
 
 **Parámetros de ruta:** `cedula` — Número de cédula del estudiante (10 dígitos).
 

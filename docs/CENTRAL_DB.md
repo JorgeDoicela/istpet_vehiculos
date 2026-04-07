@@ -55,8 +55,8 @@ foto           LONGBLOB    -- Foto del alumno en binario (Base64 en respuesta)
 idProfesor     VARCHAR(15) -- Cédula del profesor
 primerNombre   VARCHAR(50)
 segundoNombre  VARCHAR(50)
-apellidoPaterno VARCHAR(50)
-apellidoMaterno VARCHAR(50)
+primerApellido VARCHAR(50)
+segundoApellido VARCHAR(50)
 activo         INT (1=activo)
 ```
 
@@ -90,17 +90,27 @@ idSeccion      INT
 nombre         VARCHAR(50) -- MATUTINA, NOCTURNA, FIN DE SEMANA
 ```
 
-### `sigafi_es.cond_alumnos_practicas`
-Tabla exclusiva para las prácticas de conducción agendadas desde SIGAFI.
+### `sigafi_es.cond_alumnos_practicas` (Agenda Diaria)
+Tabla para las prácticas de conducción agendadas para un día específico.
 ```
-idPractica     INT PK AUTO_INCREMENT
+idPractica     INT PK
 idalumno       VARCHAR(15) -- FK -> alumnos
-idvehiculo     INT
+idvehiculo     INT         -- FK -> vehiculo
 idProfesor     VARCHAR(15) -- FK -> profesores
-fecha          DATE
+fecha          DATE        -- Filtro CURDATE()
 hora_salida    TIME
-hora_llegada   TIME
 cancelado      INT (0=vigente)
+```
+
+### `sigafi_es.cond_alumnos_vehiculos` (Tutores Asignados)
+Tabla que define el instructor responsable y vehículo fijo asignado a un estudiante para todo el curso.
+```
+idAsignacion   INT PK
+idAlumno       VARCHAR(15) -- FK -> alumnos
+idVehiculo     INT         -- FK -> vehiculo
+idPeriodo      INT
+idProfesor     VARCHAR(15) -- FK -> profesores
+activa         INT (1=asignación vigente)
 ```
 
 ### `sigafi_es.vehiculo`
@@ -116,7 +126,7 @@ Modelo         VARCHAR(50)
 
 ## Queries Cross-Database Implementados
 
-### 1. Búsqueda de Estudiante
+### 1. Búsqueda de Estudiante (Puente Híbrido)
 Ejecutado por `SqlCentralStudentProvider.GetFromCentralAsync(cedula)`.
 
 ```sql
@@ -141,21 +151,22 @@ WHERE a.idAlumno = @cedula AND p.activo = 1
 LIMIT 1;
 ```
 
-### 2. Búsqueda de Instructor
-Ejecutado por `GetInstructorFromCentralAsync(cedula)`.
+### 2. Detección de Tutor Asignado (Fixed Assignment)
+Ejecutado por `GetAssignedTutorAsync(cedula)` si no hay práctica agendada hoy.
 
 ```sql
 SELECT
-    idProfesor AS Cedula,
-    CONCAT_WS(' ', primerNombre, segundoNombre) AS Nombres,
-    CONCAT_WS(' ', apellidoPaterno, apellidoMaterno) AS Apellidos
-FROM sigafi_es.profesores
-WHERE idProfesor = @cedula AND activo = 1
+    p.idProfesor        AS Cedula,
+    CONCAT_WS(' ', p.primerNombre, p.segundoNombre) AS Nombres,
+    CONCAT_WS(' ', p.primerApellido, p.segundoApellido) AS Apellidos
+FROM sigafi_es.cond_alumnos_vehiculos v
+JOIN sigafi_es.profesores p ON p.idProfesor = v.idProfesor
+WHERE v.idAlumno = @cedula AND v.activa = 1
 LIMIT 1;
 ```
 
-### 3. Práctica Agendada para Hoy (Individual)
-Ejecutado por `GetScheduledPracticeAsync(cedula)` después de localizar a un estudiante.
+### 3. Práctica Agendada para Hoy (Daily Schedule)
+Ejecutado por `GetScheduledPracticeAsync(cedula)`. Posee prioridad sobre el Tutor Asignado.
 
 ```sql
 SELECT
@@ -167,13 +178,13 @@ SELECT
     p.idProfesor        AS CedulaProfesor,
     p.hora_salida       AS HoraSalida,
     CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
-    CONCAT(pr.apellidos, ' ', pr.nombres) AS ProfesorNombre
+    CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, 
+              pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
 FROM sigafi_es.cond_alumnos_practicas p
-JOIN sigafi_es.alumnos a    ON a.idAlumno = p.idalumno
-JOIN sigafi_es.vehiculo v   ON v.IdVehiculo = p.idvehiculo
+JOIN sigafi_es.alumnos a     ON a.idAlumno = p.idalumno
+JOIN sigafi_es.vehiculo v    ON v.IdVehiculo = p.idvehiculo
 JOIN sigafi_es.profesores pr ON pr.idProfesor = p.idProfesor
 WHERE p.idalumno = @cedula AND p.fecha = CURDATE()
-ORDER BY p.hora_salida ASC
 LIMIT 1;
 ```
 
@@ -211,7 +222,8 @@ SOURCE docs/Scripts/MOCK_SIGAFI_ES.sql;
 ```
 
 Este script crea la base de datos `sigafi_es` con estructura y datos de prueba, incluyendo:
-- 1 alumno de prueba (cédula: `1725555377`)
-- 1 profesor de prueba (cédula: `1712345678`)
-- 1 vehículo de prueba (placa: `PBA-1234`)
-- 1 práctica agendada para `CURDATE()` (el día actual)
+- Alumnos históricos y vigentes (`1725555377`, `1750000002`).
+- Profesores e Instructores registrados en SIGAFI.
+- Flota de vehículos de prueba.
+- **Tutorías asignadas** en `cond_alumnos_vehiculos`.
+- **Prácticas agendadas** en `cond_alumnos_practicas` vinculadas al día actual (`CURDATE()`).

@@ -30,19 +30,19 @@ En el campo **"Cédula del Estudiante"**, ingresar el número de cédula.
 | Estudiante encontrado en SIGAFI | Tarjeta con los datos + foto (si disponible) |
 | Estudiante no encontrado en ningún lugar | Mensaje de error: "No localizado" |
 
-**Sugerencia de Agenda:** Si el estudiante tiene una práctica agendada para hoy en SIGAFI, aparecerá una barra azul indicando el vehículo y la hora programada. El botón **"Cargar Sugerencia"** pre-selecciona el vehículo correspondiente automáticamente.
+**Sugerencia de Agenda e Inteligencia de Despacho:** Si el estudiante tiene una práctica agendada hoy o un tutor asignado en SIGAFI, el sistema **seleccionará automáticamente** al vehículo y al instructor.
 
 #### Paso 2: Seleccionar el Vehículo
 
-Se muestra la flota de vehículos disponibles (operativos y no en pista). 
+Si el sistema no detectó una sugerencia automática, se muestra la flota de vehículos disponibles:
 
 - Las tarjetas se pueden filtrar escribiendo la placa o número de unidad en el buscador.
-- Los indicadores **C / D / E** muestran la categoría de licencia del estudiante actual. Solo aparecen los vehículos compatibles.
-- Hacer clic en una tarjeta para seleccionarla (se resalta en azul).
+- Los indicadores **C / D / E** muestran la categoría de licencia del estudiante. Solo aparecen los vehículos compatibles.
+- Haga clic en una tarjeta para seleccionarla manualmente si es necesario.
 
 #### Paso 3: Seleccionar el Instructor
 
-En el menú desplegable **"Instructor Responsable"**, seleccionar el docente que acompañará al estudiante.
+En el menú desplegable **"Instructor Responsable"**, el sistema pre-seleccionará al docente asignado. Puede cambiarlo manualmente si el docente se encuentra ausente.
 
 #### Paso 4: Confirmar la Salida
 

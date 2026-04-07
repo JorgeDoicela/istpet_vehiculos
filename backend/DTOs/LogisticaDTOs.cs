@@ -14,6 +14,7 @@ namespace backend.DTOs
 
         // --- Detección de Práctica Central (Proactivo) ---
         public int? IdPracticaCentral { get; set; }
+        public int? IdPracticaInstructor { get; set; }
         public string? PracticaVehiculo { get; set; }
         public string? PracticaInstructor { get; set; }
         public string? PracticaHora { get; set; }

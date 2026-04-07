@@ -28,6 +28,7 @@ const ControlOperativo = () => {
     const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
     const [salidaLoading, setSalidaLoading] = useState(false);
     const [estudianteData, setEstudianteData] = useState(null);
+    const [mostrarBannerSugerencia, setMostrarBannerSugerencia] = useState(false);
     const [vehiculos, setVehiculos] = useState([]);
     const [filtroVehiculo, setFiltroVehiculo] = useState('');
     const [filtroLicencia, setFiltroLicencia] = useState(null);
@@ -149,13 +150,11 @@ const ControlOperativo = () => {
             if (salidaCedula.length === 10 && activeTab === 'salida') {
                 // EVITAR DOBLE CARGA: Si ya tenemos la data de esta cédula, no recargar
                 if (estudianteData?.cedula === salidaCedula) return;
-
-                setMostrarSugerencias(false);
-                ejecutarBusquedaEstudiante();
+                ejecutarBusquedaEstudiante(salidaCedula, 'manual');
             }
         }, 800);
         return () => clearTimeout(timer);
-    }, [salidaCedula, estudianteData]);
+    }, [salidaCedula, activeTab, estudianteData]);
 
     const cargarVehiculosDisponibles = async () => {
         try {
@@ -175,21 +174,60 @@ const ControlOperativo = () => {
         }
     };
 
-    const ejecutarBusquedaEstudiante = async (cedulaEnviada = null) => {
+    const ejecutarBusquedaEstudiante = async (cedulaEnviada = null, source = 'manual') => {
         const cedulaABuscar = cedulaEnviada || salidaCedula;
         if (!cedulaABuscar || cedulaABuscar.length < 10) return;
 
         setSalidaLoading(true);
         setEstudianteData(null);
+        setMostrarBannerSugerencia(false);
+
         try {
             const data = await logisticaService.buscarEstudiante(cedulaABuscar);
             setEstudianteData(data);
             if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
-            showNotification('Estudiante localizado');
+            
+            // Si viene de la agenda, aplicamos automáticamente la sugerencia
+            if (source === 'agenda' && (data.idPracticaInstructor || data.idPracticaCentral)) {
+                // Ejecutamos la aplicación de sugerencia pasando el objeto data directamente
+                // para evitar asincronía en la actualización del estado estudianteData
+                await aplicarSugerenciaManual(data);
+                showNotification('Sugerencia de agenda aplicada');
+            } else {
+                showNotification('Estudiante localizado');
+            }
         } catch (err) {
             showNotification(err.message || 'No localizado', 'error');
         } finally {
             setSalidaLoading(false);
+        }
+    };
+
+    const aplicarSugerenciaManual = async (dataOverride = null) => {
+        const data = dataOverride || estudianteData;
+        if (!data) return;
+        
+        try {
+            // 1. Instructor
+            if (data.idPracticaInstructor) {
+                let sInstr = instructores.find(i => (i.id_Instructor || i.idInstructor) === data.idPracticaInstructor);
+                if (!sInstr) {
+                    const fresh = await logisticaService.getInstructores();
+                    setInstructores(fresh);
+                    sInstr = fresh.find(i => (i.id_Instructor || i.idInstructor) === data.idPracticaInstructor);
+                }
+                if (sInstr) setInstructorSeleccionado(sInstr);
+            }
+
+            // 2. Vehículo
+            if (data.idPracticaCentral) {
+                const sVeh = vehiculos.find(v => v.idVehiculo === data.idPracticaCentral);
+                if (sVeh) setVehiculoSeleccionado(sVeh);
+            }
+
+            setMostrarBannerSugerencia(false);
+        } catch (err) {
+            console.error("Error aplicando sugerencia:", err);
         }
     };
 
@@ -402,7 +440,8 @@ const ControlOperativo = () => {
                                                 </div>
                                                 <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[var(--apple-primary)]/[0.03] to-transparent skew-x-12 translate-x-12 group-hover:translate-x-8 transition-transform duration-700"></div>
 
-                                                {estudianteData.tienePracticaHoy && (
+                                                {/* Banner informativo ya no requiere botón de confirmación si ya se aplicó */}
+                                                {mostrarBannerSugerencia && estudianteData.tienePracticaHoy && (
                                                     <div className="mt-4 bg-gradient-to-r from-[var(--istpet-navy)] to-[#2a3a6a] p-3 rounded-2xl text-white shadow-lg flex items-center justify-between gap-3 overflow-hidden relative">
                                                         <div className="flex items-center gap-3 relative z-10 text-left">
                                                             <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/10">
@@ -414,17 +453,10 @@ const ControlOperativo = () => {
                                                             </div>
                                                         </div>
                                                         <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const veh = vehiculos.find(v => v.idVehiculo === estudianteData.idPracticaCentral);
-                                                                const inst = instructores.find(i => i.fullName === estudianteData.practicaInstructor);
-                                                                if (veh) setVehiculoSeleccionado(veh);
-                                                                if (inst) setInstructorSeleccionado(inst);
-                                                                showNotification('Agenda cargada');
-                                                            }}
-                                                            className="relative z-10 px-4 py-2 bg-[var(--istpet-gold)] text-[var(--istpet-navy)] rounded-full text-[9px] font-black uppercase hover:scale-105 active:scale-95 transition-all shadow-md shrink-0"
+                                                            onClick={() => setMostrarBannerSugerencia(false)}
+                                                            className="relative z-10 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-[9px] font-black uppercase transition-all shrink-0"
                                                         >
-                                                            Cargar Sugerencia
+                                                            Ocultar
                                                         </button>
                                                         <div className="absolute -right-2 top-0 h-full w-24 bg-white/5 skew-x-12"></div>
                                                     </div>
@@ -520,7 +552,7 @@ const ControlOperativo = () => {
                                                                 key={v.idVehiculo}
                                                                 vehiculo={v}
                                                                 isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
-                                                                isSuggested={estudianteData?.idPracticaCentral === v.idVehiculo}
+                                                                isSuggested={mostrarBannerSugerencia && estudianteData?.idPracticaCentral === v.idVehiculo}
                                                                 onSelect={handleSeleccionarVehiculo}
                                                             />
                                                         ));
@@ -752,7 +784,8 @@ const ControlOperativo = () => {
                                             <button
                                                 onClick={() => {
                                                     setSalidaCedula(ag.cedulaAlumno);
-                                                    showNotification('Cédula copiada al despacho');
+                                                    ejecutarBusquedaEstudiante(ag.cedulaAlumno, 'agenda');
+                                                    showNotification('Cédula cargada de la agenda');
                                                 }}
                                                 className="w-full mt-3 py-2 bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-[var(--apple-primary)] hover:text-white shadow-sm"
                                             >
@@ -868,7 +901,8 @@ const ControlOperativo = () => {
                                             onClick={() => {
                                                 setSalidaCedula(ag.cedulaAlumno);
                                                 setShowAgendaDrawer(false);
-                                                showNotification('Cédula cargada al despacho');
+                                                ejecutarBusquedaEstudiante(ag.cedulaAlumno, 'agenda');
+                                                showNotification('Cédula cargada de la agenda');
                                             }}
                                             className="shrink-0 px-5 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest active:scale-95 transition-all shadow-md active:shadow-none"
                                         >

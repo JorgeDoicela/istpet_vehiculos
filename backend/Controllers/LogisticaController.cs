@@ -27,6 +27,9 @@ namespace backend.Controllers
         [HttpGet("estudiante/{cedula}")]
         public async Task<ActionResult<ApiResponse<EstudianteLogisticaResponse>>> BuscarEstudiante(string cedula)
         {
+            // 0. LIMPIEZA DE CEDULA
+            cedula = cedula.Trim();
+
             // 1. INTENTO LOCAL (MySQL actual)
             var localStudent = await (from m in _context.Matriculas
                                join e in _context.Estudiantes on m.CedulaEstudiante equals e.Cedula
@@ -48,6 +51,45 @@ namespace backend.Controllers
 
             if (localStudent != null)
             {
+                // --- DETECCION DE INSTRUCTOR / PRÁCTICA (Cerebro de Sugerencia) ---
+                var scheduled = await _centralProvider.GetScheduledPracticeAsync(localStudent.Cedula);
+                CentralInstructorDto? tutor = null;
+                if (scheduled == null) 
+                    tutor = await _centralProvider.GetAssignedTutorAsync(localStudent.Cedula);
+
+                string? profCedula = (scheduled?.CedulaProfesor ?? tutor?.Cedula)?.Trim();
+                if (!string.IsNullOrEmpty(profCedula))
+                {
+                    var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == profCedula);
+                    if (localProf == null)
+                    {
+                        var cp = scheduled != null 
+                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" } 
+                            : tutor;
+
+                        if (cp != null)
+                        {
+                            // Split name if it comes as one string (from practices)
+                            string fn = cp.Nombres;
+                            string fa = cp.Apellidos;
+                            if (string.IsNullOrEmpty(fa) && fn.Contains(" "))
+                            {
+                                var parts = fn.Split(' ', 2);
+                                fa = parts[0];
+                                fn = parts[1];
+                            }
+                            localProf = new backend.Models.Instructor { Cedula = cp.Cedula, Nombres = fn.ToUpper(), Apellidos = fa.ToUpper(), Activo = true };
+                            _context.Instructores.Add(localProf);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    localStudent.IdPracticaInstructor = localProf?.Id_Instructor;
+                    localStudent.PracticaInstructor = localProf != null ? $"{localProf.Apellidos} {localProf.Nombres}" : (scheduled?.ProfesorNombre ?? $"{tutor?.Apellidos} {tutor?.Nombres}");
+                    localStudent.IdPracticaCentral = scheduled?.IdPractica;
+                    localStudent.PracticaVehiculo = scheduled?.VehiculoDetalle;
+                    localStudent.PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm");
+                }
+
                 // --- DETECCION DE DISPONIBILIDAD (SISTEMA LOCAL) ---
                 localStudent.IsBusy = await _context.RegistrosSalida
                     .AnyAsync(s => s.IdMatricula == localStudent.IdMatricula 
@@ -147,8 +189,44 @@ namespace backend.Controllers
 
                 await _context.SaveChangesAsync();
                 
-                // --- DETECCION DE PRACTICA PROGRAMADA (PROACTIVO) ---
-                var scheduled = await _centralProvider.GetScheduledPracticeAsync(centralData.Cedula);
+                // --- DETECCION DE INSTRUCTOR / PRÁCTICA (Cerebro de Sugerencia) ---
+                var scheduled = await _centralProvider.GetScheduledPracticeAsync(eBase.Cedula);
+                CentralInstructorDto? tutor = null;
+                if (scheduled == null) 
+                    tutor = await _centralProvider.GetAssignedTutorAsync(eBase.Cedula);
+
+                // Mapeo a Instructor Local (Auto-Sincronización)
+                int? suggestedInstructorId = null;
+                string? profName = null;
+                string? profCedula = (scheduled?.CedulaProfesor ?? tutor?.Cedula)?.Trim();
+
+                if (!string.IsNullOrEmpty(profCedula))
+                {
+                    var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == profCedula);
+                    if (localProf == null)
+                    {
+                        var cp = scheduled != null 
+                            ? new CentralInstructorDto { Cedula = scheduled.CedulaProfesor, Nombres = scheduled.ProfesorNombre, Apellidos = "" } 
+                            : tutor;
+
+                        if (cp != null)
+                        {
+                            string fn = cp.Nombres;
+                            string fa = cp.Apellidos;
+                            if (string.IsNullOrEmpty(fa) && fn.Contains(" "))
+                            {
+                                var parts = fn.Split(' ', 2);
+                                fa = parts[0];
+                                fn = parts[1];
+                            }
+                            localProf = new backend.Models.Instructor { Cedula = cp.Cedula, Nombres = fn.ToUpper(), Apellidos = fa.ToUpper(), Activo = true };
+                            _context.Instructores.Add(localProf);
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    suggestedInstructorId = localProf?.Id_Instructor;
+                    profName = localProf != null ? $"{localProf.Apellidos} {localProf.Nombres}" : (scheduled?.ProfesorNombre ?? $"{tutor?.Apellidos} {tutor?.Nombres}");
+                }
 
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
                 {
@@ -162,7 +240,13 @@ namespace backend.Controllers
                     Periodo = centralData.Periodo ?? "2026-I",
                     IdMatricula = nuevaMatricula.Id_Matricula,
                     FotoBase64 = centralData.FotoBase64,
-                    // Datos de disponibilidad
+                    // Sugerencias de Agenda
+                    IdPracticaCentral = scheduled?.IdPractica,
+                    IdPracticaInstructor = suggestedInstructorId,
+                    PracticaInstructor = profName,
+                    PracticaVehiculo = scheduled?.VehiculoDetalle,
+                    PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm"),
+                    // Disponibilidad
                     IsBusy = await _context.RegistrosSalida
                         .AnyAsync(s => s.IdMatricula == nuevaMatricula.Id_Matricula 
                                    && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))

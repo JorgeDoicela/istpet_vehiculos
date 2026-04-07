@@ -125,6 +125,12 @@ Cuando la cédula tiene exactamente **10 dígitos** y hay un **debounce de 800ms
 
 Al seleccionar un estudiante, el selector de vehículos solo muestra las unidades cuyo `idTipoLicencia` sea menor o igual al tipo de licencia del estudiante (permite que un estudiante tipo C conduzca vehículos tipo C; un tipo E puede conducir cualquiera).
 
+### Inteligencia de Despacho (Auto-selección)
+
+Al localizar a un estudiante, el sistema preselecciona automáticamente al instructor y al vehículo si están disponibles en la respuesta de la API:
+- **Vehículo Sugerido**: Se selecciona automáticamente si `idPracticaCentral` coincide con un vehículo de la flota disponible.
+- **Instructor Sugerido**: Se selecciona mediante `idPracticaInstructor`. Si el instructor no existe en el catálogo local (recién sincronizado), el sistema realiza un **Silent Refresh** (recarga la lista de docentes) y luego aplica la selección.
+
 ---
 
 ## Capa de Servicios (Axios)

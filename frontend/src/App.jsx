@@ -5,28 +5,25 @@ import Students from './pages/Students';
 import Vehicles from './pages/Vehicles';
 import ControlOperativo from './pages/ControlOperativo';
 
-/**
- * App Root - ISTPET 2026
- * Monitoring: Routes & Context Integrity
- */
+
 function App() {
-  console.log('[APP] Inicializando sistema Zenith ISTPET 2026...');
+    console.log('[APP] Inicializando sistema Zenith ISTPET 2026...');
 
-  return (
-    <BrowserRouter>
+    return (
+        <BrowserRouter>
 
 
-      <div className="min-h-screen w-full overflow-x-hidden bg-[var(--apple-bg)]">
-        <Routes>
-          <Route path="/" element={<ControlOperativo />} />
-          <Route path="/monitoreo" element={<Home />} />
-          <Route path="/estudiantes" element={<Students />} />
-          <Route path="/vehiculos" element={<Vehicles />} />
-          <Route path="*" element={<ControlOperativo />} />
-        </Routes>
-      </div>
-    </BrowserRouter>
-  );
+            <div className="min-h-screen w-full overflow-x-hidden bg-[var(--apple-bg)]">
+                <Routes>
+                    <Route path="/" element={<ControlOperativo />} />
+                    <Route path="/monitoreo" element={<Home />} />
+                    <Route path="/estudiantes" element={<Students />} />
+                    <Route path="/vehiculos" element={<Vehicles />} />
+                    <Route path="*" element={<ControlOperativo />} />
+                </Routes>
+            </div>
+        </BrowserRouter>
+    );
 }
 
 export default App;
