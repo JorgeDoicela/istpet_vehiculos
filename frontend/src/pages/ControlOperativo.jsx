@@ -47,7 +47,7 @@ const ControlOperativo = () => {
     useEffect(() => {
         const clockInt = setInterval(() => {
             const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
             setHoraRetorno(timeStr);
         }, 1000);
         return () => clearInterval(clockInt);
@@ -421,44 +421,45 @@ const ControlOperativo = () => {
                                             </div>
                                         </div>
 
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                                            {vehiculos.length > 0 ? (
-                                                (() => {
-                                                    const filtered = vehiculos.filter(v => {
-                                                        const matchLicencia = !estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3);
-                                                        const matchFiltro = !filtroVehiculo ||
-                                                            v.placa?.toLowerCase().includes(filtroVehiculo.toLowerCase()) ||
-                                                            v.numero_vehiculo?.toString().includes(filtroVehiculo);
-                                                        return matchLicencia && matchFiltro;
-                                                    });
+                                        <div className="max-h-[380px] overflow-y-auto pr-2 custom-scrollbar -mr-2">
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
+                                                {vehiculos.length > 0 ? (
+                                                    (() => {
+                                                        const filtered = vehiculos.filter(v => {
+                                                            const matchLicencia = !estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3);
+                                                            const matchFiltro = !filtroVehiculo ||
+                                                                v.placa?.toLowerCase().includes(filtroVehiculo.toLowerCase()) ||
+                                                                v.numero_vehiculo?.toString().includes(filtroVehiculo);
+                                                            return matchLicencia && matchFiltro;
+                                                        });
 
-                                                    if (filtered.length === 0) {
-                                                        return (
-                                                            <div className="col-span-full py-16 text-center apple-glass rounded-[2rem] border border-dashed border-[var(--apple-border)] shadow-inner">
-                                                                <div className="text-[var(--apple-text-sub)] opacity-20 mb-3">
-                                                                    <svg className="h-10 w-10 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                        if (filtered.length === 0) {
+                                                            return (
+                                                                <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border border-dashed border-[var(--apple-border)] shadow-inner">
+                                                                    <div className="text-[var(--apple-text-sub)] opacity-20 mb-2">
+                                                                        <svg className="h-8 w-8 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                                    </div>
+                                                                    <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">No se encontraron unidades</p>
                                                                 </div>
-                                                                <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">No se encontraron unidades</p>
-                                                                <p className="text-[9px] font-bold text-[var(--istpet-gold)] mt-1">Intente con otro número o placa</p>
-                                                            </div>
-                                                        );
-                                                    }
+                                                            );
+                                                        }
 
-                                                    return filtered.map(v => (
-                                                        <VehicleCard
-                                                            key={v.idVehiculo}
-                                                            vehiculo={v}
-                                                            isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
-                                                            isSuggested={estudianteData?.idPracticaCentral === v.idVehiculo}
-                                                            onSelect={handleSeleccionarVehiculo}
-                                                        />
-                                                    ));
-                                                })()
-                                            ) : (
-                                                <div className="col-span-full py-20 text-center opacity-30">
-                                                    <p className="text-[var(--apple-text-sub)] font-black uppercase text-xs tracking-widest">Cargando flota...</p>
-                                                </div>
-                                            )}
+                                                        return filtered.map(v => (
+                                                            <VehicleCard
+                                                                key={v.idVehiculo}
+                                                                vehiculo={v}
+                                                                isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
+                                                                isSuggested={estudianteData?.idPracticaCentral === v.idVehiculo}
+                                                                onSelect={handleSeleccionarVehiculo}
+                                                            />
+                                                        ));
+                                                    })()
+                                                ) : (
+                                                    <div className="col-span-full py-16 text-center opacity-30">
+                                                        <p className="text-[var(--apple-text-sub)] font-black uppercase text-xs tracking-widest animate-pulse">Cargando flota...</p>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -493,7 +494,7 @@ const ControlOperativo = () => {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest leading-none mb-0.5">Hora</p>
-                                                    <p className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter">{horaRetorno || '--:--'}</p>
+                                                    <p className="text-xl lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter">{horaRetorno || '--:--:--'}</p>
                                                 </div>
                                             </div>
 
@@ -520,31 +521,33 @@ const ControlOperativo = () => {
                                 </div>
 
                                 <div className="space-y-8">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        {clasesActivas.length > 0 ? (
-                                            clasesActivas.map(c => (
-                                                <div
-                                                    key={c.id_Registro}
-                                                    onClick={() => setClaseSeleccionada(c)}
-                                                    className={`p-4 rounded-3xl border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--apple-primary)]/10 border-[var(--apple-primary)] shadow-md ring-4 ring-blue-500/10' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
-                                                >
-                                                    <div className="flex justify-between items-start mb-3">
-                                                        <div className="px-2 py-0.5 bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-lg text-[10px] font-black text-[var(--apple-text-main)]">#{c.numeroVehiculo}</div>
-                                                        <StatusBadge status="En Pista" />
+                                    <div className="max-h-[440px] overflow-y-auto pr-2 custom-scrollbar -mr-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {clasesActivas.length > 0 ? (
+                                                clasesActivas.map(c => (
+                                                    <div
+                                                        key={c.id_Registro}
+                                                        onClick={() => setClaseSeleccionada(c)}
+                                                        className={`p-4 rounded-3xl border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--apple-primary)]/10 border-[var(--apple-primary)] shadow-md ring-4 ring-blue-500/10' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
+                                                    >
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="px-2 py-0.5 bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-lg text-[10px] font-black text-[var(--apple-text-main)]">#{c.numeroVehiculo}</div>
+                                                            <StatusBadge status="En Pista" />
+                                                        </div>
+                                                        <h5 className="font-black text-xs text-[var(--apple-text-main)] uppercase mb-1">{c.instructor}</h5>
+                                                        <p className="text-[10px] text-[var(--apple-text-sub)] truncate mb-3">Estudiante: {c.estudiante}</p>
+                                                        <div className="flex items-center gap-2 text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">
+                                                            <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                            Salió: {new Date(c.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        </div>
                                                     </div>
-                                                    <h5 className="font-black text-xs text-[var(--apple-text-main)] uppercase mb-1">{c.instructor}</h5>
-                                                    <p className="text-[10px] text-[var(--apple-text-sub)] truncate mb-3">Estudiante: {c.estudiante}</p>
-                                                    <div className="flex items-center gap-2 text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest">
-                                                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                        Salió: {new Date(c.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    </div>
+                                                ))
+                                            ) : (
+                                                <div className="col-span-full py-12 text-center opacity-40 apple-glass rounded-3xl">
+                                                    <p className="text-[var(--apple-text-sub)] font-bold tracking-widest text-xs uppercase">No hay vehículos en pista</p>
                                                 </div>
-                                            ))
-                                        ) : (
-                                            <div className="col-span-full py-12 text-center opacity-40 apple-glass rounded-3xl">
-                                                <p className="text-[var(--apple-text-sub)] font-bold tracking-widest text-xs uppercase">No hay vehículos en pista</p>
-                                            </div>
-                                        )}
+                                            )}
+                                        </div>
                                     </div>
 
                                     {claseSeleccionada && (
