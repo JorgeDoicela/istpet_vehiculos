@@ -103,4 +103,9 @@ VALUES
 ('1750000001', 36, 2, '1700000001', 1),
 ('1750000002', 37, 2, '1700000002', 1);
 
+-- NOTA PARA PRODUCCIÓN (TiDB Cloud / Render):
+-- Si tu base de datos en la nube no permite múltiples esquemas, ejecuta este script
+-- dentro de la misma base de datos 'istpet_vehiculos' y asegúrate de que
+-- CENTRAL_DB_NAME en appsettings.json apunte al nombre correcto (o se deje vacío).
+
 SELECT 'MOCK_SIGAFI_ES ACTUALIZADO EXITOSAMENTE' AS Status;
