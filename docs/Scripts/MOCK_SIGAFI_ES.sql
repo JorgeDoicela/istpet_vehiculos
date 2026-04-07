@@ -13,14 +13,14 @@ CREATE TABLE alumnos (
     idAlumno VARCHAR(15) PRIMARY KEY,
     primerNombre VARCHAR(50), segundoNombre VARCHAR(50),
     apellidoPaterno VARCHAR(50), apellidoMaterno VARCHAR(50),
-    celular VARCHAR(15), email VARCHAR(100), foto LONGBLOB
+    celular VARCHAR(50), email VARCHAR(100), foto LONGBLOB
 );
 
 CREATE TABLE profesores (
     idProfesor VARCHAR(15) PRIMARY KEY,
     primerNombre VARCHAR(50), segundoNombre VARCHAR(50),
     primerApellido VARCHAR(50), segundoApellido VARCHAR(50),
-    celular VARCHAR(15), email VARCHAR(100), activo INT DEFAULT 1
+    celular VARCHAR(50), email VARCHAR(100), activo INT DEFAULT 1
 );
 
 CREATE TABLE secciones (

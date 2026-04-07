@@ -45,7 +45,7 @@ CREATE TABLE instructores (
     cedula        VARCHAR(15)  NOT NULL UNIQUE,
     nombres       VARCHAR(100) NOT NULL,
     apellidos     VARCHAR(100) NOT NULL,
-    telefono      VARCHAR(15)  NULL,
+    telefono      VARCHAR(50)  NULL,
     email         VARCHAR(100) NULL,
     activo        TINYINT(1)   NOT NULL DEFAULT 1,
     PRIMARY KEY (id_instructor)
@@ -113,7 +113,7 @@ CREATE TABLE estudiantes (
     cedula         VARCHAR(15)  NOT NULL,
     nombres        VARCHAR(100) NOT NULL,
     apellidos      VARCHAR(100) NOT NULL,
-    telefono       VARCHAR(15)  NULL,
+    telefono       VARCHAR(50)  NULL,
     email          VARCHAR(100) NULL,
     activo         TINYINT(1)   NOT NULL DEFAULT 1,
     PRIMARY KEY (cedula)
@@ -161,11 +161,19 @@ CREATE TABLE registros_llegada (
 );
 
 -- ------------------------------------------------------------
--- 7. LÓGICA DE NEGOCIO
--- Nota: La lógica de negocio (Sp, Triggers) ha sido migrada
--- al Backend (C# EF Core) para mayor seguridad y mantenimiento.
+-- 7. AUDITORÍA Y SINCRONIZACIÓN
 -- ------------------------------------------------------------
-
+CREATE TABLE sync_logs (
+    id_log                INT            NOT NULL AUTO_INCREMENT,
+    fecha                 DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    modulo                VARCHAR(50)    NOT NULL,
+    origen                VARCHAR(50)    NOT NULL DEFAULT 'API_EXTERNA',
+    estado                VARCHAR(20)    NOT NULL DEFAULT 'OK',
+    mensaje               TEXT,
+    registros_procesados  INT            NOT NULL DEFAULT 0,
+    registros_fallidos    INT            NOT NULL DEFAULT 0,
+    PRIMARY KEY (id_log)
+);
 
 -- ------------------------------------------------------------
 -- 8. VISTAS
