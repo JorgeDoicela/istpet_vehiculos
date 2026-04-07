@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import logisticaService from '../services/logisticaService';
@@ -10,6 +10,7 @@ const ControlOperativo = () => {
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
+    const instructorInputRef = useRef(null);
 
     // Sync activeTab con URL params
     useEffect(() => {
@@ -35,11 +36,13 @@ const ControlOperativo = () => {
     const [clasesActivas, setClasesActivas] = useState([]);
     const [claseSeleccionada, setClaseSeleccionada] = useState(null);
     const [horaRetorno, setHoraRetorno] = useState('');
+    const [fechaHoy, setFechaHoy] = useState('');
     const [agendadosHoy, setAgendadosHoy] = useState([]);
     const [agendadosLoading, setAgendadosLoading] = useState(false);
     const [showAgendaDrawer, setShowAgendaDrawer] = useState(false);
     const [showInstructorMenu, setShowInstructorMenu] = useState(false);
     const [filtroInstructor, setFiltroInstructor] = useState('');
+    const [isSearchingInstructor, setIsSearchingInstructor] = useState(false);
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -51,7 +54,9 @@ const ControlOperativo = () => {
         const clockInt = setInterval(() => {
             const now = new Date();
             const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
             setHoraRetorno(timeStr);
+            setFechaHoy(dateStr);
         }, 1000);
         return () => clearInterval(clockInt);
     }, []);
@@ -252,31 +257,33 @@ const ControlOperativo = () => {
                                 <div className="mb-5 px-2 flex items-center justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     {/* Reloj compacto integrado en el header */}
-                                    <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
-                                        <svg className="h-3.5 w-3.5 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                        <span className="text-sm font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
+                                    <div className="flex flex-col items-end leading-tight">
+                                        <span className="text-[8px] lg:text-[9px] text-[var(--apple-text-sub)] opacity-60 uppercase font-black tracking-widest mb-0.5">{fechaHoy}</span>
+                                        <span className="text-sm lg:text-lg font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
                                     </div>
                                 </div>
 
                                 <div className="space-y-8">
                                     {/* Campo Cédula - Más compacto */}
                                     <div className="relative group">
-                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--apple-primary)] z-10">
+                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--istpet-gold)] z-10">
                                             Cédula del Estudiante
                                         </label>
                                         <div className="relative flex items-center gap-3">
                                             <input
                                                 type="text"
+                                                inputMode="numeric"
+                                                pattern="[0-9]*"
                                                 placeholder="Ej. 172..."
                                                 maxLength={10}
                                                 value={salidaCedula}
                                                 onChange={(e) => setSalidaCedula(e.target.value.replace(/\D/g, ''))}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-base lg:text-lg font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-base lg:text-lg font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                             />
 
                                             {/* GESTIÓN CONDUCCIÓN AUTO-COMPLETE POPUP */}
                                             {mostrarSugerencias && (
-                                                <div className="absolute left-0 right-0 top-full mt-2 bg-white border border-[var(--apple-border)] rounded-[2rem] shadow-2xl z-[100] overflow-hidden animate-apple-in p-2">
+                                                <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--apple-card)] backdrop-blur-2xl border border-[var(--apple-border)] rounded-[2rem] shadow-2xl z-[100] overflow-hidden animate-apple-in p-2">
                                                     {sugerencias.map((s, idx) => (
                                                         <div
                                                             key={s.cedula}
@@ -288,7 +295,7 @@ const ControlOperativo = () => {
                                                             className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all flex items-center justify-between rounded-2xl group/item ${idx !== sugerencias.length - 1 ? 'mb-1' : ''}`}
                                                         >
                                                             <div className="flex-1 text-left py-2">
-                                                                <p className="text-[15px] font-black text-[#1a2544] uppercase tracking-tight leading-none mb-1.5">
+                                                                <p className="text-[15px] font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-none mb-1.5">
                                                                     {s.nombreCompleto}
                                                                 </p>
 
@@ -346,7 +353,7 @@ const ControlOperativo = () => {
                                     {/* Información Estudiante */}
                                     {estudianteData ? (
                                         <div className="space-y-6 animate-apple-in">
-                                            <div className="bg-white border border-[var(--apple-border)] rounded-[2.5rem] p-4 lg:p-5 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                                            <div className="apple-glass rounded-[2.5rem] p-4 lg:p-5 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
                                                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-8 relative z-10">
                                                     {/* Identidad */}
                                                     <div className="flex-1 min-w-0 text-left">
@@ -372,7 +379,7 @@ const ControlOperativo = () => {
                                                     <div className="flex items-center justify-around lg:justify-end gap-5 lg:gap-7 py-2 lg:py-0 lg:pl-7">
                                                         <div className="text-center">
                                                             <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50">Licencia</span>
-                                                            <span className="block text-sm font-black text-[var(--apple-primary)] leading-none">{estudianteData.tipoLicencia}</span>
+                                                            <span className="block text-sm font-black text-[var(--apple-text-main)] leading-none">{estudianteData.tipoLicencia}</span>
                                                         </div>
                                                         <div className="h-5 w-px bg-[var(--apple-border)]/30"></div>
                                                         <div className="text-center">
@@ -425,15 +432,15 @@ const ControlOperativo = () => {
 
                                     {/* Selección Vehículo */}
                                     <div className="pt-6">
-                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1">
+                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1 group">
                                             <div className="flex-1 text-left min-w-0">
-                                                <h3 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] mb-2 px-2">Selecciona Vehículo</h3>
+                                                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Selecciona Vehículo</h3>
                                             </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
                                                 {/* Buscador Rápido (Compacto) */}
-                                                <div className="relative flex-1 group">
-                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] group-focus-within:text-[var(--apple-primary)] transition-colors">
+                                                <div className="relative flex-1 group/search">
+                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] group-focus-within/search:text-[var(--istpet-gold)] transition-colors">
                                                         <svg className="h-3 w-3 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                                                     </div>
                                                     <input
@@ -441,10 +448,10 @@ const ControlOperativo = () => {
                                                         placeholder="BUSCAR UNIDAD..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
                                                     />
                                                     {filtroVehiculo && (
-                                                        <button 
+                                                        <button
                                                             onClick={() => setFiltroVehiculo('')}
                                                             className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-red-500 transition-colors"
                                                         >
@@ -513,16 +520,19 @@ const ControlOperativo = () => {
 
                                     {/* Selección Instructor - Integrated Combobox Search */}
                                     <div className="pt-6 px-1 relative">
-                                        <div className="mb-2">
-                                            <p className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] px-2">Instructor Responsable</p>
+                                        <div className="mb-2 transition-all">
+                                            <p className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 transition-colors duration-300 ${showInstructorMenu ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>Instructor Responsable</p>
                                         </div>
 
                                         <div className="relative group">
-                                            <div className="relative">
+                                            <div className="relative flex items-center">
                                                 <input
+                                                    ref={instructorInputRef}
                                                     type="text"
-                                                    value={showInstructorMenu ? filtroInstructor : (instructorSeleccionado?.fullName || '')}
+                                                    readOnly={!isSearchingInstructor}
+                                                    value={isSearchingInstructor && showInstructorMenu ? filtroInstructor : (instructorSeleccionado?.fullName || '')}
                                                     onChange={(e) => {
+                                                        if (!isSearchingInstructor) return;
                                                         const val = e.target.value.toUpperCase();
                                                         setFiltroInstructor(val);
                                                         if (!showInstructorMenu) setShowInstructorMenu(true);
@@ -530,15 +540,43 @@ const ControlOperativo = () => {
                                                     onClick={() => {
                                                         if (!showInstructorMenu) {
                                                             setShowInstructorMenu(true);
-                                                            setFiltroInstructor('');
+                                                            if (isSearchingInstructor) setFiltroInstructor('');
                                                         }
                                                     }}
-                                                    placeholder="-- SELECCIONE DOCENTE --"
-                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] px-5 py-3 text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--apple-primary)] ring-4 ring-[var(--apple-primary)]/10 shadow-lg' : 'border-[var(--apple-border)]'}`}
+                                                    placeholder={isSearchingInstructor ? "ESCRIBA PARA BUSCAR..." : "-- SELECCIONE DOCENTE --"}
+                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-24 py-3 text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--istpet-gold)] shadow-[0_0_20px_rgba(181,148,74,0.15)]' : 'border-[var(--apple-border)]'} ${!isSearchingInstructor ? 'cursor-pointer hover:bg-[var(--apple-card)]' : 'cursor-text'}`}
                                                 />
-                                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                    <svg className={`h-4 w-4 transition-transform duration-500 ease-in-out ${showInstructorMenu ? 'rotate-180 text-[var(--apple-primary)]' : 'text-[var(--apple-text-sub)]'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                                                </div>
+
+                                                {/* Botón Seleccionar (Flecha) - Activa modo selector */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsSearchingInstructor(false);
+                                                        setFiltroInstructor('');
+                                                        setShowInstructorMenu(true);
+                                                    }}
+                                                    className={`absolute right-16 top-1/2 -translate-y-1/2 z-20 p-1 rounded-lg transition-all ${!isSearchingInstructor ? 'text-[var(--istpet-gold)] scale-110' : 'text-[var(--apple-text-sub)] hover:bg-[var(--apple-border)]/50'}`}
+                                                    title="Modo Selector"
+                                                >
+                                                    <svg className={`h-4 w-4 transition-transform duration-500 ease-in-out ${showInstructorMenu ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                                </button>
+
+                                                {/* Botón Buscador (Lupa) - Activa modo escritura */}
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setIsSearchingInstructor(true);
+                                                        setShowInstructorMenu(true);
+                                                        setFiltroInstructor('');
+                                                        setTimeout(() => instructorInputRef.current?.focus(), 50);
+                                                    }}
+                                                    className={`absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-lg transition-all ${isSearchingInstructor ? 'text-[var(--istpet-gold)] scale-125' : 'text-[var(--apple-text-sub)] hover:bg-[var(--apple-border)]/50'}`}
+                                                    title="Modo Buscador"
+                                                >
+                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                                    </svg>
+                                                </button>
                                             </div>
 
                                             {showInstructorMenu && (
@@ -565,11 +603,11 @@ const ControlOperativo = () => {
                                                                     }}
                                                                     className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all flex items-center justify-between rounded-2xl group/item ${instructorSeleccionado?.id_Instructor === i.id_Instructor ? 'bg-[var(--apple-primary)]/10' : ''}`}
                                                                 >
-                                                                    <p className={`text-[11px] font-black uppercase tracking-tight transition-all group-hover/item:translate-x-1 ${instructorSeleccionado?.id_Instructor === i.id_Instructor ? 'text-[var(--apple-primary)]' : 'text-[var(--apple-text-main)]'}`}>
+                                                                    <p className={`text-[11px] font-black uppercase tracking-tight transition-all group-hover/item:translate-x-1 ${instructorSeleccionado?.id_Instructor === i.id_Instructor ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>
                                                                         {i.fullName}
                                                                     </p>
                                                                     {instructorSeleccionado?.id_Instructor === i.id_Instructor && (
-                                                                        <div className="h-1.5 w-1.5 rounded-full bg-[var(--apple-primary)] shadow-[0_0_8px_var(--apple-primary)]" />
+                                                                        <div className="h-1.5 w-1.5 rounded-full bg-[var(--istpet-gold)] shadow-[0_0_8px_var(--istpet-gold)]" />
                                                                     )}
                                                                 </div>
                                                             ))}
@@ -591,7 +629,7 @@ const ControlOperativo = () => {
                                         <button
                                             onClick={procesarSalida}
                                             disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
-                                            className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-blue-500/20 active:scale-95 hover:scale-[1.01]'}`}
+                                            className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 active:scale-95 hover:scale-[1.01]'}`}
                                         >
                                             {!estudianteData ? 'Ingrese cédula del estudiante' :
                                                 estudianteData.isBusy ? 'Estudiante ya en pista' :
@@ -607,9 +645,9 @@ const ControlOperativo = () => {
                                 <div className="flex items-center justify-between mb-5">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Llegada</h3>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl">
-                                            <svg className="h-3.5 w-3.5 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                            <span className="text-sm font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
+                                        <div className="flex flex-col items-end leading-tight">
+                                            <span className="text-[8px] lg:text-[9px] text-[var(--apple-text-sub)] opacity-60 uppercase font-black tracking-widest mb-0.5">{fechaHoy}</span>
+                                            <span className="text-sm lg:text-lg font-black text-[var(--apple-text-main)] tracking-tighter tabular-nums">{horaRetorno || '--:--:--'}</span>
                                         </div>
                                         <div className="flex gap-1.5 items-center text-[9px] font-black text-emerald-500 uppercase tracking-widest">
                                             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -626,7 +664,7 @@ const ControlOperativo = () => {
                                                     <div
                                                         key={c.id_Registro}
                                                         onClick={() => setClaseSeleccionada(c)}
-                                                        className={`p-4 rounded-[2.5rem] border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--apple-primary)]/10 border-[var(--apple-primary)] shadow-md ring-4 ring-blue-500/10' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
+                                                        className={`p-4 rounded-[2.5rem] border-2 transition-all cursor-pointer ${claseSeleccionada?.id_Registro === c.id_Registro ? 'bg-[var(--istpet-gold)]/10 border-[var(--istpet-gold)] shadow-lg shadow-[var(--istpet-gold)]/20' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
                                                     >
                                                         <div className="flex justify-between items-start mb-3 px-2 pt-1">
                                                             <div className="px-2 py-0.5 bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-lg text-[10px] font-black text-[var(--apple-text-main)]">#{c.numeroVehiculo}</div>

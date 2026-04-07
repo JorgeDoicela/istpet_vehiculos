@@ -39,7 +39,7 @@ const LogisticaHeader = ({ activeTab, title = "Logística Operativa" }) => {
                     {/* Botón SALIDA */}
                     <button
                         onClick={() => handleNavigation('salida')}
-                        className={`flex-1 py-4 px-4 sm:px-8 rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 flex flex-col items-center gap-1.5 ${view === 'salida' ? 'bg-white text-blue-600 shadow-xl scale-105' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 opacity-70'}`}>
+                        className={`flex-1 py-4 px-4 sm:px-8 rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 flex flex-col items-center gap-1.5 ${view === 'salida' ? 'bg-white text-[var(--istpet-navy)] shadow-xl scale-105 border border-[var(--istpet-gold)]/20' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 opacity-70'}`}>
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 19V5m0 0l-7 7m7-7l7 7" /></svg>
                         <span>Salida</span>
                     </button>
@@ -47,7 +47,7 @@ const LogisticaHeader = ({ activeTab, title = "Logística Operativa" }) => {
                     {/* Botón LLEGADA */}
                     <button
                         onClick={() => handleNavigation('llegada')}
-                        className={`flex-1 py-4 px-4 sm:px-8 rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 flex flex-col items-center gap-1.5 ${view === 'llegada' ? 'bg-white text-emerald-600 shadow-xl scale-105' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 opacity-70'}`}>
+                        className={`flex-1 py-4 px-4 sm:px-8 rounded-[2rem] text-[10px] sm:text-xs font-black uppercase tracking-[0.2em] transition-all duration-500 flex flex-col items-center gap-1.5 ${view === 'llegada' ? 'bg-white text-[var(--istpet-gold)] shadow-xl scale-105 border border-[var(--istpet-gold)]/20' : 'text-slate-500 hover:text-slate-700 hover:bg-white/40 opacity-70'}`}>
                         <svg className="w-4 h-4 sm:w-5 sm:h-5 opacity-80" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m0 0l7-7m-7 7l-7-7" /></svg>
                         <span>Llegada</span>
                     </button>
