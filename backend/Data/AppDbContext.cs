@@ -45,12 +45,12 @@ namespace backend.Data
                 entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
             });
 
-            // 2. PARAMETRIZACIÓN (tipo_licencia)
+            // 2. PARAMETRIZACIÓN (tipos_licencia)
             modelBuilder.Entity<TipoLicencia>(entity => {
-                entity.ToTable("tipo_licencia");
+                entity.ToTable("tipos_licencia");
                 entity.HasKey(e => e.Id_Tipo);
-                entity.Property(e => e.Id_Tipo).HasColumnName("id_tipo");
-                entity.Property(e => e.Codigo).HasColumnName("codigo");
+                entity.Property(e => e.Id_Tipo).HasColumnName("id_tipo_licencia");
+                entity.Property(e => e.Codigo).HasColumnName("nombre");
             });
 
             // 3. RECURSOS HUMANOS (instructores)
@@ -175,7 +175,7 @@ namespace backend.Data
                 entity.ToTable("sync_logs");
                 entity.HasKey(e => e.Id_Log);
                 entity.Property(e => e.Id_Log).HasColumnName("id_log");
-                entity.Property(e => e.Fecha).HasColumnName("fecha");
+                entity.Property(e => e.Fecha).HasColumnName("fecha").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 entity.Property(e => e.Modulo).HasColumnName("modulo");
                 entity.Property(e => e.Origen).HasColumnName("origen");
                 entity.Property(e => e.Estado).HasColumnName("estado");
