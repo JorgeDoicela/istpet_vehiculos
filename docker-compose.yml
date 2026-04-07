@@ -35,7 +35,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=http://localhost:5112
+        - VITE_API_URL=http://localhost:5112/api
     container_name: zenith_frontend
     restart: always
     depends_on:

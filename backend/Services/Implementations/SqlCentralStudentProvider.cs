@@ -20,7 +20,7 @@ namespace backend.Services.Implementations
             // Modo Plug & Play:
             // Si CentralDbName es "" (especialmente en Render/Vercel), usamos prefijo "ext_"
             // Si CentralDbName tiene valor, lo usamos como esquema: "dbName."
-            string dbName = (configuration["CentralDbName"] ?? "sigafi_es").Replace("\"", "").Trim();
+            string dbName = (configuration.GetConnectionString("CentralDbName") ?? "sigafi_es").Replace("\"", "").Trim();
 
             if (string.IsNullOrWhiteSpace(dbName)) {
                 TABLE_PREFIX = "ext_";
@@ -170,8 +170,8 @@ namespace backend.Services.Implementations
                     JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.idAlumno = @p0
-                    AND p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
-                    ORDER BY p.hora_salida ASC
+                    AND p.fecha >= CURDATE() - INTERVAL 1 DAY
+                    ORDER BY p.fecha ASC, p.hora_salida ASC
                     LIMIT 1";
 
                 var result = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql, cedula)
@@ -205,8 +205,9 @@ namespace backend.Services.Implementations
                     JOIN {TABLE_PREFIX}alumnos a ON a.idAlumno = p.idAlumno
                     JOIN {TABLE_PREFIX}vehiculos v ON v.idVehiculo = p.idVehiculo
                     JOIN {TABLE_PREFIX}profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.fecha = (SELECT MAX(fecha) FROM {TABLE_PREFIX}cond_alumnos_practicas)
-                    ORDER BY p.hora_salida ASC";
+                    WHERE p.fecha >= CURDATE() - INTERVAL 1 DAY
+                    ORDER BY p.fecha ASC, p.hora_salida ASC
+                    LIMIT 100";
 
                 var list = await _context.Database.SqlQueryRaw<ScheduledPracticeDto>(sql).ToListAsync();
                 return list;
