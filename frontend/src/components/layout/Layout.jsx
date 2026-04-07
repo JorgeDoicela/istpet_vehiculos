@@ -1,7 +1,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import { useTheme } from '../common/ThemeContext';
-import logoImg from '../../assets/logo.png';
+const logoImg = '/favicon.png';
 
 const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
@@ -18,14 +18,11 @@ const Layout = ({ children }) => {
                         <img
                             src={logoImg}
                             alt="Logo ISTPET"
-                            className={`
-                                    w-9 h-9 lg:w-16 lg:h-16 object-contain transition-all duration-700 hover:scale-105 active:scale-95
-                                    ${theme === 'light' ? 'brightness-0 contrast-200 opacity-90' : 'drop-shadow-[0_4px_20px_rgba(255,255,255,0.15)]'}
-                                `}
+                            className="w-9 h-9 lg:w-16 lg:h-16 object-contain transition-all duration-700 hover:scale-105 active:scale-95"
                         />
                         <div className="flex flex-col">
                             <h2 className="text-[10px] lg:text-base font-black tracking-[0.15em] text-[var(--apple-text-main)] leading-none mb-0.5 uppercase drop-shadow-sm">
-                                Gestión Conducción
+                                Escuela Conducción
                             </h2>
                             <span className="text-[10px] lg:text-base font-black tracking-tighter text-[var(--istpet-gold)] leading-none uppercase">
                                 ISTPET

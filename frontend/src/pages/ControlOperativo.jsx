@@ -28,6 +28,7 @@ const ControlOperativo = () => {
     const [estudianteData, setEstudianteData] = useState(null);
     const [vehiculos, setVehiculos] = useState([]);
     const [filtroVehiculo, setFiltroVehiculo] = useState('');
+    const [filtroLicencia, setFiltroLicencia] = useState(null);
     const [vehiculoSeleccionado, setVehiculoSeleccionado] = useState(null);
     const [instructores, setInstructores] = useState([]);
     const [instructorSeleccionado, setInstructorSeleccionado] = useState(null);
@@ -96,7 +97,8 @@ const ControlOperativo = () => {
     useEffect(() => {
         const timer = setTimeout(async () => {
             // Si ya tenemos cargado al estudiante de esta cédula, no necesitamos mostrar sugerencias
-            if (salidaCedula.length >= 3 && activeTab === 'salida' && estudianteData?.cedula !== salidaCedula) {
+            // Evitar mostrar sugerencias si ya estamos en proceso de búsqueda (salidaLoading) o si ya completamos 10 dígitos (búsqueda definitiva)
+            if (salidaCedula.length >= 3 && salidaCedula.length < 10 && activeTab === 'salida' && !salidaLoading && estudianteData?.cedula !== salidaCedula) {
                 // 1. Filtrado local ultra-rápido de agendados hoy
                 const localeMatch = agendadosHoy.filter(ag =>
                     ag.cedulaAlumno.startsWith(salidaCedula) ||
@@ -180,6 +182,7 @@ const ControlOperativo = () => {
         try {
             const data = await logisticaService.buscarEstudiante(cedulaABuscar);
             setEstudianteData(data);
+            if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
             showNotification('Estudiante localizado');
         } catch (err) {
             showNotification(err.message || 'No localizado', 'error');
@@ -208,6 +211,7 @@ const ControlOperativo = () => {
             setSalidaCedula('');
             setVehiculoSeleccionado(null);
             setInstructorSeleccionado(null);
+            setFiltroLicencia(null);
             cargarVehiculosDisponibles();
         } catch (err) {
             showNotification(err.message, 'error');
@@ -244,10 +248,10 @@ const ControlOperativo = () => {
                     <div className="lg:col-span-7 xl:col-span-8 space-y-6 lg:space-y-8 animate-apple-in" style={{ animationDelay: '0.2s' }}>
                         {/* Saludo Simplificado */}
                         <div className="px-8 lg:px-10 mb-2 lg:mb-4">
-                            <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-1">
+                            <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-0">
                                 {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches'}
                             </p>
-                            <h2 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase">
+                            <h2 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
                                 Bienvenido
                             </h2>
                         </div>
@@ -289,6 +293,7 @@ const ControlOperativo = () => {
                                                             key={s.cedula}
                                                             onClick={() => {
                                                                 setSalidaCedula(s.cedula);
+                                                                setSugerencias([]); // Limpiar estado de sugerencias inmediatamente
                                                                 setMostrarSugerencias(false);
                                                                 ejecutarBusquedaEstudiante(s.cedula);
                                                             }}
@@ -460,15 +465,21 @@ const ControlOperativo = () => {
                                                     )}
                                                 </div>
 
-                                                {/* Indicadores de Licencia Compactos */}
-                                                <div className="flex bg-[var(--apple-bg)] p-1.5 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
+                                                {/* Indicadores de Licencia Interactivos y Flexibles */}
+                                                <div className="flex bg-[var(--apple-bg)] p-1 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
                                                     {['C', 'D', 'E'].map(lic => (
-                                                        <div
+                                                        <button
                                                             key={lic}
-                                                            className={`w-7 h-7 lg:w-9 lg:h-9 flex items-center justify-center rounded-lg text-[9px] lg:text-[10px] font-black transition-all ${estudianteData?.tipoLicencia === lic ? 'bg-white text-[var(--istpet-gold)] shadow-md border border-[var(--istpet-gold)]/20' : 'text-[var(--apple-text-sub)] opacity-20'}`}
+                                                            onClick={() => setFiltroLicencia(filtroLicencia === lic ? null : lic)}
+                                                            title={`Filtrar por tipo ${lic}`}
+                                                            className={`w-8 lg:w-10 h-7 lg:h-9 flex items-center justify-center rounded-[0.8rem] text-[9px] lg:text-[10px] font-black transition-all duration-300 select-none cursor-pointer
+                                                                ${filtroLicencia === lic 
+                                                                    ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30' 
+                                                                    : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100 hover:bg-[var(--apple-border)]/50'}
+                                                            `}
                                                         >
                                                             {lic}
-                                                        </div>
+                                                        </button>
                                                     ))}
                                                 </div>
                                             </div>
@@ -478,9 +489,12 @@ const ControlOperativo = () => {
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
+                                                        const licIdMap = { 'C': 1, 'D': 2, 'E': 3 };
                                                         const filtered = vehiculos.filter(v => {
                                                             const term = filtroVehiculo.toLowerCase().trim();
-                                                            const matchLicencia = !estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3);
+                                                            const matchLicencia = filtroLicencia 
+                                                                ? v.idTipoLicencia === licIdMap[filtroLicencia] 
+                                                                : (!estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3));
                                                             const matchFiltro = !term ||
                                                                 v.placa?.toLowerCase().includes(term) ||
                                                                 v.numero_vehiculo?.toString().includes(term) ||
