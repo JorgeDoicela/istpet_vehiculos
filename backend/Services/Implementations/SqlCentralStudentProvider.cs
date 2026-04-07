@@ -18,9 +18,9 @@ namespace backend.Services.Implementations
         {
             _context = context;
             // Modo Plug & Play:
-            // Si CentralDbName es "" (especialmente en Render/Vercel), usamos prefijo "ext_"
-            // Si CentralDbName tiene valor, lo usamos como esquema: "dbName."
-            string dbName = (configuration.GetConnectionString("CentralDbName") ?? "sigafi_es").Replace("\"", "").Trim();
+            // Buscamos CentralDbName en la raíz (Env Var) o en ConnectionStrings
+            string? rawDb = configuration["CentralDbName"] ?? configuration.GetConnectionString("CentralDbName");
+            string dbName = (rawDb ?? "sigafi_es").Replace("\"", "").Trim();
 
             if (string.IsNullOrWhiteSpace(dbName)) {
                 TABLE_PREFIX = "ext_";
