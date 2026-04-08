@@ -1,7 +1,11 @@
 using backend.Data;
 using backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using backend.DTOs;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System;
+using System.Linq;
 
 namespace backend.Services.Implementations
 {
@@ -218,6 +222,31 @@ namespace backend.Services.Implementations
                 Console.WriteLine($"ERROR GetSchedulesForTodayAsync: {ex.Message}");
                 if(ex.InnerException != null) Console.WriteLine($"Inner: {ex.InnerException.Message}");
                 return new List<ScheduledPracticeDto>();
+            }
+        }
+
+        public async Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync()
+        {
+            try
+            {
+                string sql = $@"
+                    SELECT
+                        usuario AS Usuario,
+                        password AS Password,
+                        salida AS Salida,
+                        ingreso AS Ingreso,
+                        activo AS Activo,
+                        asistencia AS Asistencia,
+                        esRrhh AS EsRrhh
+                    FROM {TABLE_PREFIX}usuarios_web";
+
+                var list = await _context.Database.SqlQueryRaw<CentralUserDto>(sql).ToListAsync();
+                return list;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"ERROR GetAllWebUsersAsync: {ex.Message}");
+                return new List<CentralUserDto>();
             }
         }
     }

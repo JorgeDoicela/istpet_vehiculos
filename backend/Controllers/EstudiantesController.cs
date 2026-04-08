@@ -2,11 +2,13 @@ using AutoMapper;
 using backend.DTOs;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin,logistica,guardia")]
     public class EstudiantesController : ControllerBase
     {
         private readonly IEstudianteService _estudianteService;

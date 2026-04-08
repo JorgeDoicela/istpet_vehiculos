@@ -122,6 +122,8 @@ CREATE TABLE IF NOT EXISTS registros_salida (
     fecha_hora_salida DATETIME DEFAULT CURRENT_TIMESTAMP,
     observaciones_salida TEXT,
     registrado_por INT,
+    cancelado BOOLEAN DEFAULT FALSE,
+    motivo_cancelacion TEXT,
     FOREIGN KEY (id_matricula) REFERENCES matriculas(id_matricula),
     FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo),
     FOREIGN KEY (id_instructor) REFERENCES instructores(id_instructor),

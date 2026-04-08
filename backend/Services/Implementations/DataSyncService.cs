@@ -10,6 +10,7 @@ namespace backend.Services.Interfaces
     {
         Task<SyncLog> SyncExternalStudentsAsync(List<JsonElement> externalData);
         Task<SyncLog> SyncInstructorsAsync();
+        Task<SyncLog> SyncWebUsersAsync();
     }
 }
 
@@ -95,8 +96,6 @@ namespace backend.Services.Implementations
                 _logger.LogError(ex, "Fallo crítico en sincronización de instructores.");
             }
 
-            _context.SyncLogs.Add(log);
-            await _context.SaveChangesAsync();
             return log;
         }
 
@@ -174,8 +173,78 @@ namespace backend.Services.Implementations
             log.Estado = log.RegistrosFallidos > 0 ? "ADVERTENCIA" : "OK";
             log.Mensaje = $"Proceso finalizado. Éxito: {log.RegistrosProcesados}, Fallidos: {log.RegistrosFallidos}";
 
-            _context.SyncLogs.Add(log);
-            await _context.SaveChangesAsync();
+            return log;
+        }
+
+        public async Task<SyncLog> SyncWebUsersAsync()
+        {
+            _logger.LogInformation("Iniciando Sincronización de Usuarios SIGAFI (usuarios_web)...");
+
+            var log = new SyncLog
+            {
+                Modulo = "Usuarios",
+                Origen = "SIGAFI_WEB_USERS",
+                Fecha = DateTime.Now,
+                RegistrosProcesados = 0,
+                RegistrosFallidos = 0
+            };
+
+            try
+            {
+                var externalUsers = await _centralProvider.GetAllWebUsersAsync();
+
+                foreach (var eu in externalUsers)
+                {
+                    try
+                    {
+                        var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioLogin == eu.Usuario);
+                        
+                        // Rol según bits SIGAFI (enum real: admin, guardia, estacionable)
+                        string role = "guardia";
+                        if (eu.Usuario.ToLower().Contains("admin")) role = "admin";
+                        else if (eu.EsRrhh == 1) role = "estacionable";
+                        else if (eu.Salida == 1 || eu.Ingreso == 1) role = "guardia";
+
+                        if (existing == null)
+                        {
+                            _context.Usuarios.Add(new Usuario
+                            {
+                                UsuarioLogin = eu.Usuario,
+                                PasswordHash = eu.Password, // Se guardará tal cual, AuthController manejará el migrate-on-login
+                                Rol = role,
+                                NombreCompleto = eu.Usuario.ToUpper(),
+                                Activo = eu.Activo == 1,
+                                CreadoEn = DateTime.Now
+                            });
+                        }
+                        else
+                        {
+                            existing.Activo = eu.Activo == 1;
+                            existing.Rol = role;
+                            // No sobreescribimos el password local si ya ha sido hasheado por nuestro sistema
+                            if (!existing.PasswordHash.StartsWith("$2a$") && !existing.PasswordHash.StartsWith("$2b$"))
+                            {
+                                existing.PasswordHash = eu.Password;
+                            }
+                        }
+                        log.RegistrosProcesados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        log.RegistrosFallidos++;
+                        _logger.LogError("Error sincronizando usuario {user}: {message}", eu.Usuario, ex.Message);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                log.Estado = "OK";
+                log.Mensaje = $"Sincronización de usuarios completada. Procesados: {log.RegistrosProcesados}";
+            }
+            catch (Exception ex)
+            {
+                log.Estado = "ERROR";
+                log.Mensaje = $"Fallo crítico en sincronización de usuarios: {ex.Message}";
+            }
 
             return log;
         }

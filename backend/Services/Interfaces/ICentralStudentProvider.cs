@@ -1,3 +1,4 @@
+using backend.DTOs;
 using System.Threading.Tasks;
 
 namespace backend.Services.Interfaces
@@ -55,5 +56,6 @@ namespace backend.Services.Interfaces
         Task<CentralInstructorDto?> GetAssignedTutorAsync(string cedula);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string cedula);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
+        Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();
     }
 }

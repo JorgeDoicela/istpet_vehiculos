@@ -1,10 +1,12 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import { useTheme } from '../common/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 const logoImg = '/favicon.png';
 
 const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
+    const { logout } = useAuth();
     return (
         <div className="flex min-h-screen">
             {/* Sidebar Flotante */}
@@ -56,12 +58,7 @@ const Layout = ({ children }) => {
 
                         {/* Logout Button */}
                         <button
-                            onClick={() => {
-                                if (window.confirm('¿Deseas cerrar la sesión?')) {
-                                    localStorage.clear();
-                                    window.location.reload();
-                                }
-                            }}
+                            onClick={logout}
                             className="p-2 text-rose-500 hover:scale-120 transition-all duration-500 group active:scale-95"
                             title="Cerrar Sesión"
                         >

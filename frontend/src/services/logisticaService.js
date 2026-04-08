@@ -43,13 +43,15 @@ const logisticaService = {
 
   registrarSalida: async (idMatricula, idVehiculo, idInstructor) => {
     try {
-      // payload match with logisticaDTO SalidaRequest
+      const savedUser = localStorage.getItem('istpet_user');
+      const userId = savedUser ? JSON.parse(savedUser).idUsuario : 1;
+
       const response = await api.post('/logistica/salida', {
         idMatricula,
         idVehiculo,
         idInstructor,
         observaciones: 'Salida registrada en UI',
-        registradoPor: 1
+        registradoPor: userId
       });
       return response.data;
     } catch (error) {
@@ -59,10 +61,13 @@ const logisticaService = {
 
   registrarLlegada: async (idRegistro) => {
     try {
+      const savedUser = localStorage.getItem('istpet_user');
+      const userId = savedUser ? JSON.parse(savedUser).idUsuario : 1;
+
       const response = await api.post('/logistica/llegada', {
         idRegistro,
         observaciones: 'Llegada registrada en UI',
-        registradoPor: 1
+        registradoPor: userId
       });
       return response.data;
     } catch (error) {

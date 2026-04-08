@@ -1,12 +1,14 @@
-using backend.Data;
-using backend.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using backend.Data;
+using backend.Models;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin,logistica,guardia")]
     public class TipoLicenciaController : ControllerBase
     {
         private readonly AppDbContext _context;

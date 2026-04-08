@@ -6,11 +6,13 @@ using Microsoft.EntityFrameworkCore;
 using System.Text.RegularExpressions;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin,logistica,guardia")]
     public class LogisticaController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -419,4 +421,5 @@ namespace backend.Controllers
             return Ok(ApiResponse<IEnumerable<ScheduledPracticeDto>>.Ok(data, "Listado de agendados del día (SIGAFI)."));
         }
     }
+
 }

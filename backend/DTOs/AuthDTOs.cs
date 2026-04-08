@@ -12,6 +12,6 @@ namespace backend.DTOs
         public string Usuario { get; set; } = string.Empty;
         public string Nombre { get; set; } = string.Empty;
         public string Rol { get; set; } = string.Empty;
-        public string Token { get; set; } = "SESSION_TOKEN_2026"; // Mock token for now
+        public string Token { get; set; } = string.Empty;
     }
 }

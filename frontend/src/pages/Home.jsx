@@ -4,10 +4,14 @@ import LogisticaHeader from '../components/logistica/LogisticaHeader';
 import ActiveClasses from '../components/features/ActiveClasses';
 import SkeletonLoader from '../components/features/SkeletonLoader';
 import dashboardService from '../services/dashboardService';
+import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 
 const Home = () => {
+    const { isAuthorized } = useAuth();
     const [activeClasses, setActiveClasses] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [syncing, setSyncing] = useState(false);
     const [notification, setNotification] = useState(null);
 
     useEffect(() => {
@@ -23,6 +27,23 @@ const Home = () => {
             console.error('[DASHBOARD ERROR]', err.message);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleSync = async () => {
+        setSyncing(true);
+        try {
+            const response = await api.post('/sync/all');
+            if (response.data.success) {
+                showNotification('Sincronización SIGAFI completada con éxito');
+                fetchInitialData();
+            } else {
+                showNotification(response.data.message || 'Error en sincronización', 'error');
+            }
+        } catch (err) {
+            showNotification('Fallo de conexión con servicio de sincronización', 'error');
+        } finally {
+            setSyncing(false);
         }
     };
 
@@ -57,18 +78,43 @@ const Home = () => {
         <Layout>
             {/* Sistema de Notificaciones Zenith */}
             {notification && (
-                <div className="apple-toast border border-white/10 animate-apple-in">
+                <div className="apple-toast border border-white/10 animate-apple-in" style={{ zIndex: 1000 }}>
                     <div className={`w-3 h-12 rounded-full ${notification.type === 'error' ? 'bg-rose-500' : 'bg-[var(--apple-primary)]'}`}></div>
                     <p className="text-sm font-bold text-[var(--apple-text-main)]">{notification.message}</p>
                 </div>
             )}
 
             <div className="space-y-8">
-                <div className="max-w-4xl px-2">
-                    <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
-                        Pista & Monitoreo
-                    </h1>
-                    <p className="text-[var(--apple-text-sub)] font-bold text-[10px] lg:text-sm uppercase tracking-widest opacity-70 mt-1">Visión global de flota en tiempo real</p>
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+                    <div>
+                        <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
+                            Pista & Monitoreo
+                        </h1>
+                        <p className="text-[var(--apple-text-sub)] font-bold text-[10px] lg:text-sm uppercase tracking-widest opacity-70 mt-1">Visión global de flota en tiempo real</p>
+                    </div>
+
+                    {/* Botón de Sincronización solo para Admin */}
+                    {isAuthorized(['admin']) && (
+                        <button
+                            onClick={handleSync}
+                            disabled={syncing}
+                            className={`flex items-center gap-3 px-6 py-3 rounded-2xl font-black uppercase tracking-[0.15em] text-[10px] transition-all duration-500 shadow-lg ${syncing ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait' : 'bg-[var(--istpet-gold)] text-white hover:scale-105 active:scale-95 shadow-amber-500/20'}`}
+                        >
+                            {syncing ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    Sincronizando...
+                                </>
+                            ) : (
+                                <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-4 h-4">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+                                    </svg>
+                                    Sync SIGAFI
+                                </>
+                            )}
+                        </button>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 gap-8">

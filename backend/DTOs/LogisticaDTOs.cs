@@ -54,4 +54,32 @@ namespace backend.DTOs
         public string? Observaciones { get; set; }
         public int RegistradoPor { get; set; } = 1; // Default admin
     }
+
+    public class ReportePracticasDTO
+    {
+        public int IdRegistro { get; set; }
+        public string IdProfesor { get; set; } = string.Empty;
+        public string Profesor { get; set; } = string.Empty;
+        public string Categoria { get; set; } = string.Empty;
+        public int NumeroVehiculo { get; set; }
+        public string IdAlumno { get; set; } = string.Empty;
+        public string Nomina { get; set; } = string.Empty;
+        public string Dia { get; set; } = string.Empty;
+        public string Fecha { get; set; } = string.Empty;
+        public string HoraSalida { get; set; } = string.Empty;
+        public string? HoraLlegada { get; set; }
+        public string Tiempo { get; set; } = string.Empty;
+        public string? Observaciones { get; set; }
+    }
+
+    public class CentralUserDto
+    {
+        public string Usuario { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+        public int Salida { get; set; }
+        public int Ingreso { get; set; }
+        public int Activo { get; set; }
+        public int Asistencia { get; set; }
+        public int EsRrhh { get; set; }
+    }
 }

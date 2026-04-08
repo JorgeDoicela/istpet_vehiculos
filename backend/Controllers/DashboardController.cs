@@ -1,24 +1,33 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using backend.Services.Interfaces;
 using backend.Data;
 using backend.Models;
 using backend.DTOs;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace backend.Controllers
 {
-    /**
-     * ISTPET Enterprise Dashboard Controller
-     * Provides data for the Apple Light 2026 KPIs and real-time monitoring.
-     */
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin,logistica")]
     public class DashboardController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private readonly IDataSyncService _syncService;
 
-        public DashboardController(AppDbContext context)
+        public DashboardController(AppDbContext context, IDataSyncService syncService)
         {
             _context = context;
+            _syncService = syncService;
+        }
+
+        [HttpPost("sync-users")]
+        [Authorize(Roles = "admin")]
+        public async Task<ActionResult<ApiResponse<SyncLog>>> SyncUsers()
+        {
+            var result = await _syncService.SyncWebUsersAsync();
+            return Ok(ApiResponse<SyncLog>.Ok(result, "Sincronización de usuarios de SIGAFI completada."));
         }
 
         [HttpGet("clases-activas")]

@@ -23,7 +23,7 @@ namespace backend.Data
         public DbSet<Matricula> Matriculas { get; set; }
         public DbSet<RegistroSalida> RegistrosSalida { get; set; }
         public DbSet<RegistroLlegada> RegistrosLlegada { get; set; }
-        public DbSet<SyncLog> SyncLogs { get; set; }
+        // sync_logs no existe en el servidor — se usa SyncLog solo en memoria
 
         // SQL VIEWS (Read-only monitoring)
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
@@ -43,14 +43,17 @@ namespace backend.Data
                 entity.Property(e => e.Rol).HasColumnName("rol").HasDefaultValue("guardia");
                 entity.Property(e => e.NombreCompleto).HasColumnName("nombre_completo");
                 entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
+                entity.Property(e => e.CreadoEn).HasColumnName("creado_en").HasDefaultValueSql("CURRENT_TIMESTAMP");
             });
 
             // 2. PARAMETRIZACIÓN (tipos_licencia)
             modelBuilder.Entity<TipoLicencia>(entity => {
-                entity.ToTable("tipos_licencia");
+                entity.ToTable("tipo_licencia");
                 entity.HasKey(e => e.Id_Tipo);
-                entity.Property(e => e.Id_Tipo).HasColumnName("id_tipo_licencia");
-                entity.Property(e => e.Codigo).HasColumnName("nombre");
+                entity.Property(e => e.Id_Tipo).HasColumnName("id_tipo");
+                entity.Property(e => e.Codigo).HasColumnName("codigo");
+                entity.Property(e => e.Descripcion).HasColumnName("descripcion");
+                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
             });
 
             // 3. RECURSOS HUMANOS (instructores)
@@ -170,19 +173,6 @@ namespace backend.Data
                 entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
             });
 
-            // AUDIT LOGS
-            modelBuilder.Entity<SyncLog>(entity => {
-                entity.ToTable("sync_logs");
-                entity.HasKey(e => e.Id_Log);
-                entity.Property(e => e.Id_Log).HasColumnName("id_log");
-                entity.Property(e => e.Fecha).HasColumnName("fecha").HasDefaultValueSql("CURRENT_TIMESTAMP");
-                entity.Property(e => e.Modulo).HasColumnName("modulo");
-                entity.Property(e => e.Origen).HasColumnName("origen");
-                entity.Property(e => e.Estado).HasColumnName("estado");
-                entity.Property(e => e.Mensaje).HasColumnName("mensaje");
-                entity.Property(e => e.RegistrosProcesados).HasColumnName("registros_procesados");
-                entity.Property(e => e.RegistrosFallidos).HasColumnName("registros_fallidos");
-            });
         }
     }
 }

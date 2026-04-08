@@ -3,11 +3,13 @@ using backend.Models;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using Microsoft.AspNetCore.Authorization;
 
 namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "admin")]
     public class SyncController : ControllerBase
     {
         private readonly IDataSyncService _syncService;

@@ -1,0 +1,288 @@
+/* Apple-Style Premium Login Theme */
+
+.apple-login-container {
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    background: var(--apple-bg);
+    overflow: hidden;
+    font-family: 'Outfit', 'Inter', sans-serif;
+}
+
+/* Background Visuals (Floating Orbs) */
+.apple-visual-background {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.apple-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.15;
+}
+
+.apple-orb-1 {
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, var(--istpet-gold), transparent);
+    top: -200px;
+    right: -100px;
+}
+
+.apple-orb-2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--istpet-navy), transparent);
+    bottom: -150px;
+    left: -100px;
+}
+
+/* Main Wrapper */
+.apple-login-wrapper {
+    position: relative;
+    z-index: 10;
+    width: 100%;
+    max-width: 440px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Glass Card Customizations */
+.login-glass-card {
+    padding: 3.5rem 3rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* Header Section */
+.apple-login-header {
+    text-align: center;
+}
+
+.apple-brand-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.apple-logo-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 8px 16px rgba(26, 37, 68, 0.1));
+}
+
+.apple-login-title {
+    margin-top: 2rem;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--apple-text-main);
+    letter-spacing: -0.01em;
+    opacity: 0.9;
+}
+
+.apple-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.apple-title-main {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--apple-text-main);
+    text-transform: uppercase;
+    opacity: 0.6;
+}
+
+.apple-title-sub {
+    font-size: 16px;
+    font-weight: 950;
+    color: var(--istpet-gold);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+    line-height: 1.1;
+}
+
+/* Form Styles */
+.apple-login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+}
+
+.apple-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.apple-input-group label {
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--apple-text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding-left: 0.5rem;
+}
+
+.apple-field-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.apple-field-icon {
+    position: absolute;
+    left: 1.25rem;
+    width: 20px;
+    height: 20px;
+    color: var(--apple-text-sub);
+    opacity: 0.4;
+}
+
+.apple-field-container input {
+    width: 100%;
+    padding: 1.1rem 5.75rem 1.1rem 3.25rem;
+    border-radius: 1.25rem;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1.5px solid var(--apple-border);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--apple-text-main);
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.apple-field-container input:focus {
+    outline: none;
+    background: white;
+    border-color: var(--istpet-gold);
+    box-shadow: 0 8px 20px rgba(181, 148, 74, 0.12);
+}
+
+.apple-password-toggle {
+    position: absolute;
+    right: 1rem;
+    border: none;
+    background: transparent;
+    color: var(--apple-text-sub);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    padding: 0;
+}
+
+.apple-password-toggle svg {
+    width: 18px;
+    height: 18px;
+}
+
+.apple-password-toggle:hover {
+    opacity: 1;
+}
+
+/* Submit Button */
+.apple-submit-btn {
+    margin-top: 1rem;
+    width: 100%;
+    padding: 1.2rem;
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+}
+
+.btn-icon {
+    width: 18px;
+    height: 18px;
+    transition: transform 0.3s;
+}
+
+.apple-submit-btn:hover .btn-icon {
+    transform: translateX(4px);
+}
+
+/* Error Toast */
+.apple-error-toast {
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-left: 4px solid #ef4444;
+    border-radius: 1rem;
+    color: #b91c1c;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Card Footer */
+.apple-card-footer {
+    text-align: center;
+}
+
+.apple-link-gold {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--istpet-gold);
+    text-decoration: none;
+    transition: opacity 0.2s;
+}
+
+.apple-link-gold:hover {
+    opacity: 0.8;
+}
+
+/* Loading Spinner */
+.apple-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2.5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: apple-spin 0.8s linear infinite;
+}
+
+@keyframes apple-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Footer Credits */
+.apple-page-footer {
+    text-align: center;
+    opacity: 0.6;
+}
+
+.apple-page-footer p {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--apple-text-sub);
+    letter-spacing: 0.02em;
+}
+
+/* Responsive adjustment */
+@media (max-width: 480px) {
+    .apple-login-wrapper {
+        padding: 15px;
+    }
+    .login-glass-card {
+        padding: 3rem 2rem;
+        border-radius: 2.5rem;
+    }
+}
