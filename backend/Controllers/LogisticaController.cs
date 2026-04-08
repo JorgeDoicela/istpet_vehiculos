@@ -87,7 +87,7 @@ namespace backend.Controllers
                     }
                     localStudent.IdPracticaInstructor = localProf?.Id_Instructor;
                     localStudent.PracticaInstructor = localProf != null ? $"{localProf.Apellidos} {localProf.Nombres}" : (scheduled?.ProfesorNombre ?? $"{tutor?.Apellidos} {tutor?.Nombres}");
-                    localStudent.IdPracticaCentral = scheduled?.IdPractica;
+                    localStudent.IdPracticaCentral = scheduled?.IdVehiculo;
                     localStudent.PracticaVehiculo = scheduled?.VehiculoDetalle;
                     localStudent.PracticaHora = scheduled?.HoraSalida?.ToString(@"hh\:mm");
                 }
@@ -243,7 +243,7 @@ namespace backend.Controllers
                     IdMatricula = nuevaMatricula.Id_Matricula,
                     FotoBase64 = centralData.FotoBase64,
                     // Sugerencias de Agenda
-                    IdPracticaCentral = scheduled?.IdPractica,
+                    IdPracticaCentral = scheduled?.IdVehiculo,
                     IdPracticaInstructor = suggestedInstructorId,
                     PracticaInstructor = profName,
                     PracticaVehiculo = scheduled?.VehiculoDetalle,

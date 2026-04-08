@@ -187,15 +187,21 @@ const ControlOperativo = () => {
             setEstudianteData(data);
             if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
             
-            // Si viene de la agenda, aplicamos automáticamente la sugerencia
-            if (source === 'agenda' && (data.idPracticaInstructor || data.idPracticaCentral)) {
-                // Ejecutamos la aplicación de sugerencia pasando el objeto data directamente
-                // para evitar asincronía en la actualización del estado estudianteData
+            // --- CEREBRO DE AUTOSUGERENCIA ---
+            // Si el estudiante tiene una práctica agendada (Instructor o Vehículo), la aplicamos automáticamente
+            if (data.idPracticaInstructor || data.idPracticaCentral) {
                 await aplicarSugerenciaManual(data);
-                showNotification('Sugerencia de agenda aplicada');
+                
+                if (source === 'agenda') {
+                    showNotification('Sugerencia de agenda aplicada');
+                } else {
+                    setMostrarBannerSugerencia(true); // Mostramos el banner informativo en búsqueda manual
+                    showNotification('¡Agenda detectada y aplicada automáticamente!');
+                }
             } else {
                 showNotification('Estudiante localizado');
             }
+
         } catch (err) {
             showNotification(err.message || 'No localizado', 'error');
         } finally {

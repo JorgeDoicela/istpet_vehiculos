@@ -58,8 +58,7 @@ CREATE TABLE IF NOT EXISTS mantenimientos (
 );
 
 CREATE TABLE IF NOT EXISTS estudiantes (
-    id_estudiante INT PRIMARY KEY AUTO_INCREMENT,
-    cedula VARCHAR(15) UNIQUE NOT NULL,
+    cedula VARCHAR(15) PRIMARY KEY,
     nombres VARCHAR(100) NOT NULL,
     apellidos VARCHAR(100) NOT NULL,
     telefono VARCHAR(20),
@@ -69,8 +68,18 @@ CREATE TABLE IF NOT EXISTS estudiantes (
 
 CREATE TABLE IF NOT EXISTS cursos (
     id_curso INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
     id_tipo_licencia INT,
+    nivel VARCHAR(50) NOT NULL,
+    paralelo VARCHAR(10) NOT NULL,
+    jornada VARCHAR(50) DEFAULT 'MATUTINA',
+    periodo VARCHAR(20) NOT NULL,
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    cupo_maximo INT DEFAULT 20,
+    cupos_disponibles INT DEFAULT 20,
+    horas_practica_total INT DEFAULT 15,
+    estado VARCHAR(20) DEFAULT 'ACTIVO',
     FOREIGN KEY (id_tipo_licencia) REFERENCES tipos_licencia(id_tipo_licencia)
 );
 
@@ -79,8 +88,8 @@ CREATE TABLE IF NOT EXISTS matriculas (
     cedula_estudiante VARCHAR(15) NOT NULL,
     id_curso INT NOT NULL,
     fecha_matricula DATE NOT NULL,
-    horas_completadas INT DEFAULT 0,
-    estado ENUM('ACTIVO', 'SUSPENDIDO', 'FINALIZADO') DEFAULT 'ACTIVO',
+    horas_completadas DECIMAL(5,2) DEFAULT 0.00,
+    estado VARCHAR(20) DEFAULT 'ACTIVO',
     FOREIGN KEY (cedula_estudiante) REFERENCES estudiantes(cedula),
     FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
 );
@@ -120,10 +129,10 @@ CREATE TABLE IF NOT EXISTS registros_salida (
 );
 
 CREATE TABLE IF NOT EXISTS registros_llegada (
-    id_registro INT PRIMARY KEY,
+    id_llegada INT PRIMARY KEY AUTO_INCREMENT,
+    id_registro INT NOT NULL,
     fecha_hora_llegada DATETIME DEFAULT CURRENT_TIMESTAMP,
     observaciones_llegada TEXT,
-    km_llegada INT,
     registrado_por INT,
     FOREIGN KEY (id_registro) REFERENCES registros_salida(id_registro),
     FOREIGN KEY (registrado_por) REFERENCES usuarios(id_usuario)
@@ -148,7 +157,7 @@ JOIN estudiantes e ON m.cedula_estudiante = e.cedula
 JOIN vehiculos v ON s.id_vehiculo = v.id_vehiculo
 JOIN instructores i ON s.id_instructor = i.id_instructor
 LEFT JOIN registros_llegada l ON s.id_registro = l.id_registro
-WHERE l.id_registro IS NULL;
+WHERE l.id_llegada IS NULL;
 
 CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
 SELECT 
@@ -203,21 +212,38 @@ CREATE TABLE IF NOT EXISTS periodos (
     idPeriodo INT PRIMARY KEY, detalle VARCHAR(50), activo INT DEFAULT 1
 );
 
+CREATE TABLE IF NOT EXISTS secciones (
+    idSeccion INT PRIMARY KEY, seccion VARCHAR(50)
+);
+
+CREATE TABLE IF NOT EXISTS cursos (
+    idNivel INT PRIMARY KEY, Nivel VARCHAR(100)
+);
+
+CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
+    idAlumno VARCHAR(15), idProfesor VARCHAR(15), activa INT DEFAULT 1
+);
+
 -- Simulation Data
 INSERT IGNORE INTO usuario VALUES (1725555377, '$2a$12$K79B1f.w.v/WfA.h.X.v.Ou.O.v.O.v.O.v.O.v.O.v.O.v.O', 1);
-INSERT IGNORE INTO alumnos VALUES ('1725555377', 'JORGE', 'ISMAEL', 'DOICELA', 'MOLINA', '0999999999', 'jorge@mail.com', NULL);
-INSERT IGNORE INTO profesores VALUES ('1712345678', 'RICHARD', 'MAURICIO', 'TRUJILLO', 'REDROBAN', '0888888888', 'richard@mail.com', 1);
+INSERT IGNORE INTO alumnos (idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno, celular, email) VALUES ('1725555377', 'JORGE', 'ISMAEL', 'DOICELA', 'MOLINA', '0999999999', 'jorge@mail.com');
+INSERT IGNORE INTO profesores VALUES ('1725555377', 'RICHARD', 'MAURICIO', 'TRUJILLO', 'REDROBAN', '0888888888', 'richard@mail.com', 1);
 INSERT IGNORE INTO vehiculos VALUES (35, 35, 'PBA-1234', 'CHEVROLET', 'AVEO', 1, 0);
 INSERT IGNORE INTO periodos VALUES (1, 'OCT2025', 1), (2, '2026-I', 1);
-INSERT IGNORE INTO matriculas (idAlumno, idPeriodo, idNivel, idSeccion, fechaMatricula, paralelo) VALUES ('1725555377', 1, 100, 1, CURDATE(), 'A');
-INSERT IGNORE INTO cond_alumnos_practicas (idAlumno, idVehiculo, idProfesor, fecha, hora_salida, user_asigna) VALUES ('1725555377', 35, '1712345678', CURDATE(), '08:00:00', 'ADMIN');
+INSERT IGNORE INTO secciones VALUES (1, 'MATUTINA'), (2, 'VESPERTINA'), (3, 'NOCTURNA');
+INSERT IGNORE INTO cursos VALUES (1, 'CURSO TIPO C - LICENCIA REGULAR');
+INSERT IGNORE INTO cond_alumnos_vehiculos VALUES ('1725555377', '1725555377', 1);
+INSERT IGNORE INTO matriculas (idAlumno, idPeriodo, idNivel, idSeccion, fechaMatricula, paralelo) VALUES ('1725555377', 2, 1, 1, CURDATE(), 'A');
+INSERT IGNORE INTO cond_alumnos_practicas (idAlumno, idVehiculo, idProfesor, fecha, hora_salida, user_asigna) VALUES ('1725555377', 35, '1725555377', CURDATE(), '08:00:00', 'ADMIN');
+
+
 
 -- ------------------------------------------------------------
 -- SECTION 4: DATA SYNCHRONIZATION
 -- ------------------------------------------------------------
 USE istpet_vehiculos;
 
-INSERT IGNORE INTO tipos_licencia (nombre, descripcion) VALUES ('C', 'Liviana'), ('D', 'Pesada'), ('E', 'Extra Pesada');
+INSERT IGNORE INTO tipos_licencia (id_tipo_licencia, nombre, descripcion) VALUES (1, 'C', 'Liviana'), (2, 'D', 'Pesada'), (3, 'E', 'Extra Pesada');
 
 INSERT IGNORE INTO instructores (cedula, nombres, apellidos, telefono, email, activo)
 SELECT idProfesor, CONCAT_WS(' ', primerNombre, segundoNombre), CONCAT_WS(' ', primerApellido, segundoApellido), celular, email, COALESCE(activo, 1)
@@ -227,14 +253,24 @@ INSERT IGNORE INTO vehiculos (id_vehiculo, numero_vehiculo, placa, marca, modelo
 SELECT v.IdVehiculo, v.numero_vehiculo, v.placa, v.Marca, v.Modelo, 1, 1, 'OPERATIVO'
 FROM sigafi_es.vehiculos v;
 
+-- Create Default Admin User (Essential for Foreign Keys)
+INSERT IGNORE INTO usuarios (id_usuario, usuario, password_hash, rol, nombre_completo, activo)
+VALUES (1, 'admin', '$2a$12$K79B1f.w.v/WfA.h.X.v.Ou.O.v.O.v.O.v.O.v.O.v.O.v.O', 'admin', 'ADMINISTRADOR DEL SISTEMA', 1);
+
 INSERT IGNORE INTO usuarios (usuario, password_hash, rol, nombre_completo, activo)
 SELECT p.idProfesor, u.Contrasenia, 'admin', CONCAT_WS(' ', p.primerApellido, p.segundoApellido, p.primerNombre, p.segundoNombre), 1
 FROM sigafi_es.usuario u
-JOIN sigafi_es.profesores p ON u.IdUsuario = CAST(p.idProfesor AS UNSIGNED);
+JOIN sigafi_es.profesores p ON u.IdUsuario = CAST(p.idProfesor AS UNSIGNED)
+WHERE u.IdUsuario != 1;
+
 
 INSERT IGNORE INTO estudiantes (cedula, nombres, apellidos, telefono, email, activo)
 SELECT idAlumno, CONCAT_WS(' ', primerNombre, segundoNombre), CONCAT_WS(' ', apellidoPaterno, apellidoMaterno), celular, email, 1
 FROM sigafi_es.alumnos;
+
+-- Create Default Course to avoid null references
+INSERT IGNORE INTO cursos (id_curso, nombre, id_tipo_licencia, nivel, paralelo, jornada, periodo, fecha_inicio, fecha_fin, estado)
+VALUES (1, 'CURSO DE CONDUCCIÓN PROFESIONAL', 1, 'PRIMERO', 'A', 'MATUTINA', '2026-I', CURDATE(), DATE_ADD(CURDATE(), INTERVAL 6 MONTH), 'ACTIVO');
 
 INSERT IGNORE INTO matriculas (id_matricula, cedula_estudiante, id_curso, fecha_matricula, horas_completadas, estado)
 SELECT idMatricula, idAlumno, 1, COALESCE(fechaMatricula, CURDATE()), 0, 'ACTIVO'
@@ -242,3 +278,4 @@ FROM sigafi_es.matriculas WHERE valida = 1;
 
 -- Final Log
 SELECT 'DEPLOYMENT AND SYNCHRONIZATION COMPLETED SUCCESSFULLY' AS Status;
+
