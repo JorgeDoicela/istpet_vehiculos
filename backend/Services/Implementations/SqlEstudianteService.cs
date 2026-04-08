@@ -5,6 +5,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Services.Implementations
 {
+    /**
+     * Student Search Service: Refactored for Absolute SIGAFI Parity 2026.
+     */
     public class SqlEstudianteService : IEstudianteService
     {
         private readonly AppDbContext _context;
@@ -14,9 +17,9 @@ namespace backend.Services.Implementations
             _context = context;
         }
 
-        public async Task<Estudiante?> GetByCedulaAsync(string cedula)
+        public async Task<Estudiante?> GetByIdAlumnoAsync(string idAlumno)
         {
-            return await _context.Estudiantes.FirstOrDefaultAsync(e => e.Cedula == cedula);
+            return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
         }
 
         public async Task<IEnumerable<Estudiante>> GetAllAsync()

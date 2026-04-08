@@ -1,13 +1,14 @@
-import api from './api';
+import axios from 'axios';
 
-/**
- * Student Service - Unpacks ApiResponse<T> for Academic Components
- */
-const studentService = {
-  getByCedula: async (cedula) => {
-    const response = await api.get(`/Estudiantes/${cedula}`);
-    return response.data?.data || null;
+const API_URL = import.meta.env.VITE_API_URL + '/estudiantes';
+
+export const studentService = {
+  getAll: async () => {
+    const response = await axios.get(API_URL);
+    return response.data;
+  },
+  getByIdAlumno: async (idAlumno) => {
+    const response = await axios.get(`${API_URL}/${idAlumno}`);
+    return response.data;
   }
 };
-
-export default studentService;

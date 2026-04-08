@@ -7,8 +7,7 @@ namespace backend.Services.Implementations
 {
     /**
      * EF Core Implementation of ILogisticaService
-     * Migrado desde Procedimientos Almacenados (Stored Procedures)
-     * Toda la lógica de negocio y validación reside ahora en el servidor.
+     * Refactored 2026 for Absolute Parity: idAlumno, idProfesor, idVehiculo, idPractica.
      */
     public class SqlLogisticaService : ILogisticaService
     {
@@ -19,51 +18,49 @@ namespace backend.Services.Implementations
             _context = context;
         }
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, int idInstructor, string observaciones, int registradoPor)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 // 1. Validar que el vehículo exista y esté operativo
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
-                if (vehiculo == null || !vehiculo.Activo || vehiculo.EstadoMecanico != "OPERATIVO")
+                if (vehiculo == null || !vehiculo.activo || vehiculo.estado_mecanico != "OPERATIVO")
                     return "ERROR: Vehículo no disponible u operativo.";
 
-                // 2. Validar que el vehículo no esté ya en uso (sin llegada registrada)
-                var vehiculoOcupado = await _context.RegistrosSalida
-                    .AnyAsync(s => s.IdVehiculo == idVehiculo && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
+                // 2. Validar que el vehículo no esté ya en uso (ensalida = 1)
+                var vehiculoOcupado = await _context.Practicas
+                    .AnyAsync(p => p.idvehiculo == idVehiculo && p.ensalida == 1 && p.cancelado == 0);
 
                 if (vehiculoOcupado)
                     return "VEHICULO_EN_USO";
 
-                // 3. Validar que el instructor no esté ocupado (sin llegada registrada)
-                var instructorOcupado = await _context.RegistrosSalida
-                    .AnyAsync(s => s.IdInstructor == idInstructor && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro));
-
-                if (instructorOcupado)
-                    return "INSTRUCTOR_OCUPADO";
+                // 3. Obtener datos de la matrícula para idAlumno
+                var matricula = await _context.Matriculas.FindAsync(idMatricula);
+                if (matricula == null) return "ERROR: Matrícula no encontrada.";
 
                 // 4. Validar que el estudiante no esté ya en pista
-                // Buscamos si hay un registro de salida para esta matrícula sin su respectiva llegada
-                var estudianteOcupado = await _context.RegistrosSalida
-                    .Where(s => s.IdMatricula == idMatricula && !_context.RegistrosLlegada.Any(l => l.IdRegistro == s.Id_Registro))
-                    .AnyAsync();
+                var estudianteOcupado = await _context.Practicas
+                    .AnyAsync(p => p.idalumno == matricula.idAlumno && p.ensalida == 1 && p.cancelado == 0);
 
                 if (estudianteOcupado)
                     return "ESTUDIANTE_EN_PISTA";
 
-                // 5. Registrar salida
-                var salida = new RegistroSalida
+                // 5. Registrar salida (Usando modelo Practica que mapea a cond_alumnos_practicas)
+                var practica = new Practica
                 {
-                    IdMatricula = idMatricula,
-                    IdVehiculo = idVehiculo,
-                    IdInstructor = idInstructor,
-                    FechaHoraSalida = DateTime.Now,
-                    ObservacionesSalida = observaciones,
-                    RegistradoPor = registradoPor
+                    idalumno = matricula.idAlumno,
+                    idvehiculo = idVehiculo,
+                    idProfesor = idInstructor,
+                    idPeriodo = matricula.idPeriodo ?? "S/P",
+                    fecha = DateTime.Today,
+                    hora_salida = DateTime.Now.TimeOfDay,
+                    ensalida = 1,
+                    user_asigna = registradoPor.ToString(),
+                    cancelado = 0
                 };
 
-                _context.RegistrosSalida.Add(salida);
+                _context.Practicas.Add(practica);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -76,40 +73,36 @@ namespace backend.Services.Implementations
             }
         }
 
-        public async Task<string> RegistrarLlegadaAsync(int idRegistro, string observaciones, int registradoPor)
+        public async Task<string> RegistrarLlegadaAsync(int idPractica, string observaciones, int registradoPor)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Obtener registro de salida
-                var salida = await _context.RegistrosSalida.FindAsync(idRegistro);
-                if (salida == null)
-                    return "ERROR: Registro de salida no encontrado.";
+                // 1. Obtener registro de la práctica
+                var practica = await _context.Practicas.FindAsync(idPractica);
+                if (practica == null)
+                    return "ERROR: Registro de práctica no encontrado.";
 
-                // 2. Validar que no tenga llegada ya
-                var tieneLlegada = await _context.RegistrosLlegada.AnyAsync(l => l.IdRegistro == idRegistro);
-                if (tieneLlegada)
-                    return "ERROR: Este registro ya fue cerrado.";
+                // 2. Validar que esté en salida
+                if (practica.ensalida == 0)
+                    return "ERROR: Esta práctica ya fue cerrada o no ha iniciado.";
 
                 // 3. Registrar Llegada
-                var llegada = new RegistroLlegada
-                {
-                    IdRegistro = idRegistro,
-                    FechaHoraLlegada = DateTime.Now,
-                    ObservacionesLlegada = observaciones,
-                    RegistradoPor = registradoPor
-                };
+                practica.hora_llegada = DateTime.Now.TimeOfDay;
+                practica.ensalida = 0;
+                practica.user_llegada = registradoPor.ToString();
 
-                _context.RegistrosLlegada.Add(llegada);
-
-                // 6. Actualizar Horas Completadas del Estudiante (Matrícula)
-                var matricula = await _context.Matriculas.FindAsync(salida.IdMatricula);
-                if (matricula != null)
+                if (practica.hora_salida.HasValue)
                 {
-                    var duracionClase = llegada.FechaHoraLlegada - salida.FechaHoraSalida;
-                    // Redondear a dos decimales las horas totales (eg. 1.5 horas = 1 hora 30 min)
-                    decimal horasCalculadas = (decimal)Math.Round(duracionClase.TotalHours, 2);
-                    matricula.HorasCompletadas += horasCalculadas;
+                    practica.tiempo = practica.hora_llegada - practica.hora_salida;
+                }
+
+                // 4. Actualizar Horas Completadas en Matrícula
+                var matricula = await _context.Matriculas.FirstOrDefaultAsync(m => m.idAlumno == practica.idalumno && m.estado == "ACTIVO");
+                if (matricula != null && practica.tiempo.HasValue)
+                {
+                    decimal horasCalculadas = (decimal)Math.Round(practica.tiempo.Value.TotalHours, 2);
+                    matricula.horas_completadas += horasCalculadas;
                 }
 
                 await _context.SaveChangesAsync();

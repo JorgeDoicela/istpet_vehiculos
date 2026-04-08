@@ -1,44 +1,86 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
+    /**
+     * Instructor Model: Absolute SIGAFI Parity 2026.
+     * Comprehensive alignment with SIGAFI 'profesores' table schema.
+     */
     public class Instructor
     {
         [Key]
-        public int Id_Instructor { get; set; }
+        [MaxLength(14)]
+        public string idProfesor { get; set; } = string.Empty;
+
+        [MaxLength(1)]
+        public string? tipodocumento { get; set; } = "C";
 
         [Required]
-        [MaxLength(15)]
-        public string Cedula { get; set; } = string.Empty;
+        [MaxLength(80)]
+        public string primerApellido { get; set; } = string.Empty;
+
+        [MaxLength(80)]
+        public string? segundoApellido { get; set; }
 
         [Required]
+        [MaxLength(80)]
+        public string primerNombre { get; set; } = string.Empty;
+
+        [MaxLength(80)]
+        public string? segundoNombre { get; set; }
+
+        // Combined fields (Legacy / Search compatibility)
+        [MaxLength(60)]
+        public string nombres { get; set; } = string.Empty;
+
+        [MaxLength(60)]
+        public string apellidos { get; set; } = string.Empty;
+
+        public int estadoCivil { get; set; } = 1;
+
         [MaxLength(100)]
-        public string Nombres { get; set; } = string.Empty;
+        public string? direccion { get; set; }
 
-        [Required]
+        [MaxLength(30)]
+        public string? telefono { get; set; }
+
+        [MaxLength(20)]
+        public string? celular { get; set; }
+
         [MaxLength(100)]
-        public string Apellidos { get; set; } = string.Empty;
+        public string? email { get; set; }
+
+        public DateTime? fecha_nacimiento { get; set; }
+
+        [MaxLength(1)]
+        public string? sexo { get; set; }
+
+        [MaxLength(20)]
+        public string? clave { get; set; } = "321";
+
+        public int practicas { get; set; } = 0;
+
+        [MaxLength(1)]
+        public string? tipo { get; set; } = "P";
+
+        [MaxLength(200)]
+        public string? titulo { get; set; }
+
+        [MaxLength(5)]
+        public string? abreviatura { get; set; }
+
+        [MaxLength(255)]
+        public string? emailInstitucional { get; set; }
+
+        [MaxLength(5)]
+        public string? tipoSangre { get; set; }
+
+        [MaxLength(255)]
+        public string? foto { get; set; }
+
+        public bool activo { get; set; } = true;
 
         [MaxLength(50)]
-        public string? Telefono { get; set; }
-
-        [MaxLength(100)]
-        public string? Email { get; set; }
-
-        public bool Activo { get; set; } = true;
-    }
-
-    public class InstructorLicencia
-    {
-        public int Id_Instructor { get; set; }
-        public int Id_Tipo_Licencia { get; set; }
-        public DateTime? FechaObtencion { get; set; }
-
-        [ForeignKey("Id_Instructor")]
-        public virtual Instructor? Instructor { get; set; }
-
-        [ForeignKey("Id_Tipo_Licencia")]
-        public virtual TipoLicencia? TipoLicencia { get; set; }
+        public string? nacionalidad { get; set; }
     }
 }

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Layout from '../components/layout/Layout';
 import StudentSearch from '../components/features/StudentSearch';
 import SkeletonLoader from '../components/features/SkeletonLoader';
-import studentService from '../services/studentService';
+import { studentService } from '../services/studentService';
 
 const Students = () => {
     const [student, setStudent] = useState(null);
@@ -14,11 +14,11 @@ const Students = () => {
         setTimeout(() => setNotification(null), 4000);
     };
 
-    const handleSearchStudent = async (cedula) => {
+    const handleSearchStudent = async (idAlumno) => {
         setLoading(true);
         setStudent(null);
         try {
-            const data = await studentService.getByCedula(cedula);
+            const data = await studentService.getByIdAlumno(idAlumno);
             setStudent(data);
             showNotification('Estudiante localizado con éxito');
         } catch (err) {
@@ -75,7 +75,7 @@ const Students = () => {
                                 <h3 className="text-3xl lg:text-4xl font-black uppercase tracking-tighter text-[var(--apple-text-main)] leading-tight">{student.nombreCompleto}</h3>
                                 <div className="flex gap-4 mt-2">
                                     <span className="px-4 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-emerald-500/20">Matriculado</span>
-                                    <p className="text-[var(--apple-text-sub)] font-mono text-xs tracking-[0.2em] self-center opacity-60">ID {student.cedula}</p>
+                                    <p className="text-[var(--apple-text-sub)] font-mono text-xs tracking-[0.2em] self-center opacity-60">ID {student.idAlumno}</p>
                                 </div>
                             </div>
                         </div>

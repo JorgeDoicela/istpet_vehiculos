@@ -4,9 +4,8 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Data
 {
     /**
-     * ISTPET Enterprise DbContext: Grand Mapping 2026 Edition
-     * Aligned with SQL snake_case schema across all 11 tables.
-     * Includes Mapping for SQL Views and Sync Auditing logs.
+     * ISTPET Enterprise DbContext: Absolute Parity Edition 2026.
+     * Mirroring the exact SIGAFI server schema in the local database.
      */
     public class AppDbContext : DbContext
     {
@@ -15,17 +14,14 @@ namespace backend.Data
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<TipoLicencia> TipoLicencias { get; set; }
         public DbSet<Instructor> Instructores { get; set; }
-        public DbSet<InstructorLicencia> InstructorLicencias { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<Mantenimiento> Mantenimientos { get; set; }
-        public DbSet<Curso> Cursos { get; set; }
+        public DbSet<Nivel> Niveles { get; set; }
         public DbSet<Estudiante> Estudiantes { get; set; }
         public DbSet<Matricula> Matriculas { get; set; }
-        public DbSet<RegistroSalida> RegistrosSalida { get; set; }
-        public DbSet<RegistroLlegada> RegistrosLlegada { get; set; }
-        // sync_logs no existe en el servidor — se usa SyncLog solo en memoria
+        public DbSet<Practica> Practicas { get; set; }
+        public DbSet<Asignacion> Asignaciones { get; set; }
 
-        // SQL VIEWS (Read-only monitoring)
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
         public DbSet<AlertaMantenimiento> AlertasMantenimiento { get; set; }
 
@@ -33,146 +29,125 @@ namespace backend.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            // 1. SEGURIDAD (usuarios)
+            // 1. SEGURIDAD (usuarios_web)
             modelBuilder.Entity<Usuario>(entity => {
-                entity.ToTable("usuarios");
-                entity.HasKey(e => e.Id_Usuario);
-                entity.Property(e => e.Id_Usuario).HasColumnName("id_usuario");
-                entity.Property(e => e.UsuarioLogin).HasColumnName("usuario");
-                entity.Property(e => e.PasswordHash).HasColumnName("password_hash");
-                entity.Property(e => e.Rol).HasColumnName("rol").HasDefaultValue("guardia");
-                entity.Property(e => e.NombreCompleto).HasColumnName("nombre_completo");
-                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
-                entity.Property(e => e.CreadoEn).HasColumnName("creado_en").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                entity.ToTable("usuarios_web");
+                entity.HasKey(e => e.usuario);
             });
 
-            // 2. PARAMETRIZACIÓN (tipos_licencia)
+            // 2. TIPO LICENCIA
             modelBuilder.Entity<TipoLicencia>(entity => {
                 entity.ToTable("tipo_licencia");
-                entity.HasKey(e => e.Id_Tipo);
-                entity.Property(e => e.Id_Tipo).HasColumnName("id_tipo");
-                entity.Property(e => e.Codigo).HasColumnName("codigo");
-                entity.Property(e => e.Descripcion).HasColumnName("descripcion");
-                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
+                entity.HasKey(e => e.id_tipo);
             });
 
-            // 3. RECURSOS HUMANOS (instructores)
+            // 3. INSTRUCTORES (Mirroring 'profesores' schema)
             modelBuilder.Entity<Instructor>(entity => {
-                entity.ToTable("instructores");
-                entity.HasKey(e => e.Id_Instructor);
-                entity.Property(e => e.Id_Instructor).HasColumnName("id_instructor");
-                entity.Property(e => e.Cedula).HasColumnName("cedula");
-                entity.Property(e => e.Nombres).HasColumnName("nombres");
-                entity.Property(e => e.Apellidos).HasColumnName("apellidos");
-                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
+                entity.ToTable("profesores");
+                entity.HasKey(e => e.idProfesor);
+                entity.Property(e => e.idProfesor).HasColumnName("idProfesor");
+                entity.Property(e => e.primerNombre).HasColumnName("primerNombre");
+                entity.Property(e => e.segundoNombre).HasColumnName("segundoNombre");
+                entity.Property(e => e.primerApellido).HasColumnName("primerApellido");
+                entity.Property(e => e.segundoApellido).HasColumnName("segundoApellido");
+                entity.Property(e => e.nombres).HasColumnName("nombres");
+                entity.Property(e => e.apellidos).HasColumnName("apellidos");
             });
 
-            modelBuilder.Entity<InstructorLicencia>(entity => {
-                entity.ToTable("instructor_licencias");
-                entity.HasKey(e => new { e.Id_Instructor, e.Id_Tipo_Licencia });
-            });
-
-            // 4. GESTIÓN DE FLOTA (vehiculos, mantenimientos)
+            // 4. VEHÍCULOS (Mirroring 'vehiculos' schema)
             modelBuilder.Entity<Vehiculo>(entity => {
                 entity.ToTable("vehiculos");
-                entity.HasKey(e => e.Id_Vehiculo);
-                entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
-                entity.Property(e => e.NumeroVehiculo).HasColumnName("numero_vehiculo");
-                entity.Property(e => e.Placa).HasColumnName("placa");
-                entity.Property(e => e.EstadoMecanico).HasColumnName("estado_mecanico").HasDefaultValue("OPERATIVO");
-                entity.Property(e => e.IdTipoLicencia).HasColumnName("id_tipo_licencia");
-                entity.Property(e => e.IdInstructorFijo).HasColumnName("id_instructor_fijo");
-                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
+                entity.HasKey(e => e.idVehiculo);
+                entity.Property(e => e.idVehiculo).HasColumnName("idVehiculo");
+                entity.Property(e => e.numero_vehiculo).HasColumnName("numero_vehiculo");
+                entity.Property(e => e.placa).HasColumnName("placa");
+                entity.Property(e => e.marca).HasColumnName("marca");
+                entity.Property(e => e.modelo).HasColumnName("modelo");
+                entity.Property(e => e.anio).HasColumnName("anio");
+                entity.Property(e => e.chasis).HasColumnName("chasis");
+                entity.Property(e => e.motor).HasColumnName("motor");
+                entity.Property(e => e.observacion).HasColumnName("observacion");
             });
 
-            modelBuilder.Entity<Mantenimiento>(entity => {
-                entity.ToTable("mantenimientos");
-                entity.HasKey(e => e.Id_Mantenimiento);
-                entity.Property(e => e.Id_Mantenimiento).HasColumnName("id_mantenimiento");
-                entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
-                entity.Property(e => e.Fecha).HasColumnName("fecha");
-                entity.Property(e => e.Descripcion).HasColumnName("descripcion");
-            });
-
-            // 5. ACADÉMICO (estudiantes, cursos, matriculas)
+            // 5. ESTUDIANTES (Mirroring 'alumnos' schema)
             modelBuilder.Entity<Estudiante>(entity => {
-                entity.ToTable("estudiantes");
-                entity.HasKey(e => e.Cedula);
-                entity.Property(e => e.Cedula).HasColumnName("cedula");
-                entity.Property(e => e.Nombres).HasColumnName("nombres");
-                entity.Property(e => e.Apellidos).HasColumnName("apellidos");
-                entity.Property(e => e.Activo).HasColumnName("activo").HasDefaultValue(true);
+                entity.ToTable("alumnos");
+                entity.HasKey(e => e.idAlumno);
+                entity.Property(e => e.idAlumno).HasColumnName("idAlumno");
+                entity.Property(e => e.primerNombre).HasColumnName("primerNombre");
+                entity.Property(e => e.segundoNombre).HasColumnName("segundoNombre");
+                entity.Property(e => e.apellidoPaterno).HasColumnName("apellidoPaterno");
+                entity.Property(e => e.apellidoMaterno).HasColumnName("apellidoMaterno");
             });
 
-            modelBuilder.Entity<Curso>(entity => {
-                entity.ToTable("cursos");
-                entity.HasKey(e => e.Id_Curso);
-                entity.Property(e => e.Id_Curso).HasColumnName("id_curso");
-                entity.Property(e => e.IdTipoLicencia).HasColumnName("id_tipo_licencia");
-                entity.Property(e => e.Nombre).HasColumnName("nombre");
-                entity.Property(e => e.Nivel).HasColumnName("nivel");
-                entity.Property(e => e.Paralelo).HasColumnName("paralelo");
-                entity.Property(e => e.Jornada).HasColumnName("jornada");
-                entity.Property(e => e.Periodo).HasColumnName("periodo");
-                entity.Property(e => e.FechaInicio).HasColumnName("fecha_inicio");
-                entity.Property(e => e.FechaFin).HasColumnName("fecha_fin");
-                entity.Property(e => e.CupoMaximo).HasColumnName("cupo_maximo");
-                entity.Property(e => e.CuposDisponibles).HasColumnName("cupos_disponibles");
-                entity.Property(e => e.HorasPracticaTotal).HasColumnName("horas_practica_total");
-            });
-
+            // 6. MATRÍCULAS (Mirroring 'matriculas' schema)
             modelBuilder.Entity<Matricula>(entity => {
                 entity.ToTable("matriculas");
-                entity.HasKey(e => e.Id_Matricula);
-                entity.Property(e => e.Id_Matricula).HasColumnName("id_matricula");
-                entity.Property(e => e.CedulaEstudiante).HasColumnName("cedula_estudiante");
-                entity.Property(e => e.IdCurso).HasColumnName("id_curso");
-                entity.Property(e => e.FechaMatricula).HasColumnName("fecha_matricula");
-                entity.Property(e => e.HorasCompletadas).HasColumnName("horas_completadas");
-                entity.Property(e => e.Estado).HasColumnName("estado");
+                entity.HasKey(e => e.idMatricula);
+                entity.Property(e => e.idMatricula).HasColumnName("idMatricula");
+                entity.Property(e => e.idAlumno).HasColumnName("idAlumno");
+                entity.Property(e => e.idNivel).HasColumnName("idNivel");
+                entity.Property(e => e.idSeccion).HasColumnName("idSeccion");
+                entity.Property(e => e.idPeriodo).HasColumnName("idPeriodo");
+                entity.Property(e => e.paralelo).HasColumnName("paralelo");
             });
 
-            // 6. CONTROL LOGÍSTICO (registros_salida, registros_llegada)
-            modelBuilder.Entity<RegistroSalida>(entity => {
-                entity.ToTable("registros_salida");
-                entity.HasKey(e => e.Id_Registro);
-                entity.Property(e => e.Id_Registro).HasColumnName("id_registro");
-                entity.Property(e => e.IdMatricula).HasColumnName("id_matricula");
-                entity.Property(e => e.IdVehiculo).HasColumnName("id_vehiculo");
-                entity.Property(e => e.IdInstructor).HasColumnName("id_instructor");
-                entity.Property(e => e.FechaHoraSalida).HasColumnName("fecha_hora_salida");
-                entity.Property(e => e.ObservacionesSalida).HasColumnName("observaciones_salida");
-                entity.Property(e => e.RegistradoPor).HasColumnName("registrado_por");
+            // 8. NIVELES (Mirroring 'niveles' schema)
+            modelBuilder.Entity<Nivel>(entity => {
+                entity.ToTable("niveles");
+                entity.HasKey(e => e.idNivel);
+                entity.Property(e => e.idNivel).HasColumnName("idNivel");
+                entity.Property(e => e.idCarrera).HasColumnName("idCarrera");
+                entity.Property(e => e.NivelNombre).HasColumnName("Nivel");
             });
 
-            modelBuilder.Entity<RegistroLlegada>(entity => {
-                entity.ToTable("registros_llegada");
-                entity.HasKey(e => e.Id_Llegada);
-                entity.Property(e => e.Id_Llegada).HasColumnName("id_llegada");
-                entity.Property(e => e.IdRegistro).HasColumnName("id_registro");
-                entity.Property(e => e.FechaHoraLlegada).HasColumnName("fecha_hora_llegada");
-                entity.Property(e => e.ObservacionesLlegada).HasColumnName("observaciones_llegada");
-                entity.Property(e => e.RegistradoPor).HasColumnName("registrado_por");
+            // 7. PRÁCTICAS (Mirroring 'cond_alumnos_practicas' schema)
+            modelBuilder.Entity<Practica>(entity => {
+                entity.ToTable("cond_alumnos_practicas"); 
+                entity.HasKey(e => e.idPractica);
+                entity.Property(e => e.idPractica).HasColumnName("idPractica");
+                entity.Property(e => e.idalumno).HasColumnName("idalumno");
+                entity.Property(e => e.idvehiculo).HasColumnName("idvehiculo");
+                entity.Property(e => e.idProfesor).HasColumnName("idProfesor");
+                entity.Property(e => e.idPeriodo).HasColumnName("idPeriodo");
+                entity.Property(e => e.dia).HasColumnName("dia");
+                entity.Property(e => e.fecha).HasColumnName("fecha");
+                entity.Property(e => e.hora_salida).HasColumnName("hora_salida");
+                entity.Property(e => e.hora_llegada).HasColumnName("hora_llegada");
+                entity.Property(e => e.tiempo).HasColumnName("tiempo");
+                entity.Property(e => e.ensalida).HasColumnName("ensalida");
+                entity.Property(e => e.verificada).HasColumnName("verificada");
+                entity.Property(e => e.user_asigna).HasColumnName("user_asigna");
+                entity.Property(e => e.user_llegada).HasColumnName("user_llegada");
+                entity.Property(e => e.cancelado).HasColumnName("cancelado");
+            });
+            
+            // 9. ASIGNACIONES
+            modelBuilder.Entity<Asignacion>(entity => {
+                entity.ToTable("Asignaciones");
+                entity.HasKey(e => e.idAsignacion);
             });
 
-            // SQL VIEWS MAPPING
+            // 10. PERIODOS
+            modelBuilder.Entity<Periodo>(entity => {
+                entity.ToTable("periodo");
+                entity.HasKey(e => e.idPeriodo);
+            });
+
+            // 11. SECCIONES
+            modelBuilder.Entity<Seccion>(entity => {
+                entity.ToTable("secciones");
+                entity.HasKey(e => e.idSeccion);
+            });
+            
+            // VIEWS
             modelBuilder.Entity<ClaseActiva>(entity => {
                 entity.ToView("v_clases_activas").HasNoKey();
-                entity.Property(e => e.Id_Registro).HasColumnName("id_registro");
-                entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
-                entity.Property(e => e.Cedula).HasColumnName("cedula");
-                entity.Property(e => e.Estudiante).HasColumnName("estudiante");
-                entity.Property(e => e.Placa).HasColumnName("placa");
-                entity.Property(e => e.NumeroVehiculo).HasColumnName("numero_vehiculo");
-                entity.Property(e => e.Instructor).HasColumnName("instructor");
-                entity.Property(e => e.Salida).HasColumnName("salida");
+                entity.Property(e => e.idPractica).HasColumnName("id_registro");
+                entity.Property(e => e.idVehiculo).HasColumnName("id_vehiculo");
+                entity.Property(e => e.idAlumno).HasColumnName("idAlumno");
+                entity.Property(e => e.numeroVehiculo).HasColumnName("numero_vehiculo");
             });
-
-            modelBuilder.Entity<AlertaMantenimiento>(entity => {
-                entity.ToView("v_alerta_mantenimiento").HasNoKey();
-                entity.Property(e => e.Id_Vehiculo).HasColumnName("id_vehiculo");
-            });
-
         }
     }
 }

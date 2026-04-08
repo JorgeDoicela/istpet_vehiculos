@@ -3,12 +3,13 @@ using backend.Services.Interfaces;
 using Microsoft.Extensions.Configuration;
 using MySqlConnector;
 using System.Globalization;
+using System.Linq;
 
 namespace backend.Services.Implementations
 {
     /**
-     * Lectura de reportes desde MySQL SIGAFI (servidor dedicado o misma instancia con otra base).
-     * No usa tablas de istpet_vehiculos salvo que el DBA las tenga en el mismo servidor.
+     * Reportes contra la BD SIGAFI del servidor configurado.
+     * Refactored 2026 for Absolute Parity: idAlumno, idProfesor, numeroVehiculo, etc.
      */
     public class SigafiReportService : ISigafiReportService
     {
@@ -50,31 +51,34 @@ namespace backend.Services.Implementations
 
             var sql = @"
 SELECT
-    p.idPractica,
-    pr.idProfesor,
+    p.idPractica AS id_practica,
+    pr.idProfesor AS id_profesor,
     TRIM(CONCAT(
         COALESCE(pr.primerApellido, ''), ' ',
         COALESCE(pr.segundoApellido, ''), ' ',
         COALESCE(pr.primerNombre, ''), ' ',
         COALESCE(pr.segundoNombre, '')
-    )) AS ProfesorNombre,
-    v.numero_vehiculo,
-    v.IdTipoVehiculo,
-    a.idAlumno,
+    )) AS profesor_nombre,
+    v.numero_vehiculo AS numero_vehiculo,
+    v.placa AS placa,
+    v.Marca AS marca,
+    v.Modelo AS modelo,
+    a.idAlumno AS id_alumno,
     TRIM(CONCAT(
         COALESCE(a.apellidoPaterno, ''), ' ',
         COALESCE(a.apellidoMaterno, ''), ' ',
         COALESCE(a.primerNombre, ''), ' ',
         COALESCE(a.segundoNombre, '')
-    )) AS AlumnoNombre,
-    p.fecha,
-    p.hora_salida,
-    p.hora_llegada,
-    COALESCE(p.cancelado, 0) AS cancelado
+    )) AS alumno_nombre,
+    p.fecha AS fecha_practica,
+    p.hora_salida AS hora_salida,
+    p.hora_llegada AS hora_llegada,
+    COALESCE(p.cancelado, 0) AS cancelado,
+    p.user_asigna AS user_asigna
 FROM cond_alumnos_practicas p
-INNER JOIN alumnos a ON a.idAlumno = p.idAlumno
+INNER JOIN alumnos a ON a.idAlumno = p.idalumno
 INNER JOIN profesores pr ON pr.idProfesor = p.idProfesor
-INNER JOIN vehiculos v ON v.idVehiculo = p.idVehiculo
+INNER JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
 WHERE COALESCE(p.cancelado, 0) = 0";
 
             var args = new List<MySqlParameter>();
@@ -110,26 +114,26 @@ WHERE COALESCE(p.cancelado, 0) = 0";
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
-                var idPractica = reader.GetInt32(reader.GetOrdinal("idPractica"));
-                var idProf = reader.GetString(reader.GetOrdinal("idProfesor"));
-                var profNombre = reader.IsDBNull(reader.GetOrdinal("ProfesorNombre"))
+                var idPractica = reader.GetInt32(reader.GetOrdinal("id_practica"));
+                var idProf = reader.GetString(reader.GetOrdinal("id_profesor"));
+                var profNombre = reader.IsDBNull(reader.GetOrdinal("profesor_nombre"))
                     ? ""
-                    : reader.GetString(reader.GetOrdinal("ProfesorNombre"));
+                    : reader.GetString(reader.GetOrdinal("profesor_nombre"));
 
                 var numOrdinal = reader.GetOrdinal("numero_vehiculo");
                 var numeroVeh = reader.IsDBNull(numOrdinal) ? 0 : Convert.ToInt32(reader.GetValue(numOrdinal));
 
-                int? idTipoVeh = null;
-                var tipoOrd = reader.GetOrdinal("IdTipoVehiculo");
-                if (!reader.IsDBNull(tipoOrd))
-                    idTipoVeh = Convert.ToInt32(reader.GetValue(tipoOrd));
+                var placaOrd = reader.GetOrdinal("placa");
+                var placa = reader.IsDBNull(placaOrd) ? "" : reader.GetString(placaOrd);
+                var marca = reader.IsDBNull(reader.GetOrdinal("marca")) ? "" : reader.GetString(reader.GetOrdinal("marca")).Trim();
+                var modelo = reader.IsDBNull(reader.GetOrdinal("modelo")) ? "" : reader.GetString(reader.GetOrdinal("modelo")).Trim();
 
-                var idAlumno = reader.GetString(reader.GetOrdinal("idAlumno"));
-                var alumnoNom = reader.IsDBNull(reader.GetOrdinal("AlumnoNombre"))
+                var idAlumno = reader.GetString(reader.GetOrdinal("id_alumno"));
+                var alumnoNom = reader.IsDBNull(reader.GetOrdinal("alumno_nombre"))
                     ? ""
-                    : reader.GetString(reader.GetOrdinal("AlumnoNombre"));
+                    : reader.GetString(reader.GetOrdinal("alumno_nombre"));
 
-                var fecha = reader.GetDateTime(reader.GetOrdinal("fecha"));
+                var fecha = reader.GetDateTime(reader.GetOrdinal("fecha_practica"));
 
                 var horaSalidaStr = FormatTime(reader, "hora_salida");
                 var horaLlegadaStr = reader.IsDBNull(reader.GetOrdinal("hora_llegada"))
@@ -147,29 +151,38 @@ WHERE COALESCE(p.cancelado, 0) = 0";
                 if (duracion < TimeSpan.Zero)
                     duracion = TimeSpan.Zero;
 
-                var categoria = idTipoVeh.HasValue
-                    ? culture.TextInfo.ToUpper($"Licencia tipo {idTipoVeh.Value}")
-                    : culture.TextInfo.ToUpper("Práctica SIGAFI");
+                var categoriaDetalle = string.Join(" ", new[] { marca, modelo }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                var categoria = !string.IsNullOrWhiteSpace(categoriaDetalle)
+                    ? culture.TextInfo.ToUpper(categoriaDetalle)
+                    : (!string.IsNullOrWhiteSpace(placa)
+                        ? culture.TextInfo.ToUpper($"Placa {placa.Trim()}")
+                        : culture.TextInfo.ToUpper("Práctica SIGAFI"));
 
                 list.Add(new ReportePracticasDTO
                 {
-                    IdRegistro = idPractica,
-                    IdProfesor = idProf,
-                    Profesor = culture.TextInfo.ToUpper(profNombre.Trim()),
-                    Categoria = categoria,
-                    NumeroVehiculo = numeroVeh,
-                    IdAlumno = idAlumno,
-                    Nomina = culture.TextInfo.ToUpper(alumnoNom.Trim()),
-                    Dia = culture.DateTimeFormat.GetDayName(fecha.DayOfWeek).ToLowerInvariant(),
-                    Fecha = fecha.ToString("dd/M/yyyy"),
-                    HoraSalida = horaSalidaStr,
-                    HoraLlegada = horaLlegadaStr,
-                    Tiempo = string.Format("{0:00}:{1:00}:{2:00}", (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
-                    Observaciones = null
+                    idPractica = idPractica,
+                    idProfesor = idProf,
+                    profesor = culture.TextInfo.ToUpper(profNombre.Trim()),
+                    categoria = categoria,
+                    numeroVehiculo = numeroVeh.ToString(),
+                    idAlumno = idAlumno,
+                    nomina = culture.TextInfo.ToUpper(alumnoNom.Trim()),
+                    dia = culture.DateTimeFormat.GetDayName(fecha.DayOfWeek).ToLowerInvariant(),
+                    fecha = fecha.ToString("dd/M/yyyy"),
+                    horaSalida = horaSalidaStr,
+                    horaLlegada = horaLlegadaStr,
+                    tiempo = string.Format("{0:00}:{1:00}:{2:00}", (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
+                    observaciones = ReadOptionalString(reader, "user_asigna")
                 });
             }
 
             return list;
+        }
+
+        private static string? ReadOptionalString(MySqlDataReader reader, string column)
+        {
+            var ord = reader.GetOrdinal(column);
+            return reader.IsDBNull(ord) ? null : reader.GetString(ord);
         }
 
         private static string FormatTime(MySqlDataReader reader, string column)

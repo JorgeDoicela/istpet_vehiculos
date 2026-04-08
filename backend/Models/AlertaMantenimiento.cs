@@ -10,8 +10,8 @@ namespace backend.Models
     [Keyless]
     public class AlertaMantenimiento
     {
-        public int Id_Vehiculo { get; set; }
-        public int Numero_Vehiculo { get; set; }
-        public string Placa { get; set; } = string.Empty;
+        public int id_vehiculo { get; set; }
+        public int numero_vehiculo { get; set; }
+        public string placa { get; set; } = string.Empty;
     }
 }

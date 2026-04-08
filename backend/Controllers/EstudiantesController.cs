@@ -1,14 +1,19 @@
-using AutoMapper;
+using backend.Data;
 using backend.DTOs;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using AutoMapper;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace backend.Controllers
 {
+    /**
+     * Estudiantes Controller: Absolute SIGAFI Naming Parity 2026.
+     */
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "admin,logistica,guardia")]
     public class EstudiantesController : ControllerBase
     {
         private readonly IEstudianteService _estudianteService;
@@ -20,19 +25,19 @@ namespace backend.Controllers
             _mapper = mapper;
         }
 
-        [HttpGet("{cedula}")]
-        public async Task<ActionResult<ApiResponse<EstudianteDto>>> GetByCedula(string cedula)
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<EstudianteDto>>> GetAll()
         {
-            var estudiante = await _estudianteService.GetByCedulaAsync(cedula);
-            if (estudiante == null)
-            {
-                return NotFound(ApiResponse<EstudianteDto>.Fail("Estudiante no encontrado."));
-            }
+            var estudiantes = await _estudianteService.GetAllAsync();
+            return Ok(_mapper.Map<IEnumerable<EstudianteDto>>(estudiantes));
+        }
 
-            // 🤖 AUTOMÁTICO: AutoMapper hace todo el trabajo
-            var dto = _mapper.Map<EstudianteDto>(estudiante);
-
-            return Ok(ApiResponse<EstudianteDto>.Ok(dto));
+        [HttpGet("{idAlumno}")]
+        public async Task<ActionResult<EstudianteDto>> GetByIdAlumno(string idAlumno)
+        {
+            var estudiante = await _estudianteService.GetByIdAlumnoAsync(idAlumno);
+            if (estudiante == null) return NotFound();
+            return Ok(_mapper.Map<EstudianteDto>(estudiante));
         }
     }
 }

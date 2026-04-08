@@ -52,36 +52,43 @@ namespace backend.Services.Implementations
                 {
                     try
                     {
-                        var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.Cedula == ci.Cedula);
+                        var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == ci.idProfesor);
 
                         if (existing == null)
                         {
                             _context.Instructores.Add(new Instructor
                             {
-                                Cedula = ci.Cedula,
-                                Nombres = ci.Nombres.ToUpper(),
-                                Apellidos = ci.Apellidos.ToUpper(),
-                                Telefono = ci.Telefono?.Length > 50 ? ci.Telefono.Substring(0, 50) : ci.Telefono,
-                                Email = ci.Email,
-                                Activo = ci.Activo
+                                idProfesor = ci.idProfesor,
+                                primerNombre = ci.primerNombre ?? "",
+                                segundoNombre = ci.segundoNombre,
+                                primerApellido = ci.primerApellido ?? "",
+                                segundoApellido = ci.segundoApellido,
+                                nombres = (ci.nombres ?? "").ToUpper(),
+                                apellidos = (ci.apellidos ?? "").ToUpper(),
+                                celular = ci.celular?.Length > 50 ? ci.celular.Substring(0, 50) : ci.celular,
+                                email = ci.email,
+                                activo = ci.activo == 1
                             });
                             log.RegistrosProcesados++;
                         }
                         else
                         {
-                            // Actualizamos datos existentes para mantener consistencia
-                            existing.Nombres = ci.Nombres.ToUpper();
-                            existing.Apellidos = ci.Apellidos.ToUpper();
-                            existing.Telefono = ci.Telefono?.Length > 50 ? ci.Telefono.Substring(0, 50) : ci.Telefono;
-                            existing.Email = ci.Email;
-                            existing.Activo = ci.Activo;
+                            existing.primerNombre = ci.primerNombre ?? "";
+                            existing.segundoNombre = ci.segundoNombre;
+                            existing.primerApellido = ci.primerApellido ?? "";
+                            existing.segundoApellido = ci.segundoApellido;
+                            existing.nombres = (ci.nombres ?? "").ToUpper();
+                            existing.apellidos = (ci.apellidos ?? "").ToUpper();
+                            existing.celular = ci.celular?.Length > 50 ? ci.celular.Substring(0, 50) : ci.celular;
+                            existing.email = ci.email;
+                            existing.activo = ci.activo == 1;
                             log.RegistrosProcesados++;
                         }
                     }
                     catch (Exception ex)
                     {
                         log.RegistrosFallidos++;
-                        _logger.LogError("Error sincronizando instructor {cedula}: {message}", ci.Cedula, ex.Message);
+                        _logger.LogError("Error sincronizando instructor {cedula}: {message}", ci.idProfesor, ex.Message);
                     }
                 }
 
@@ -99,10 +106,6 @@ namespace backend.Services.Implementations
             return log;
         }
 
-        /**
-         * Dynamic Sync with Data-Shield Protection
-         * Processes uncertain external JSON and maps it safely to ISTPET schema.
-         */
         public async Task<SyncLog> SyncExternalStudentsAsync(List<JsonElement> externalData)
         {
             _logger.LogInformation("Iniciando Ingesta Protegida de Datos...");
@@ -115,48 +118,34 @@ namespace backend.Services.Implementations
                 RegistrosFallidos = 0
             };
 
-            // Configuración de Mapeo (Esto podría venir de un archivo config o DB)
-            var mapping = new List<SyncMapping>
-            {
-                new SyncMapping { SourceField = "id_externo", DestinationField = "Cedula" },
-                new SyncMapping { SourceField = "nombre_completo", DestinationField = "Nombres" },
-                // El campo Apellidos lo extraeremos del nombre si es necesario
-                new SyncMapping { SourceField = "correo_universidad", DestinationField = "Email" }
-            };
-
             foreach (var item in externalData)
             {
                 try
                 {
-                    // 1. Extraer datos usando el mapeo ajustable
                     string extCedula = item.GetProperty("id_externo").GetString() ?? "";
                     string extNombre = item.GetProperty("nombre_completo").GetString() ?? "S/N";
                     string extEmail = item.GetProperty("correo_universidad").GetString() ?? "";
 
-                    // 2. PASAR POR LA ADUANA (Validación)
                     if (!DataValidator.IsValidCedula(extCedula))
                     {
                         log.RegistrosFallidos++;
-                        _logger.LogWarning("Registro rechazado por Aduana: Cédula inválida {extCedula}", extCedula);
                         continue;
                     }
 
-                    // 3. Transformación Segura
                     var names = extNombre.Split(' ', 2);
                     string firstName = DataValidator.CleanName(names[0]);
                     string lastName = names.Length > 1 ? DataValidator.CleanName(names[1]) : "EXTERNO";
 
-                    // 4. Verificación de Existencia y Persistencia
                     var existing = await _context.Estudiantes.FindAsync(extCedula);
                     if (existing == null)
                     {
                         _context.Estudiantes.Add(new Estudiante
                         {
-                            Cedula = extCedula,
-                            Nombres = firstName,
-                            Apellidos = lastName,
-                            Email = DataValidator.IsValidEmail(extEmail) ? extEmail : null,
-                            Activo = true
+                            idAlumno = extCedula,
+                            primerNombre = firstName,
+                            apellidoPaterno = lastName,
+                            email = DataValidator.IsValidEmail(extEmail) ? extEmail : null,
+                            activo = true
                         });
                         log.RegistrosProcesados++;
                     }
@@ -169,10 +158,7 @@ namespace backend.Services.Implementations
             }
 
             await _context.SaveChangesAsync();
-
             log.Estado = log.RegistrosFallidos > 0 ? "ADVERTENCIA" : "OK";
-            log.Mensaje = $"Proceso finalizado. Éxito: {log.RegistrosProcesados}, Fallidos: {log.RegistrosFallidos}";
-
             return log;
         }
 
@@ -197,34 +183,32 @@ namespace backend.Services.Implementations
                 {
                     try
                     {
-                        var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioLogin == eu.Usuario);
+                        var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario_login == eu.usuario);
                         
-                        // Rol según bits SIGAFI (enum real: admin, guardia, estacionable)
                         string role = "guardia";
-                        if (eu.Usuario.ToLower().Contains("admin")) role = "admin";
-                        else if (eu.EsRrhh == 1) role = "estacionable";
-                        else if (eu.Salida == 1 || eu.Ingreso == 1) role = "guardia";
+                        if (eu.usuario.ToLower().Contains("admin")) role = "admin";
+                        else if (eu.esRrhh == 1) role = "estacionable";
+                        else if (eu.salida == 1 || eu.ingreso == 1) role = "guardia";
 
                         if (existing == null)
                         {
                             _context.Usuarios.Add(new Usuario
                             {
-                                UsuarioLogin = eu.Usuario,
-                                PasswordHash = eu.Password, // Se guardará tal cual, AuthController manejará el migrate-on-login
-                                Rol = role,
-                                NombreCompleto = eu.Usuario.ToUpper(),
-                                Activo = eu.Activo == 1,
-                                CreadoEn = DateTime.Now
+                                usuario_login = eu.usuario,
+                                password_hash = eu.password,
+                                rol = role,
+                                nombre_completo = eu.usuario.ToUpper(),
+                                activo = eu.activo == 1,
+                                creado_en = DateTime.Now
                             });
                         }
                         else
                         {
-                            existing.Activo = eu.Activo == 1;
-                            existing.Rol = role;
-                            // No sobreescribimos el password local si ya ha sido hasheado por nuestro sistema
-                            if (!existing.PasswordHash.StartsWith("$2a$") && !existing.PasswordHash.StartsWith("$2b$"))
+                            existing.activo = eu.activo == 1;
+                            existing.rol = role;
+                            if (!existing.password_hash.StartsWith("$2a$") && !existing.password_hash.StartsWith("$2b$"))
                             {
-                                existing.PasswordHash = eu.Password;
+                                existing.password_hash = eu.password;
                             }
                         }
                         log.RegistrosProcesados++;
@@ -232,7 +216,7 @@ namespace backend.Services.Implementations
                     catch (Exception ex)
                     {
                         log.RegistrosFallidos++;
-                        _logger.LogError("Error sincronizando usuario {user}: {message}", eu.Usuario, ex.Message);
+                        _logger.LogError("Error sincronizando usuario {user}: {message}", eu.usuario, ex.Message);
                     }
                 }
 

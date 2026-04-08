@@ -25,24 +25,24 @@ const VehicleList = ({ vehicles }) => {
                 </div>
                 <div>
                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Unidad</p>
-                   <h4 className="text-2xl font-black text-[var(--apple-text-main)] tracking-tighter">#{v.numero_Vehiculo || v.numero_vehiculo || '---'}</h4>
+                   <h4 className="text-2xl font-black text-[var(--apple-text-main)] tracking-tighter">#{v.numero_vehiculo || '---'}</h4>
                 </div>
               </div>
               <span className={`px-4 py-1 rounded-2xl text-[9px] font-black uppercase border-2 transition-colors ${
-                (v.estado_Mecanico || v.estado_mecanico) === 'OPERATIVO' 
+                v.estado === 'OPERATIVO' 
                   ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' 
                   : 'bg-rose-500/10 text-rose-500 border-rose-500/20'
               }`}>
-                {v.estado_Mecanico || v.estado_mecanico || 'DESCONOCIDO'}
+                {v.estado || 'DESCONOCIDO'}
               </span>
             </div>
 
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
-                 <div className="p-4 bg-[var(--apple-bg)] rounded-3xl border border-[var(--apple-border)]">
-                    <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] tracking-widest mb-1">Marca</p>
-                    <p className="text-sm font-bold text-[var(--apple-text-main)]">{v.marca || 'N/A'}</p>
-                 </div>
+                  <div className="p-4 bg-[var(--apple-bg)] rounded-3xl border border-[var(--apple-border)]">
+                    <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] tracking-widest mb-1">Modelo</p>
+                    <p className="text-sm font-bold text-[var(--apple-text-main)]">{v.marca_modelo || 'N/A'}</p>
+                  </div>
                  <div className="p-4 bg-[var(--apple-bg)] rounded-3xl border border-[var(--apple-border)]">
                     <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] tracking-widest mb-1">Placa</p>
                     <p className="text-sm font-bold text-[var(--apple-text-main)]">{v.placa || '---'}</p>

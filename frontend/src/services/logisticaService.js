@@ -1,88 +1,36 @@
-import api from './api';
+import axios from 'axios';
 
-const logisticaService = {
-  buscarEstudiante: async (cedula) => {
-    try {
-      const response = await api.get(`/logistica/estudiante/${cedula}`);
-      return response.data.data; // { cedula, estudianteNombre, cursoDetalle, periodo, idMatricula }
-    } catch (error) {
-      if (error.response && error.response.status === 404) {
-        throw new Error('Estudiante no encontrado o sin matrícula activa');
-      }
-      throw new Error(error.response?.data?.message || 'Error de conexión');
-    }
+const API_URL = import.meta.env.VITE_API_URL + '/logistica';
+
+export const logisticaService = {
+  buscarEstudiante: async (idAlumno) => {
+    const response = await axios.get(`${API_URL}/estudiante/${idAlumno}`);
+    return response.data;
   },
-
-  buscarSugerencias: async (query) => {
-    try {
-      const response = await api.get(`/logistica/buscar?query=${query}`);
-      return response.data.data; // List of { cedula, nombreCompleto }
-    } catch (error) {
-      console.error('Error fetching suggestions:', error);
-      return [];
-    }
-  },
-
   getVehiculosDisponibles: async () => {
-    try {
-      const response = await api.get('/logistica/vehiculos-disponibles');
-      return response.data.data;
-    } catch (error) {
-      throw new Error('No se cargaron los vehículos');
-    }
+    const response = await axios.get(`${API_URL}/vehiculos-disponibles`);
+    return response.data;
   },
-
   getInstructores: async () => {
-    try {
-      const response = await api.get('/logistica/instructores');
-      return response.data.data;
-    } catch (error) {
-      throw new Error('No se cargaron los instructores');
-    }
+    const response = await axios.get(`${API_URL}/instructores`);
+    return response.data;
   },
-
-  registrarSalida: async (idMatricula, idVehiculo, idInstructor) => {
-    try {
-      const savedUser = localStorage.getItem('istpet_user');
-      const userId = savedUser ? JSON.parse(savedUser).idUsuario : 1;
-
-      const response = await api.post('/logistica/salida', {
-        idMatricula,
-        idVehiculo,
-        idInstructor,
-        observaciones: 'Salida registrada en UI',
-        registradoPor: userId
-      });
-      return response.data;
-    } catch (error) {
-       throw new Error(error.response?.data?.message || 'Error al procesar salida');
-    }
+  registrarSalida: async (data) => {
+    // data must include: idMatricula, idVehiculo, idInstructor, observaciones, registradoPor
+    const response = await axios.post(`${API_URL}/salida`, data);
+    return response.data;
   },
-
-  registrarLlegada: async (idRegistro) => {
-    try {
-      const savedUser = localStorage.getItem('istpet_user');
-      const userId = savedUser ? JSON.parse(savedUser).idUsuario : 1;
-
-      const response = await api.post('/logistica/llegada', {
-        idRegistro,
-        observaciones: 'Llegada registrada en UI',
-        registradoPor: userId
-      });
-      return response.data;
-    } catch (error) {
-       throw new Error(error.response?.data?.message || 'Error al procesar llegada');
-    }
+  registrarLlegada: async (data) => {
+    // data must include: idRegistro, observaciones, registradoPor
+    const response = await axios.post(`${API_URL}/llegada`, data);
+    return response.data;
   },
-
+  buscarSugerencias: async (query) => {
+    const response = await axios.get(`${API_URL}/buscar?query=${query}`);
+    return response.data;
+  },
   getAgendadosHoy: async () => {
-    try {
-      const response = await api.get('/logistica/agendados-hoy');
-      return response.data.data;
-    } catch (error) {
-      throw new Error('No se cargaron los agendados del día');
-    }
+    const response = await axios.get(`${API_URL}/agendados-hoy`);
+    return response.data;
   }
 };
-
-export default logisticaService;

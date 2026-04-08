@@ -1,7 +1,10 @@
 import React from 'react';
 
+/**
+ * Active Classes Component: Absolute SIGAFI Parity 2026.
+ * All property naming aligned with ClaseActiva model (idRegistro, idAlumno, numeroVehiculo).
+ */
 const ActiveClasses = ({ classes }) => {
-  // Aseguramos que classes sea un array
   const safeClasses = Array.isArray(classes) ? classes : [];
 
   return (
@@ -28,11 +31,11 @@ const ActiveClasses = ({ classes }) => {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-3">
             {safeClasses.map((c) => (
-              <div key={c.id_Registro || c.id_registro || Math.random()} className="group p-3 lg:p-4 bg-[var(--apple-bg)] rounded-2xl transition-all duration-500 border border-[var(--apple-border)] hover:border-[var(--istpet-gold)]/40 hover:shadow-lg">
+              <div key={c.idPractica || Math.random()} className="group p-3 lg:p-4 bg-[var(--apple-bg)] rounded-2xl transition-all duration-500 border border-[var(--apple-border)] hover:border-[var(--istpet-gold)]/40 hover:shadow-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div className="min-w-0 flex-1">
                      <h4 className="text-[11px] lg:text-xs font-black uppercase tracking-tighter text-[var(--apple-text-main)] truncate">{c.estudiante || 'ESTUDIANTE N/A'}</h4>
-                     <p className="text-[8px] font-black uppercase text-[var(--apple-text-sub)] tracking-widest opacity-60">ID: {c.cedula?.substring(0,6) || '---'}...</p>
+                     <p className="text-[8px] font-black uppercase text-[var(--apple-text-sub)] tracking-widest opacity-60">ID: {c.idAlumno?.substring(0,6) || '---'}...</p>
                   </div>
                   <div className="text-right ml-2">
                      <p className="text-[11px] lg:text-[13px] font-black tabular-nums text-[var(--istpet-gold)]">
@@ -49,7 +52,7 @@ const ActiveClasses = ({ classes }) => {
                       </svg>
                    </div>
                    <div className="min-w-0">
-                      <h5 className="text-[10px] font-black text-[var(--apple-text-main)] tracking-tighter uppercase truncate">#{c.numero_Vehiculo || c.numero_vehiculo || '---'} — {c.placa || 'PLACA'}</h5>
+                      <h5 className="text-[10px] font-black text-[var(--apple-text-main)] tracking-tighter uppercase truncate">#{c.numeroVehiculo || '---'} — {c.placa || 'PLACA'}</h5>
                       <p className="text-[7px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50">Unidad Operativa</p>
                    </div>
                 </div>

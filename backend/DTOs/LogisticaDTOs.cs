@@ -1,85 +1,88 @@
 namespace backend.DTOs
 {
+    /**
+     * Logistica DTOs: Refactored for Absolute SIGAFI Parity 2026.
+     * Guaranteed 1:1 naming with central database for idAlumno, idProfesor, idVehiculo, idPractica.
+     */
     public class EstudianteLogisticaResponse
     {
-        public string Cedula { get; set; } = string.Empty;
-        public string EstudianteNombre { get; set; } = string.Empty;
-        public string CursoDetalle { get; set; } = string.Empty;
-        public string Periodo { get; set; } = string.Empty;
-        public string Paralelo { get; set; } = string.Empty;
-        public string Jornada { get; set; } = string.Empty;
-        public string TipoLicencia { get; set; } = string.Empty; // C, D, E
-        public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
-        public int IdMatricula { get; set; }
+        public string idAlumno { get; set; } = string.Empty;
+        public string nombreCompleto { get; set; } = string.Empty;
+        public string curso { get; set; } = string.Empty;
+        public string idPeriodo { get; set; } = string.Empty;
+        public string paralelo { get; set; } = string.Empty;
+        public string jornada { get; set; } = string.Empty;
+        public string tipoLicencia { get; set; } = string.Empty; 
+        public int idTipoLicencia { get; set; } 
+        public int idMatricula { get; set; }
 
-        // --- Detección de Práctica Central (Proactivo) ---
-        public int? IdPracticaCentral { get; set; }
-        public int? IdPracticaInstructor { get; set; }
-        public string? PracticaVehiculo { get; set; }
-        public string? PracticaInstructor { get; set; }
-        public string? PracticaHora { get; set; }
-        public bool TienePracticaHoy => IdPracticaCentral.HasValue;
-        public string? FotoBase64 { get; set; }
-        public bool IsBusy { get; set; }
+        public int? idPracticaCentral { get; set; }
+        public int? idPracticaInstructor { get; set; }
+        public string? practicaVehiculo { get; set; }
+        public string? practicaInstructor { get; set; }
+        public string? practicaHora { get; set; }
+        public bool tienePracticaHoy => idPracticaCentral.HasValue;
+        public string? fotoBase64 { get; set; }
+        public bool isBusy { get; set; }
     }
 
     public class VehiculoLogisticaResponse
     {
-        public int IdVehiculo { get; set; }
-        public int NumeroVehiculo { get; set; }
-        public string VehiculoStr { get; set; } = string.Empty;
-        public int IdInstructorFijo { get; set; }
-        public string InstructorNombre { get; set; } = string.Empty;
-        public int IdTipoLicencia { get; set; } // Identificador numérico para filtrado
+        public int idVehiculo { get; set; }
+        public int numeroVehiculo { get; set; }
+        public string vehiculoStr { get; set; } = string.Empty;
+        public int idInstructorFijo { get; set; }
+        public string instructorNombre { get; set; } = string.Empty;
+        public int idTipoLicencia { get; set; }
     }
 
     public class InstructorLogisticaResponse
     {
-        public int Id_Instructor { get; set; }
-        public string FullName { get; set; } = string.Empty;
+        public string idInstructor { get; set; } = string.Empty;
+        public string fullName { get; set; } = string.Empty;
     }
 
     public class SalidaRequest
     {
-        public int IdMatricula { get; set; }
-        public int IdVehiculo { get; set; }
-        public int IdInstructor { get; set; }
-        public string? Observaciones { get; set; }
-        public int RegistradoPor { get; set; } = 1; // Default admin
+        public int idMatricula { get; set; }
+        public int idVehiculo { get; set; }
+        public string idInstructor { get; set; } = string.Empty;
+        public string? observaciones { get; set; }
+        public int registradoPor { get; set; } = 1;
     }
 
     public class LlegadaRequest
     {
-        public int IdRegistro { get; set; }
-        public string? Observaciones { get; set; }
-        public int RegistradoPor { get; set; } = 1; // Default admin
+        public int idPractica { get; set; }
+        public string? observaciones { get; set; }
+        public int registradoPor { get; set; } = 1;
     }
 
     public class ReportePracticasDTO
     {
-        public int IdRegistro { get; set; }
-        public string IdProfesor { get; set; } = string.Empty;
-        public string Profesor { get; set; } = string.Empty;
-        public string Categoria { get; set; } = string.Empty;
-        public int NumeroVehiculo { get; set; }
-        public string IdAlumno { get; set; } = string.Empty;
-        public string Nomina { get; set; } = string.Empty;
-        public string Dia { get; set; } = string.Empty;
-        public string Fecha { get; set; } = string.Empty;
-        public string HoraSalida { get; set; } = string.Empty;
-        public string? HoraLlegada { get; set; }
-        public string Tiempo { get; set; } = string.Empty;
-        public string? Observaciones { get; set; }
+        public int idPractica { get; set; }
+        public string idProfesor { get; set; } = string.Empty;
+        public string profesor { get; set; } = string.Empty;
+        public string categoria { get; set; } = string.Empty;
+        public string numeroVehiculo { get; set; } = string.Empty;
+        public string idAlumno { get; set; } = string.Empty;
+        public string nomina { get; set; } = string.Empty;
+        public string dia { get; set; } = string.Empty;
+        public string fecha { get; set; } = string.Empty;
+        public string horaSalida { get; set; } = string.Empty;
+        public string? horaLlegada { get; set; }
+        public string tiempo { get; set; } = string.Empty;
+        public string? observaciones { get; set; }
     }
 
     public class CentralUserDto
     {
-        public string Usuario { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-        public int Salida { get; set; }
-        public int Ingreso { get; set; }
-        public int Activo { get; set; }
-        public int Asistencia { get; set; }
-        public int EsRrhh { get; set; }
+        public string usuario { get; set; } = string.Empty;
+        public string password { get; set; } = string.Empty;
+        public int salida { get; set; }
+        public int ingreso { get; set; }
+        public int activo { get; set; }
+        public int asistencia { get; set; }
+        public int esRrhh { get; set; }
     }
 }

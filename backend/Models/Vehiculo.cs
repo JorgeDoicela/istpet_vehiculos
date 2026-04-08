@@ -4,41 +4,55 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace backend.Models
 {
     /**
-     * ISTPET Enterprise Vehicle Model
-     * Aligned with DESCRIBE vehiculos (MySQL tinyint(1) -> bool)
+     * Vehicle Model: Absolute SIGAFI Parity 2026.
+     * Aligned with SIGAFI 'vehiculos' table schema.
      */
     public class Vehiculo
     {
         [Key]
-        public int Id_Vehiculo { get; set; }
+        public int idVehiculo { get; set; }
 
-        public int NumeroVehiculo { get; set; }
+        public int? idSubcategoria { get; set; }
 
-        [Required]
-        [MaxLength(15)]
-        public string Placa { get; set; } = string.Empty;
+        [MaxLength(3)]
+        public string? numero_vehiculo { get; set; }
 
-        [MaxLength(80)]
-        public string? Marca { get; set; }
+        [MaxLength(10)]
+        public string? placa { get; set; }
 
-        [MaxLength(80)]
-        public string? Modelo { get; set; }
+        [MaxLength(100)]
+        public string? marca { get; set; }
 
-        public int IdTipoLicencia { get; set; }
+        public int? anio { get; set; }
 
-        public int IdInstructorFijo { get; set; }
+        public int? idCategoria { get; set; }
 
-        public string EstadoMecanico { get; set; } = "OPERATIVO";
+        [MaxLength(200)]
+        public string? observacion { get; set; }
 
+        [MaxLength(50)]
+        public string? chasis { get; set; }
 
+        [MaxLength(50)]
+        public string? motor { get; set; }
 
-        public bool Activo { get; set; } = true; // Corregido: tinyint(1) mapea a bool en .NET
+        [MaxLength(100)]
+        public string? modelo { get; set; }
 
-        // Navigation Properties
-        [ForeignKey("IdTipoLicencia")]
-        public virtual TipoLicencia? TipoLicencia { get; set; }
+        public bool activo { get; set; } = true;
 
-        [ForeignKey("IdInstructorFijo")]
-        public virtual Instructor? InstructorFijo { get; set; }
+        // Logistics / Operational Fields (Local Augmentation)
+        public int id_tipo_licencia { get; set; } = 1; // Default to Type C
+
+        [ForeignKey("id_tipo_licencia")]
+        public TipoLicencia? TipoLicencia { get; set; }
+
+        public string? id_instructor_fijo { get; set; } // FK to idProfesor
+
+        [ForeignKey("id_instructor_fijo")]
+        public Instructor? InstructorFijo { get; set; }
+
+        [MaxLength(50)]
+        public string estado_mecanico { get; set; } = "OPERATIVO";
     }
 }

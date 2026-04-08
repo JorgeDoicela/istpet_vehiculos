@@ -2,42 +2,54 @@
 -- 01_LOGISTICS_DB.sql
 -- Database: istpet_vehiculos
 -- Purpose: Primary Operational Schema for Logistics Control
+-- Absolute SIGAFI Parity Edition 2026.
 -- ============================================================
 
 CREATE DATABASE IF NOT EXISTS istpet_vehiculos;
 USE istpet_vehiculos;
 
--- Master Data: License Types
-CREATE TABLE IF NOT EXISTS tipos_licencia (
-    id_tipo_licencia INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL,
-    descripcion TEXT
+-- 1. Master Data: License Types (tipo_licencia)
+CREATE TABLE IF NOT EXISTS tipo_licencia (
+    id_tipo INT PRIMARY KEY AUTO_INCREMENT,
+    codigo VARCHAR(10) UNIQUE NOT NULL, -- e.g. 'C', 'D', 'E'
+    descripcion VARCHAR(200) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE
 );
 
--- Master Data: Instructors
+-- 2. Master Data: Instructors (instructores)
+-- Mirroring SIGAFI/profesores schema for 1:1 parity
 CREATE TABLE IF NOT EXISTS instructores (
-    id_instructor INT PRIMARY KEY AUTO_INCREMENT,
-    cedula VARCHAR(15) UNIQUE NOT NULL,
-    nombres VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    telefono VARCHAR(20),
+    idProfesor VARCHAR(15) PRIMARY KEY, -- Primary identification (CEDULA)
+    primerNombre VARCHAR(80) NOT NULL,
+    segundoNombre VARCHAR(80),
+    primerApellido VARCHAR(80) NOT NULL,
+    segundoApellido VARCHAR(80),
+    nombres VARCHAR(160), -- Compatibility field
+    apellidos VARCHAR(160), -- Compatibility field
+    celular VARCHAR(50),
     email VARCHAR(100),
     activo BOOLEAN DEFAULT TRUE
 );
 
--- Master Data: Vehicles
+-- 3. Master Data: Vehicles (vehiculos)
+-- Mirroring SIGAFI/vehiculos schema with local logistics augmentation
 CREATE TABLE IF NOT EXISTS vehiculos (
-    id_vehiculo INT PRIMARY KEY AUTO_INCREMENT,
-    numero_vehiculo INT UNIQUE NOT NULL,
+    idVehiculo INT PRIMARY KEY, -- Matches SIGAFI idVehiculo
+    numero_vehiculo VARCHAR(10) UNIQUE,
     placa VARCHAR(15) UNIQUE NOT NULL,
-    marca VARCHAR(50),
-    modelo VARCHAR(50),
+    marca VARCHAR(100),
+    modelo VARCHAR(100),
+    anio INT,
+    chasis VARCHAR(50),
+    motor VARCHAR(50),
+    observacion VARCHAR(200),
+    -- Local Logistics Fields
     id_tipo_licencia INT,
-    id_instructor_fijo INT,
+    id_instructor_fijo VARCHAR(15), 
     estado_mecanico ENUM('OPERATIVO', 'MANTENIMIENTO', 'FUERA_SERVICIO') DEFAULT 'OPERATIVO',
     activo BOOLEAN DEFAULT TRUE,
-    FOREIGN KEY (id_tipo_licencia) REFERENCES tipos_licencia(id_tipo_licencia),
-    FOREIGN KEY (id_instructor_fijo) REFERENCES instructores(id_instructor)
+    FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia(id_tipo),
+    FOREIGN KEY (id_instructor_fijo) REFERENCES instructores(idProfesor)
 );
 
 CREATE TABLE IF NOT EXISTS mantenimientos (
@@ -45,47 +57,59 @@ CREATE TABLE IF NOT EXISTS mantenimientos (
     id_vehiculo INT NOT NULL,
     fecha DATE NOT NULL,
     descripcion TEXT,
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo)
+    FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(idVehiculo)
 );
 
--- Master Data: Students
+-- 4. Master Data: Students (estudiantes)
+-- Mirroring SIGAFI/alumnos schema
 CREATE TABLE IF NOT EXISTS estudiantes (
-    id_estudiante INT PRIMARY KEY AUTO_INCREMENT,
-    cedula VARCHAR(15) UNIQUE NOT NULL,
-    nombres VARCHAR(100) NOT NULL,
-    apellidos VARCHAR(100) NOT NULL,
-    telefono VARCHAR(20),
+    idAlumno VARCHAR(15) PRIMARY KEY,
+    primerNombre VARCHAR(80) NOT NULL,
+    segundoNombre VARCHAR(80),
+    apellidoPaterno VARCHAR(80) NOT NULL,
+    apellidoMaterno VARCHAR(80),
+    celular VARCHAR(50),
     email VARCHAR(100),
     activo BOOLEAN DEFAULT TRUE
 );
 
--- Operational: Courses & Enrollments
-CREATE TABLE IF NOT EXISTS cursos (
-    id_curso INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(100) NOT NULL,
-    id_tipo_licencia INT,
-    FOREIGN KEY (id_tipo_licencia) REFERENCES tipos_licencia(id_tipo_licencia)
+-- 5. Operational: Levels (niveles)
+-- Mirroring SIGAFI/niveles schema
+CREATE TABLE IF NOT EXISTS niveles (
+    idNivel INT PRIMARY KEY,
+    idCarrera INT,
+    Nivel VARCHAR(100), -- Column name 'Nivel' matches central schema
+    activo BOOLEAN DEFAULT TRUE
 );
 
+-- 6. Operational: Enrollments (matriculas)
+-- Mirroring SIGAFI/matriculas schema with local historical tracking
 CREATE TABLE IF NOT EXISTS matriculas (
-    id_matricula INT PRIMARY KEY AUTO_INCREMENT,
-    cedula_estudiante VARCHAR(15) NOT NULL,
-    id_curso INT NOT NULL,
-    fecha_matricula DATE NOT NULL,
-    horas_completadas INT DEFAULT 0,
+    idMatricula INT PRIMARY KEY AUTO_INCREMENT,
+    idAlumno VARCHAR(15) NOT NULL,
+    idNivel INT NOT NULL,
+    idSeccion INT DEFAULT 1,
+    idModalidad INT DEFAULT 1,
+    idPeriodo VARCHAR(10),
+    paralelo VARCHAR(5) DEFAULT 'A',
+    fecha_matricula DATE,
+    -- Local Tracking
+    horas_completadas DECIMAL(10,2) DEFAULT 0.00,
     estado ENUM('ACTIVO', 'SUSPENDIDO', 'FINALIZADO') DEFAULT 'ACTIVO',
-    FOREIGN KEY (cedula_estudiante) REFERENCES estudiantes(cedula),
-    FOREIGN KEY (id_curso) REFERENCES cursos(id_curso)
+    valida TINYINT DEFAULT 1,
+    FOREIGN KEY (idAlumno) REFERENCES estudiantes(idAlumno),
+    FOREIGN KEY (idNivel) REFERENCES niveles(idNivel)
 );
 
--- System: Users
+-- 7. System: Users (usuarios)
 CREATE TABLE IF NOT EXISTS usuarios (
     id_usuario INT PRIMARY KEY AUTO_INCREMENT,
-    usuario VARCHAR(50) UNIQUE NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    rol ENUM('admin', 'logistica', 'guardia') DEFAULT 'guardia',
-    nombre_completo VARCHAR(100),
-    activo BOOLEAN DEFAULT TRUE
+    usuario VARCHAR(50) UNIQUE NOT NULL, -- SIGAFI Login
+    password VARCHAR(255) NOT NULL, -- Col name matches central 'Contrasenia' translation
+    rol VARCHAR(20) DEFAULT 'guardia', -- admin, logistica, guardia
+    nombre_completo VARCHAR(160),
+    activo BOOLEAN DEFAULT TRUE,
+    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS sync_logs (
@@ -99,28 +123,26 @@ CREATE TABLE IF NOT EXISTS sync_logs (
     registros_fallidos INT DEFAULT 0
 );
 
--- Transactions: Departure Logs
+-- 8. Transactions: Practice Logs (registros_salida)
+-- Unifies Departure and Arrival for Absolute Parity with CENTRAL cond_alumnos_practicas
 CREATE TABLE IF NOT EXISTS registros_salida (
-    id_registro INT PRIMARY KEY AUTO_INCREMENT,
-    id_matricula INT NOT NULL,
-    id_vehiculo INT NOT NULL,
-    id_instructor INT NOT NULL,
-    fecha_hora_salida DATETIME DEFAULT CURRENT_TIMESTAMP,
-    observaciones_salida TEXT,
-    registrado_por INT,
-    FOREIGN KEY (id_matricula) REFERENCES matriculas(id_matricula),
-    FOREIGN KEY (id_vehiculo) REFERENCES vehiculos(id_vehiculo),
-    FOREIGN KEY (id_instructor) REFERENCES instructores(id_instructor),
-    FOREIGN KEY (registrado_por) REFERENCES usuarios(id_usuario)
-);
-
--- Transactions: Arrival Logs
-CREATE TABLE IF NOT EXISTS registros_llegada (
-    id_registro INT PRIMARY KEY,
-    fecha_hora_llegada DATETIME DEFAULT CURRENT_TIMESTAMP,
-    observaciones_llegada TEXT,
-    km_llegada INT,
-    registrado_por INT,
-    FOREIGN KEY (id_registro) REFERENCES registros_salida(id_registro),
-    FOREIGN KEY (registrado_por) REFERENCES usuarios(id_usuario)
+    idPractica INT PRIMARY KEY AUTO_INCREMENT,
+    idalumno VARCHAR(15) NOT NULL,
+    idvehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    idPeriodo VARCHAR(10),
+    dia VARCHAR(15), -- Track day name
+    fecha DATE NOT NULL,
+    hora_salida TIME,
+    hora_llegada TIME,
+    tiempo TIME,
+    ensalida TINYINT DEFAULT 1, -- 1: In track, 0: Returned
+    verificada TINYINT DEFAULT 0,
+    user_asigna VARCHAR(20), -- SIGAFI User
+    user_llegada VARCHAR(20),
+    cancelado TINYINT DEFAULT 0,
+    observaciones TEXT,
+    FOREIGN KEY (idalumno) REFERENCES estudiantes(idAlumno),
+    FOREIGN KEY (idvehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES instructores(idProfesor)
 );

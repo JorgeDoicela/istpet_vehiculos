@@ -3,7 +3,7 @@ using backend.DTOs;
 namespace backend.Services.Interfaces
 {
     /// <summary>
-    /// Reportes leídos directamente de la BD central SIGAFI (cond_alumnos_practicas y tablas relacionadas).
+    /// Reportes leídos de la instancia MySQL SIGAFI configurada en appsettings (servidor = fuente de verdad).
     /// </summary>
     public interface ISigafiReportService
     {

@@ -4,18 +4,19 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Models
 {
     /**
-     * Read-only model for SQL View: v_clases_activas
+     * Read-only model for SQL View: v_clases_activas.
+     * Absolute Parity 2026: Aligned with idPractica as the primary handle.
      */
     [Keyless]
     public class ClaseActiva
     {
-        public int Id_Registro { get; set; }
-        public int Id_Vehiculo { get; set; }
-        public string Cedula { get; set; } = string.Empty;
-        public string Estudiante { get; set; } = string.Empty;
-        public string Placa { get; set; } = string.Empty;
-        public int NumeroVehiculo { get; set; }
-        public string Instructor { get; set; } = string.Empty;
-        public DateTime Salida { get; set; }
+        public int idPractica { get; set; }
+        public int idVehiculo { get; set; }
+        public string idAlumno { get; set; } = string.Empty;
+        public string estudiante { get; set; } = string.Empty;
+        public string placa { get; set; } = string.Empty;
+        public int numeroVehiculo { get; set; }
+        public string instructor { get; set; } = string.Empty;
+        public DateTime salida { get; set; }
     }
 }

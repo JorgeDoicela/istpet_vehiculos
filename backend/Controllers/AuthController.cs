@@ -26,11 +26,11 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest req)
         {
-            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.UsuarioLogin == req.Usuario && u.Activo);
+            // Matching usuario_login (snake_case) with req.usuario (if updated) or legacy req.Usuario
+            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario_login == (req.usuario ?? req.Usuario) && u.activo);
 
             if (user == null)
             {
-                // Delay artificial para evitar ataques de timing (Opcional en ultra-seguro)
                 await Task.Delay(500); 
                 return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
             }
@@ -38,60 +38,40 @@ namespace backend.Controllers
             bool isValid = false;
             bool needsRehash = false;
 
-            // 🛡️ PUENTE DE AUTENTICACIÓN MIGRATORIA (Zenith Auth Bridge 2026)
-            
-            // 1. Detección de Hash SIGAFI/Moderno (BCrypt)
-            if (user.PasswordHash.StartsWith("$2a$") || user.PasswordHash.StartsWith("$2b$"))
+            if (user.password_hash.StartsWith("$2a$") || user.password_hash.StartsWith("$2b$"))
             {
-                try
-                {
-                    isValid = BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash);
-                }
+                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? req.Password, user.password_hash); }
                 catch { isValid = false; }
             }
             else
             {
-                // 2. Validación de Texto Plano (Legacy SIGAFI)
-                // Usado para la primera sincronización de usuarios_web
-                isValid = string.Equals(user.PasswordHash, req.Password);
-                
+                isValid = string.Equals(user.password_hash, req.password ?? req.Password);
                 if (!isValid)
                 {
-                    // 3. Validación de Hash SHA-256 (Legacy ISTPET interno)
-                    string calculatedHash = ComputeSha256Hash(req.Password);
-                    isValid = string.Equals(user.PasswordHash, calculatedHash, StringComparison.OrdinalIgnoreCase);
+                    string calculatedHash = ComputeSha256Hash(req.password ?? req.Password);
+                    isValid = string.Equals(user.password_hash, calculatedHash, StringComparison.OrdinalIgnoreCase);
                 }
-
-                // 🛡️ RE-HASH AUTOMÁTICO A BCRYPT (Protección Proactiva)
-                if (isValid)
-                {
-                    needsRehash = true;
-                }
+                if (isValid) needsRehash = true;
             }
 
-            if (!isValid)
-            {
-                return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
-            }
+            if (!isValid) return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
 
-            // Aplicar re-hash si es necesario (Mejora proactiva de seguridad)
             if (needsRehash)
             {
-                user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password);
+                user.password_hash = BCrypt.Net.BCrypt.HashPassword(req.password ?? req.Password);
                 await _context.SaveChangesAsync();
             }
 
-            // 🛡️ GENERACIÓN DE JWT (Ultra Seguro)
             var token = CreateToken(user);
 
             return Ok(ApiResponse<LoginResponse>.Ok(new LoginResponse
             {
-                Token = token,
-                IdUsuario = user.Id_Usuario,
-                Usuario = user.UsuarioLogin,
-                Nombre = user.NombreCompleto ?? "Usuario ISTPET",
-                Rol = user.Rol
-            }, "Ingreso exitoso. Sesión protegida con JWT."));
+                token = token,
+                id_usuario = user.id_usuario,
+                usuario = user.usuario_login,
+                nombre = user.nombre_completo ?? "Usuario ISTPET",
+                rol = user.rol
+            }, "Ingreso exitoso."));
         }
 
         private string CreateToken(backend.Models.Usuario user)
@@ -102,9 +82,9 @@ namespace backend.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id_Usuario.ToString()),
-                new Claim(ClaimTypes.Name, user.UsuarioLogin),
-                new Claim(ClaimTypes.Role, user.Rol)
+                new Claim(ClaimTypes.NameIdentifier, user.id_usuario.ToString()),
+                new Claim(ClaimTypes.Name, user.usuario_login),
+                new Claim(ClaimTypes.Role, user.rol)
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor
@@ -118,7 +98,6 @@ namespace backend.Controllers
 
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
-
             return tokenHandler.WriteToken(token);
         }
 
@@ -128,10 +107,7 @@ namespace backend.Controllers
             {
                 byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
                 StringBuilder builder = new StringBuilder();
-                foreach (byte b in bytes)
-                {
-                    builder.Append(b.ToString("x2"));
-                }
+                foreach (byte b in bytes) builder.Append(b.ToString("x2"));
                 return builder.ToString();
             }
         }

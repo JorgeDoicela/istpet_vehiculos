@@ -8,8 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace backend.Controllers
 {
     /**
-     * Reportes administrativos desde la BD central SIGAFI (prácticas agendadas / histórico en cond_alumnos_practicas).
-     * La conexión se define en ConnectionStrings:SigafiConnection (IP/host del servidor SIGAFI).
+     * Reports Controller: Refactored 2026.
      */
     [ApiController]
     [Route("api/[controller]")]
@@ -41,15 +40,15 @@ namespace backend.Controllers
                     hasta = e.Date;
 
                 string? cedulaProfesor = null;
-                if (!string.IsNullOrEmpty(instructorId) && int.TryParse(instructorId, out var instPk))
+                if (!string.IsNullOrEmpty(instructorId))
                 {
                     cedulaProfesor = await _context.Instructores
-                        .Where(i => i.Id_Instructor == instPk)
-                        .Select(i => i.Cedula)
+                        .Where(i => i.idProfesor == instructorId)
+                        .Select(i => i.idProfesor)
                         .FirstOrDefaultAsync();
 
                     if (string.IsNullOrEmpty(cedulaProfesor))
-                        return Ok(ApiResponse<IEnumerable<ReportePracticasDTO>>.Ok(Array.Empty<ReportePracticasDTO>(), "Instructor no encontrado; sin resultados."));
+                        return Ok(ApiResponse<IEnumerable<ReportePracticasDTO>>.Ok(Array.Empty<ReportePracticasDTO>(), "Instructor no encontrado."));
                 }
 
                 var result = await _sigafiReports.GetReportePracticasAsync(desde, hasta, cedulaProfesor);
@@ -57,7 +56,7 @@ namespace backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<IEnumerable<ReportePracticasDTO>>.Fail($"Error generando reporte SIGAFI: {ex.Message}"));
+                return StatusCode(500, ApiResponse<IEnumerable<ReportePracticasDTO>>.Fail($"Error: {ex.Message}"));
             }
         }
     }

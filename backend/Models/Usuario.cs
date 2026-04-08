@@ -3,29 +3,32 @@ using System.ComponentModel.DataAnnotations;
 namespace backend.Models
 {
     /**
-     * ISTPET Enterprise User Model
-     * Aligned with SQL Security Schema
+     * Usuario Model: Absolute SIGAFI Parity 2026.
+     * Aligned with SIGAFI 'usuario' table schema.
      */
     public class Usuario
     {
         [Key]
-        public int Id_Usuario { get; set; }
+        [MaxLength(20)]
+        public string usuario { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(50)]
-        public string UsuarioLogin { get; set; } = string.Empty;
+        [MaxLength(255)] // Hashed
+        public string password { get; set; } = string.Empty;
 
-        [Required]
-        [MaxLength(255)]
-        public string PasswordHash { get; set; } = string.Empty;
+        public bool salida { get; set; } = false;
 
-        public string Rol { get; set; } = "guardia";
+        public bool ingreso { get; set; } = false;
 
-        [MaxLength(100)]
-        public string? NombreCompleto { get; set; }
+        public bool activo { get; set; } = true;
 
-        public bool Activo { get; set; } = true;
+        public bool asistencia { get; set; } = false;
 
-        public DateTime CreadoEn { get; set; } = DateTime.Now;
+        public bool esRrhh { get; set; } = false;
+
+        // Local Augmentation (Keep for display/JWT)
+        public string? rol { get; set; } // Derived from salida/ingreso/esRrhh
+        public string? nombre_completo { get; set; }
+        public DateTime creado_en { get; set; } = DateTime.Now;
     }
 }

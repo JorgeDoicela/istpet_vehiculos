@@ -21,7 +21,7 @@ namespace backend.Services.Implementations
 
         public async Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa)
         {
-            return await _context.Vehiculos.FirstOrDefaultAsync(v => v.Placa == placa);
+            return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == placa);
         }
     }
 }
