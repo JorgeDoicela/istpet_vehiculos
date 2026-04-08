@@ -28,7 +28,6 @@ const ControlOperativo = () => {
     const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
     const [salidaLoading, setSalidaLoading] = useState(false);
     const [estudianteData, setEstudianteData] = useState(null);
-    const [mostrarBannerSugerencia, setMostrarBannerSugerencia] = useState(false);
     const [vehiculos, setVehiculos] = useState([]);
     const [filtroVehiculo, setFiltroVehiculo] = useState('');
     const [filtroLicencia, setFiltroLicencia] = useState(null);
@@ -180,8 +179,6 @@ const ControlOperativo = () => {
 
         setSalidaLoading(true);
         setEstudianteData(null);
-        setMostrarBannerSugerencia(false);
-
         try {
             const data = await logisticaService.buscarEstudiante(cedulaABuscar);
             setEstudianteData(data);
@@ -195,7 +192,6 @@ const ControlOperativo = () => {
                 if (source === 'agenda') {
                     showNotification('Sugerencia de agenda aplicada');
                 } else {
-                    setMostrarBannerSugerencia(true); // Mostramos el banner informativo en búsqueda manual
                     showNotification('¡Agenda detectada y aplicada automáticamente!');
                 }
             } else {
@@ -231,7 +227,6 @@ const ControlOperativo = () => {
                 if (sVeh) setVehiculoSeleccionado(sVeh);
             }
 
-            setMostrarBannerSugerencia(false);
         } catch (err) {
             console.error("Error aplicando sugerencia:", err);
         }
@@ -445,28 +440,6 @@ const ControlOperativo = () => {
                                                     </div>
                                                 </div>
                                                 <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[var(--apple-primary)]/[0.03] to-transparent skew-x-12 translate-x-12 group-hover:translate-x-8 transition-transform duration-700"></div>
-
-                                                {/* Banner informativo ya no requiere botón de confirmación si ya se aplicó */}
-                                                {mostrarBannerSugerencia && estudianteData.tienePracticaHoy && (
-                                                    <div className="mt-4 bg-gradient-to-r from-[var(--istpet-navy)] to-[#2a3a6a] p-3 rounded-2xl text-white shadow-lg flex items-center justify-between gap-3 overflow-hidden relative">
-                                                        <div className="flex items-center gap-3 relative z-10 text-left">
-                                                            <div className="h-8 w-8 rounded-xl bg-white/10 flex items-center justify-center flex-shrink-0 backdrop-blur-sm border border-white/10">
-                                                                <svg className="h-4 w-4 text-[var(--istpet-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                                                            </div>
-                                                            <div className="leading-tight">
-                                                                <p className="text-[9px] font-black uppercase tracking-widest text-[var(--istpet-gold)]">Sugerencia de Agenda</p>
-                                                                <p className="text-[10px] font-bold text-white/90">{estudianteData.practicaVehiculo} • {estudianteData.practicaHora}</p>
-                                                            </div>
-                                                        </div>
-                                                        <button
-                                                            onClick={() => setMostrarBannerSugerencia(false)}
-                                                            className="relative z-10 px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-full text-[9px] font-black uppercase transition-all shrink-0"
-                                                        >
-                                                            Ocultar
-                                                        </button>
-                                                        <div className="absolute -right-2 top-0 h-full w-24 bg-white/5 skew-x-12"></div>
-                                                    </div>
-                                                )}
                                             </div>
                                         </div>
                                     ) : !salidaLoading && salidaCedula.length >= 1 && (
@@ -558,7 +531,7 @@ const ControlOperativo = () => {
                                                                 key={v.idVehiculo}
                                                                 vehiculo={v}
                                                                 isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
-                                                                isSuggested={mostrarBannerSugerencia && estudianteData?.idPracticaCentral === v.idVehiculo}
+                                                                isSuggested={estudianteData?.idPracticaCentral === v.idVehiculo}
                                                                 onSelect={handleSeleccionarVehiculo}
                                                             />
                                                         ));

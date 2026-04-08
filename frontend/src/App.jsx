@@ -4,8 +4,6 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import Students from './pages/Students';
-import Vehicles from './pages/Vehicles';
 import ControlOperativo from './pages/ControlOperativo';
 import Reports from './pages/Reports';
 
@@ -36,16 +34,8 @@ function App() {
                                 <Home />
                             </ProtectedRoute>
                         } />
-                        <Route path="/estudiantes" element={
-                            <ProtectedRoute allowedRoles={['admin', 'logistica']}>
-                                <Students />
-                            </ProtectedRoute>
-                        } />
-                        <Route path="/vehiculos" element={
-                            <ProtectedRoute allowedRoles={['admin', 'logistica']}>
-                                <Vehicles />
-                            </ProtectedRoute>
-                        } />
+                        <Route path="/estudiantes" element={<Navigate to="/control-operativo" replace />} />
+                        <Route path="/vehiculos" element={<Navigate to="/control-operativo" replace />} />
                         <Route path="/reportes" element={
                             <ProtectedRoute allowedRoles={['admin']}>
                                 <Reports />

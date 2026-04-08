@@ -51,20 +51,23 @@
     animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+/* Tabla: scroll suave en iOS y ancho mínimo controlado en JSX */
+.reports-table-wrap {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+}
+
 /* Table Specifics */
-table {
+.reports-data-table {
     border-spacing: 0;
 }
 
-th {
+.reports-data-table th,
+.reports-data-table td {
     white-space: nowrap;
 }
 
-td {
-    white-space: nowrap;
-}
-
-tr:last-child td {
+.reports-data-table tr:last-child td {
     border-bottom: none;
 }
 
