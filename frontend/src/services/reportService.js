@@ -8,8 +8,8 @@ const reportService = {
             if (filtros.fechaFin) params.append('fechaFin', filtros.fechaFin);
             if (filtros.instructorId) params.append('instructorId', filtros.instructorId);
 
-            const response = await api.get(`/reports/practicas?${params.toString()}`);
-            return response.data;
+            const response = await api.get(`/Reports/practicas?${params.toString()}`);
+            return response.data?.data ?? [];
         } catch (error) {
             throw error.response?.data || { message: 'Error connection to server' };
         }

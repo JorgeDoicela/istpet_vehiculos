@@ -62,6 +62,7 @@ const Sidebar = () => {
 
     const isItemActive = (item) => {
         if (item.id === 'monitoreo') return location.pathname === '/monitoreo';
+        if (item.id === 'reportes') return location.pathname === '/reportes';
         if (location.pathname !== '/') return false;
         if (!currentTab && item.id === 'salida') return true;
         return currentTab === item.id;
