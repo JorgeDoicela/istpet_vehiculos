@@ -31,3 +31,11 @@
 - **`periodos` / `secciones`**: no están en **`01`**; el backend las consulta en **SIGAFI** vía `SqlCentralStudentProvider`, no como tablas obligatorias en el espejo local.
 - **`v_alerta_mantenimiento`**: no está en **`01`**; el dashboard usa SIGAFI y, si existe la vista en local, hace merge. Su ausencia no rompe el arranque.
 - **`02` vs Master Sync**: `02` documenta el modelo de datos; la ingesta **operativa** y completa está en el **Master Sync** (ver `docs/SYNC_VERIFICATION.md`).
+
+---
+
+## Docker (raíz del repositorio)
+
+- Comando: `docker compose up --build` — levanta MariaDB con **`01`** en el primer arranque, API en **http://localhost:5112**, frontend en **http://localhost** (puerto 80).
+- Archivo **`.env`**: `LOCAL_DB_*` apunta al servicio `db` (red interna Docker); `REMOTE_SIGAFI_*` a tu servidor SIGAFI (p. ej. `192.168.x.x`) para que el contenedor del backend lea `sigafi_es`.
+- Swagger: **http://localhost:5112/swagger** — el `docker-compose` usa `ASPNETCORE_ENVIRONMENT=Development` para poder revisar la API; para un despliegue cerrado cambia a `Production` (Swagger quedará desactivado).
