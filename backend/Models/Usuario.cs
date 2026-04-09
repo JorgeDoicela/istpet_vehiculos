@@ -1,10 +1,11 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
     /**
      * Usuario Model: Absolute SIGAFI Parity 2026.
-     * Aligned with SIGAFI 'usuario' table schema.
+     * Aligned with SIGAFI 'usuarios_web' table schema.
      */
     public class Usuario
     {
@@ -13,7 +14,7 @@ namespace backend.Models
         public string usuario { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(255)] // Hashed
+        [MaxLength(255)] 
         public string password { get; set; } = string.Empty;
 
         public bool salida { get; set; } = false;
@@ -26,9 +27,14 @@ namespace backend.Models
 
         public bool esRrhh { get; set; } = false;
 
-        // Local Augmentation (Keep for display/JWT)
-        public string? rol { get; set; } // Derived from salida/ingreso/esRrhh
+        // Local Auxiliary Fields (NOT in SIGAFI DB)
+        [NotMapped]
+        public string? rol { get; set; } 
+
+        [NotMapped]
         public string? nombre_completo { get; set; }
+
+        [NotMapped]
         public DateTime creado_en { get; set; } = DateTime.Now;
     }
 }

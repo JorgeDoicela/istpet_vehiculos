@@ -62,13 +62,39 @@ namespace backend.Controllers
                 await _context.SaveChangesAsync();
             }
 
+            // --- PROFESSIONAL DATA HYDRATION ---
+            
+            // 1. Dynamic Role Derivation
+            user.rol = "guardia"; // Default
+            if (user.salida && user.ingreso) user.rol = "admin";
+            else if (user.salida) user.rol = "logistica";
+
+            // 2. Name Hydration from Mirror Tables
+            string fullName = "Usuario ISTPET";
+            var profesor = await _context.Instructores.FirstOrDefaultAsync(p => p.idProfesor == user.usuario);
+            if (profesor != null)
+            {
+                fullName = profesor.apellidos + " " + profesor.nombres;
+                if (string.IsNullOrWhiteSpace(fullName.Trim())) 
+                    fullName = $"{profesor.primerApellido} {profesor.primerNombre}";
+            }
+            else
+            {
+                var alumno = await _context.Estudiantes.FirstOrDefaultAsync(a => a.idAlumno == user.usuario);
+                if (alumno != null)
+                {
+                    fullName = $"{alumno.apellidoPaterno} {alumno.apellidoMaterno} {alumno.primerNombre}";
+                }
+            }
+            user.nombre_completo = fullName;
+
             var token = CreateToken(user);
 
             return Ok(ApiResponse<LoginResponse>.Ok(new LoginResponse
             {
                 token = token,
                 usuario = user.usuario,
-                nombre = user.nombre_completo ?? "Usuario ISTPET",
+                nombre = user.nombre_completo,
                 rol = user.rol
             }, "Ingreso exitoso."));
         }
