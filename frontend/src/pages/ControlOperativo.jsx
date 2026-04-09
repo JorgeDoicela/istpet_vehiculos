@@ -185,23 +185,52 @@ const ControlOperativo = () => {
                 try {
                     const serverMatch = await logisticaService.buscarSugerencias(salidaIdAlumno);
                     let combined = dedupePreferVigente([...localeMatch]);
+
+                    const filaDesdeServidorSigafi = (sm) => {
+                        const sid = idKey(sm.idAlumno);
+                        const agSrv = !!sm.esAgendado;
+                        return {
+                            idAlumno: sid,
+                            nombreCompleto: (sm.nombreCompleto || '').trim() || sid,
+                            esAgendado: agSrv,
+                            isBusy: sm.isBusy || busy(sid),
+                            hora: (sm.horaAgenda || sm.hora || '').toString(),
+                            vehiculo: sm.vehiculoAgenda || sm.vehiculo || '',
+                            instructor: sm.instructorAgenda || sm.instructor || ''
+                        };
+                    };
+
+                    const mejorFilaSugerencia = (prev, next) => {
+                        if (next.esAgendado && !prev.esAgendado) return next;
+                        if (prev.esAgendado && !next.esAgendado) return prev;
+                        return next;
+                    };
+
                     serverMatch.forEach((sm) => {
                         const sid = idKey(sm.idAlumno);
-                        if (combined.some((c) => idKey(c.idAlumno) === sid)) return;
                         const rows = agendadosHoy.filter((a) => idKey(a.idalumno) === sid);
                         const agV =
                             rows.find((a) => agendaPracticaVigenteParaSugerencia(a)) ?? rows[0];
+
+                        let fila;
                         if (agV) {
-                            combined.push(
-                                filaSugerenciaDesdeAgenda(agV, sm.nombreCompleto)
-                            );
+                            fila = filaSugerenciaDesdeAgenda(agV, sm.nombreCompleto);
+                            if (!fila.esAgendado && sm.esAgendado) {
+                                fila = {
+                                    ...fila,
+                                    esAgendado: true,
+                                    hora: sm.horaAgenda || fila.hora,
+                                    vehiculo: sm.vehiculoAgenda || fila.vehiculo,
+                                    instructor: sm.instructorAgenda || fila.instructor
+                                };
+                            }
                         } else {
-                            combined.push({
-                                ...sm,
-                                idAlumno: sid,
-                                isBusy: sm.isBusy || busy(sid)
-                            });
+                            fila = filaDesdeServidorSigafi(sm);
                         }
+
+                        const idx = combined.findIndex((c) => idKey(c.idAlumno) === sid);
+                        if (idx < 0) combined.push(fila);
+                        else combined[idx] = mejorFilaSugerencia(combined[idx], fila);
                     });
                     combined = dedupePreferVigente(combined);
 

@@ -53,6 +53,10 @@ namespace backend.DTOs
         public string nombreCompleto { get; set; } = string.Empty;
         public bool esAgendado { get; set; }
         public bool isBusy { get; set; }
+        /// <summary>Próxima práctica abierta en SIGAFI (hoy o futura, sin llegada), para sugerencias fuera del top de agenda.</summary>
+        public string? horaAgenda { get; set; }
+        public string? vehiculoAgenda { get; set; }
+        public string? instructorAgenda { get; set; }
     }
 
     public class SalidaRequest

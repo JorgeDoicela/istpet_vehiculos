@@ -254,6 +254,8 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralInstructorDto>> GetAllInstructorsFromCentralAsync();
         Task<CentralInstructorDto?> GetAssignedTutorAsync(string idAlumno);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string idAlumno);
+        /// <summary>Para cada cédula, la próxima práctica en SIGAFI con fecha ≥ hoy, no cancelada y sin hora de llegada.</summary>
+        Task<IReadOnlyDictionary<string, ScheduledPracticeDto>> GetNextOpenPracticesForAlumnosAsync(IEnumerable<string> idAlumnos);
         Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno);
         Task<IEnumerable<ScheduledPracticeDto>> GetRecentSchedulesAsync(int limit = 100);
         Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();

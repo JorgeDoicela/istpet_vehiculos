@@ -5,6 +5,7 @@ using backend.DTOs;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using System;
+using System.Linq;
 using MySqlConnector;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -294,6 +295,62 @@ namespace backend.Services.Implementations
             {
                 _logger.LogError(ex, "Error consultando prácticas recientes SIGAFI.");
                 return new List<ScheduledPracticeDto>();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyDictionary<string, ScheduledPracticeDto>> GetNextOpenPracticesForAlumnosAsync(
+            IEnumerable<string> idAlumnos)
+        {
+            var ids = idAlumnos?
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .Select(s => s.Trim())
+                .Distinct(StringComparer.Ordinal)
+                .Take(25)
+                .ToList() ?? new List<string>();
+            if (ids.Count == 0)
+                return new Dictionary<string, ScheduledPracticeDto>(StringComparer.Ordinal);
+
+            try
+            {
+                var inClause = string.Join(",", ids.Select((_, i) => $"@p{i}"));
+                var sql = $@"
+                    SELECT
+                        p.idPractica,
+                        p.idalumno,
+                        p.idvehiculo,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
+                        p.idProfesor,
+                        p.fecha,
+                        p.hora_salida,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                        CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                        CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                        p.hora_llegada AS SigafiHoraLlegada
+                    FROM cond_alumnos_practicas p
+                    JOIN alumnos a ON a.idAlumno = p.idalumno
+                    JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN profesores pr ON pr.idProfesor = p.idProfesor
+                    WHERE COALESCE(p.cancelado, 0) = 0
+                    AND p.hora_llegada IS NULL
+                    AND p.fecha >= CURDATE()
+                    AND p.idalumno IN ({inClause})
+                    ORDER BY p.idalumno ASC, p.fecha ASC, p.hora_salida ASC";
+                var rows = (await QueryListAsync(sql, ids, MapScheduledPractice)).ToList();
+                var dict = new Dictionary<string, ScheduledPracticeDto>(StringComparer.Ordinal);
+                foreach (var row in rows)
+                {
+                    if (!dict.ContainsKey(row.idalumno))
+                        dict[row.idalumno] = row;
+                }
+
+                return dict;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error consultando prácticas abiertas SIGAFI por lote de alumnos.");
+                return new Dictionary<string, ScheduledPracticeDto>(StringComparer.Ordinal);
             }
         }
 
@@ -730,6 +787,22 @@ WHERE COALESCE(activo, 1) = 0";
             await using var conn = new MySqlConnection(_connectionString);
             await conn.OpenAsync();
             await using var cmd = new MySqlCommand(sql, conn);
+            await using var reader = await cmd.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                list.Add(mapper(reader));
+            }
+            return list;
+        }
+
+        private async Task<IEnumerable<T>> QueryListAsync<T>(string sql, IReadOnlyList<string> paramValues, Func<MySqlDataReader, T> mapper)
+        {
+            var list = new List<T>();
+            await using var conn = new MySqlConnection(_connectionString);
+            await conn.OpenAsync();
+            await using var cmd = new MySqlCommand(sql, conn);
+            for (var i = 0; i < paramValues.Count; i++)
+                cmd.Parameters.AddWithValue($"@p{i}", paramValues[i]);
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {

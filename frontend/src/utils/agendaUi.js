@@ -30,6 +30,12 @@ export function agendaPracticaVigenteParaSugerencia(ag) {
 
 export function agendaYmdFromApi(fecha) {
   if (!fecha) return '';
+  if (fecha instanceof Date && !Number.isNaN(fecha.getTime())) {
+    const y = fecha.getFullYear();
+    const mo = String(fecha.getMonth() + 1).padStart(2, '0');
+    const d = String(fecha.getDate()).padStart(2, '0');
+    return `${y}-${mo}-${d}`;
+  }
   const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);
   return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
 }

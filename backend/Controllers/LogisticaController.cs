@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -464,6 +465,26 @@ namespace backend.Controllers
 
             if (list.Count > 0)
             {
+                try
+                {
+                    var porSigafi = await _centralProvider.GetNextOpenPracticesForAlumnosAsync(list.Select(x => x.idAlumno));
+                    foreach (var item in list)
+                    {
+                        if (!porSigafi.TryGetValue(item.idAlumno, out var pr))
+                            continue;
+                        item.esAgendado = true;
+                        item.horaAgenda = pr.hora_salida.HasValue
+                            ? pr.hora_salida.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture)
+                            : null;
+                        item.vehiculoAgenda = string.IsNullOrWhiteSpace(pr.VehiculoDetalle) ? null : pr.VehiculoDetalle;
+                        item.instructorAgenda = string.IsNullOrWhiteSpace(pr.ProfesorNombre) ? null : pr.ProfesorNombre;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "SIGAFI no enriqueció sugerencias de alumnos (se devuelve lista sin práctica central).");
+                }
+
                 var ids = list.Select(x => x.idAlumno).ToList();
                 var busyIds = await _context.Practicas.AsNoTracking()
                     .Where(p => p.ensalida == 1 && (p.cancelado ?? 0) == 0 && ids.Contains(p.idalumno))
