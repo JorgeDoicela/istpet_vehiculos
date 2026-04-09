@@ -22,7 +22,7 @@ namespace backend.Models
         public int idNivel { get; set; }
 
         [ForeignKey("idNivel")]
-        public Nivel? Nivel { get; set; }
+        public Curso? Curso { get; set; }
 
         public int idSeccion { get; set; }
 

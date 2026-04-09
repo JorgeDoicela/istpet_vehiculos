@@ -183,7 +183,7 @@ namespace backend.Services.Implementations
                 {
                     try
                     {
-                        var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario_login == eu.usuario);
+                        var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == eu.usuario);
                         
                         string role = "guardia";
                         if (eu.usuario.ToLower().Contains("admin")) role = "admin";
@@ -194,8 +194,8 @@ namespace backend.Services.Implementations
                         {
                             _context.Usuarios.Add(new Usuario
                             {
-                                usuario_login = eu.usuario,
-                                password_hash = eu.password,
+                                usuario = eu.usuario,
+                                password = eu.password,
                                 rol = role,
                                 nombre_completo = eu.usuario.ToUpper(),
                                 activo = eu.activo == 1,
@@ -206,9 +206,9 @@ namespace backend.Services.Implementations
                         {
                             existing.activo = eu.activo == 1;
                             existing.rol = role;
-                            if (!existing.password_hash.StartsWith("$2a$") && !existing.password_hash.StartsWith("$2b$"))
+                            if (!existing.password.StartsWith("$2a$") && !existing.password.StartsWith("$2b$"))
                             {
-                                existing.password_hash = eu.password;
+                                existing.password = eu.password;
                             }
                         }
                         log.RegistrosProcesados++;

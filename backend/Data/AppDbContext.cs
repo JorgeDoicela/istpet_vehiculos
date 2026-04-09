@@ -3,10 +3,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace backend.Data
 {
-    /**
-     * ISTPET Enterprise DbContext: Absolute Parity Edition 2026.
-     * Mirroring the exact SIGAFI server schema in the local database.
-     */
     public class AppDbContext : DbContext
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
@@ -16,7 +12,7 @@ namespace backend.Data
         public DbSet<Instructor> Instructores { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
         public DbSet<Mantenimiento> Mantenimientos { get; set; }
-        public DbSet<Nivel> Niveles { get; set; }
+        public DbSet<Curso> Cursos { get; set; }
         public DbSet<Estudiante> Estudiantes { get; set; }
         public DbSet<Matricula> Matriculas { get; set; }
         public DbSet<Practica> Practicas { get; set; }
@@ -92,18 +88,18 @@ namespace backend.Data
                 entity.Property(e => e.paralelo).HasColumnName("paralelo");
             });
 
-            // 8. NIVELES (Mirroring 'niveles' schema)
-            modelBuilder.Entity<Nivel>(entity => {
-                entity.ToTable("niveles");
+            // 8. CURSOS
+            modelBuilder.Entity<Curso>(entity => {
+                entity.ToTable("cursos");
                 entity.HasKey(e => e.idNivel);
                 entity.Property(e => e.idNivel).HasColumnName("idNivel");
                 entity.Property(e => e.idCarrera).HasColumnName("idCarrera");
-                entity.Property(e => e.NivelNombre).HasColumnName("Nivel");
+                entity.Property(e => e.Nivel).HasColumnName("Nivel");
             });
 
             // 7. PRÁCTICAS (Mirroring 'cond_alumnos_practicas' schema)
             modelBuilder.Entity<Practica>(entity => {
-                entity.ToTable("cond_alumnos_practicas"); 
+                entity.ToTable("cond_alumnos_practicas");
                 entity.HasKey(e => e.idPractica);
                 entity.Property(e => e.idPractica).HasColumnName("idPractica");
                 entity.Property(e => e.idalumno).HasColumnName("idalumno");
@@ -121,16 +117,16 @@ namespace backend.Data
                 entity.Property(e => e.user_llegada).HasColumnName("user_llegada");
                 entity.Property(e => e.cancelado).HasColumnName("cancelado");
             });
-            
-            // 9. ASIGNACIONES
+
+            // 9. ASIGNACIONES (Mirroring 'cond_alumnos_vehiculos' schema)
             modelBuilder.Entity<Asignacion>(entity => {
-                entity.ToTable("Asignaciones");
+                entity.ToTable("cond_alumnos_vehiculos");
                 entity.HasKey(e => e.idAsignacion);
             });
 
             // 10. PERIODOS
             modelBuilder.Entity<Periodo>(entity => {
-                entity.ToTable("periodo");
+                entity.ToTable("periodos");
                 entity.HasKey(e => e.idPeriodo);
             });
 
@@ -139,7 +135,7 @@ namespace backend.Data
                 entity.ToTable("secciones");
                 entity.HasKey(e => e.idSeccion);
             });
-            
+
             // VIEWS
             modelBuilder.Entity<ClaseActiva>(entity => {
                 entity.ToView("v_clases_activas").HasNoKey();

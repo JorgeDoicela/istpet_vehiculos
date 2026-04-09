@@ -8,12 +8,12 @@ namespace backend.DTOs
     {
         public string idAlumno { get; set; } = string.Empty;
         public string nombreCompleto { get; set; } = string.Empty;
-        public string curso { get; set; } = string.Empty;
+        public string nivel { get; set; } = string.Empty;
         public string idPeriodo { get; set; } = string.Empty;
         public string paralelo { get; set; } = string.Empty;
         public string jornada { get; set; } = string.Empty;
-        public string tipoLicencia { get; set; } = string.Empty; 
-        public int idTipoLicencia { get; set; } 
+        public string tipoLicencia { get; set; } = string.Empty;
+        public int idTipoLicencia { get; set; }
         public int idMatricula { get; set; }
 
         public int? idPracticaCentral { get; set; }

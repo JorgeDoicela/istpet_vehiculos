@@ -38,13 +38,13 @@ namespace backend.Controllers
             // 1. LOCAL SEARCH
             var localStudent = await (from m in _context.Matriculas
                                 join e in _context.Estudiantes on m.idAlumno equals e.idAlumno
-                                join n in _context.Niveles on m.idNivel equals n.idNivel
+                                join c in _context.Cursos on m.idNivel equals c.idNivel
                                 where e.idAlumno == idAlumno && m.estado == "ACTIVO"
                                 select new EstudianteLogisticaResponse
                                 {
                                     idAlumno = e.idAlumno,
                                     nombreCompleto = $"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}".Trim(),
-                                    curso = (n.NivelNombre ?? "S/N").ToUpper(),
+                                    nivel = (c.Nivel ?? "S/N").ToUpper(),
                                     paralelo = m.paralelo ?? "A",
                                     jornada = "MATUTINA",
                                     idPeriodo = m.idPeriodo ?? "S/P",
@@ -67,20 +67,20 @@ namespace backend.Controllers
                         var cp = scheduled != null ? new CentralInstructorDto { idProfesor = scheduled.idProfesor, nombres = scheduled.ProfesorNombre, apellidos = "" } : tutor;
                         if (cp != null)
                         {
-                            localProf = new Instructor 
-                            { 
-                                idProfesor = cp.idProfesor, 
+                            localProf = new Instructor
+                            {
+                                idProfesor = cp.idProfesor,
                                 primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
                                 primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
-                                nombres = (cp.nombres ?? "").ToUpper(), 
-                                apellidos = (cp.apellidos ?? "").ToUpper(), 
-                                activo = true 
+                                nombres = (cp.nombres ?? "").ToUpper(),
+                                apellidos = (cp.apellidos ?? "").ToUpper(),
+                                activo = true
                             };
                             _context.Instructores.Add(localProf);
                             await _context.SaveChangesAsync();
                         }
                     }
-                    
+
                     localStudent.practicaInstructor = localProf != null ? $"{localProf.apellidos} {localProf.nombres}" : (scheduled?.ProfesorNombre ?? $"{tutor?.apellidos} {tutor?.nombres}");
                     localStudent.idPracticaCentral = scheduled?.idvehiculo;
                     localStudent.practicaVehiculo = scheduled?.VehiculoDetalle;
@@ -113,8 +113,8 @@ namespace backend.Controllers
                     _context.Estudiantes.Add(eBase);
                 }
 
-                var nivelLocal = await _context.Niveles.FirstOrDefaultAsync() 
-                                  ?? new Nivel { idNivel = 1, NivelNombre = centralData.Nivel };
+                var nivelLocal = await _context.Cursos.FirstOrDefaultAsync()
+                                  ?? new Curso { idNivel = 1, Nivel = centralData.Nivel };
 
                 var nuevaMatricula = new Matricula
                 {
@@ -134,7 +134,7 @@ namespace backend.Controllers
                 {
                     idAlumno = eBase.idAlumno,
                     nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
-                    curso = (nivelLocal.NivelNombre ?? "S/N").ToUpper(),
+                    nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
                     paralelo = nuevaMatricula.paralelo,
                     jornada = "MATUTINA",
                     idPeriodo = nuevaMatricula.idPeriodo,

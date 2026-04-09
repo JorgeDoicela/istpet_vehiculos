@@ -193,6 +193,23 @@ Ejecutado por `GetSchedulesForTodayAsync()` para el widget "Agenda SIGAFI Hoy" d
 
 Similar al anterior pero sin filtro de cédula, devuelve todas las prácticas del día.
 
+## Lógica de Sincronización Automática (Bajo Demanda)
+
+El sistema Logistics está diseñado para minimizar la carga sobre el servidor central SIGAFI y garantizar la operatividad local mediante un modelo de sincronización inteligente:
+
+1. **Auto-registro de Estudiantes**:
+   - Al buscar un estudiante por CI en el panel de control, el sistema primero consulta los datos oficiales en `sigafi_es`.
+   - Si el estudiante existe en el sistema central pero no en la base local `istpet_vehiculos`, el sistema lo **crea y matricula automáticamente** en la base de datos local con los datos recuperados.
+   - Esto permite que nuevos alumnos registrados en SIGAFI sean operativos en Logistics de inmediato sin intervención manual.
+
+2. **Propósito de la Persistencia Local**:
+   - **Autonomía Operativa**: El sistema puede seguir registrando salidas y llegadas incluso si la conexión con el servidor 192.168.7.50 se interrumpe temporalmente.
+   - **Enriquecimiento de Datos**: La base local almacena métricas que SIGAFI no posee, como el conteo de `horas_completadas` de práctica, el estado mecánico actual del vehículo y el instructor fijo asignado para logística.
+   - **Performance**: Reduce drásticamente los tiempos de respuesta al evitar consultas transversales constantes para datos que cambian poco (nombres, fotos, etc.).
+
+3. **Sincronización de Usuarios e Instructores**:
+   - El servicio `DataSyncService` permite realizar barridos manuales o programados de la tabla `usuarios_web` e `instructores`, asegurando que las credenciales y el catálogo de personal estén siempre alineados con la administración central.
+
 ---
 
 ## Comportamiento ante Fallos de la BD Central

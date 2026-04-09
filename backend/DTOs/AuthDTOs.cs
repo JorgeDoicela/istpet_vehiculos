@@ -16,7 +16,6 @@ namespace backend.DTOs
     public class LoginResponse
     {
         public string token { get; set; } = string.Empty;
-        public int id_usuario { get; set; }
         public string usuario { get; set; } = string.Empty;
         public string nombre { get; set; } = string.Empty;
         public string rol { get; set; } = "guardia";

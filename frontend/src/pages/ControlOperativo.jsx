@@ -386,7 +386,7 @@ const ControlOperativo = () => {
                                                             )}
                                                         </div>
                                                         <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide opacity-60">
-                                                                {estudianteData.curso}
+                                                                {estudianteData.nivel}
                                                         </p>
                                                     </div>
 

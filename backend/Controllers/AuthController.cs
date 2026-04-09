@@ -26,8 +26,8 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest req)
         {
-            // Matching usuario_login (snake_case) with req.usuario (if updated) or legacy req.Usuario
-            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario_login == (req.usuario ?? req.Usuario) && u.activo);
+            // Matching usuario with req.usuario (if updated) or legacy req.Usuario
+            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == (req.usuario ?? req.Usuario) && u.activo);
 
             if (user == null)
             {
@@ -38,18 +38,18 @@ namespace backend.Controllers
             bool isValid = false;
             bool needsRehash = false;
 
-            if (user.password_hash.StartsWith("$2a$") || user.password_hash.StartsWith("$2b$"))
+            if (user.password.StartsWith("$2a$") || user.password.StartsWith("$2b$"))
             {
-                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? req.Password, user.password_hash); }
+                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? req.Password, user.password); }
                 catch { isValid = false; }
             }
             else
             {
-                isValid = string.Equals(user.password_hash, req.password ?? req.Password);
+                isValid = string.Equals(user.password, req.password ?? req.Password);
                 if (!isValid)
                 {
                     string calculatedHash = ComputeSha256Hash(req.password ?? req.Password);
-                    isValid = string.Equals(user.password_hash, calculatedHash, StringComparison.OrdinalIgnoreCase);
+                    isValid = string.Equals(user.password, calculatedHash, StringComparison.OrdinalIgnoreCase);
                 }
                 if (isValid) needsRehash = true;
             }
@@ -58,7 +58,7 @@ namespace backend.Controllers
 
             if (needsRehash)
             {
-                user.password_hash = BCrypt.Net.BCrypt.HashPassword(req.password ?? req.Password);
+                user.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? req.Password);
                 await _context.SaveChangesAsync();
             }
 
@@ -67,8 +67,7 @@ namespace backend.Controllers
             return Ok(ApiResponse<LoginResponse>.Ok(new LoginResponse
             {
                 token = token,
-                id_usuario = user.id_usuario,
-                usuario = user.usuario_login,
+                usuario = user.usuario,
                 nombre = user.nombre_completo ?? "Usuario ISTPET",
                 rol = user.rol
             }, "Ingreso exitoso."));
@@ -82,9 +81,9 @@ namespace backend.Controllers
 
             var claims = new List<Claim>
             {
-                new Claim(ClaimTypes.NameIdentifier, user.id_usuario.ToString()),
-                new Claim(ClaimTypes.Name, user.usuario_login),
-                new Claim(ClaimTypes.Role, user.rol)
+                new Claim(ClaimTypes.NameIdentifier, user.usuario),
+                new Claim(ClaimTypes.Name, user.usuario),
+                new Claim(ClaimTypes.Role, user.rol ?? "user")
             };
 
             var tokenDescriptor = new SecurityTokenDescriptor

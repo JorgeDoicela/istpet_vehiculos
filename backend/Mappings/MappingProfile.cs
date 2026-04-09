@@ -4,10 +4,6 @@ using backend.DTOs;
 
 namespace backend.Mappings
 {
-    /**
-     * Master Mapping Profile: Absolute SIGAFI Naming Parity 2026.
-     * All property names match between Models and DTOs for 1:1 parity and efficiency.
-     */
     public class MappingProfile : Profile
     {
         public MappingProfile()
@@ -23,7 +19,7 @@ namespace backend.Mappings
                 .ForMember(dest => dest.idAlumno, opt => opt.MapFrom(src => src.idAlumno))
                 .ForMember(dest => dest.idMatricula, opt => opt.MapFrom(src => src.idMatricula))
                 .ForMember(dest => dest.paralelo, opt => opt.MapFrom(src => src.paralelo))
-                .ForMember(dest => dest.curso, opt => opt.MapFrom(src => src.Nivel != null ? src.Nivel.NivelNombre : "N/A"));
+                .ForMember(dest => dest.nivel, opt => opt.MapFrom(src => src.Curso != null ? src.Curso.Nivel : "N/A"));
 
             // Mirroring Practice DTO logic
             CreateMap<Practica, ReportePracticasDTO>()

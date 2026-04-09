@@ -102,7 +102,7 @@ namespace backend.Services.Implementations
                 if (matricula != null && practica.tiempo.HasValue)
                 {
                     decimal horasCalculadas = (decimal)Math.Round(practica.tiempo.Value.TotalHours, 2);
-                    matricula.horas_completadas += horasCalculadas;
+                    matricula.horas_completadas += (int)horasCalculadas;
                 }
 
                 await _context.SaveChangesAsync();
