@@ -444,13 +444,13 @@ namespace backend.Services.Implementations
         private async Task<int> SyncInstructorsInternalAsync()
         {
             var rows = await _centralProvider.GetAllInstructorsFromCentralAsync();
+            var byId = await _context.Instructores.ToDictionaryAsync(i => i.idProfesor);
             var processed = 0;
             foreach (var ci in rows)
             {
-                var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == ci.idProfesor);
-                if (existing == null)
+                if (!byId.TryGetValue(ci.idProfesor, out var existing))
                 {
-                    _context.Instructores.Add(new Instructor
+                    var nuevo = new Instructor
                     {
                         idProfesor = ci.idProfesor,
                         primerNombre = ci.primerNombre ?? "",
@@ -462,7 +462,9 @@ namespace backend.Services.Implementations
                         celular = ci.celular?.Length > 50 ? ci.celular[..50] : ci.celular,
                         email = ci.email,
                         activo = ci.activo == 1
-                    });
+                    };
+                    _context.Instructores.Add(nuevo);
+                    byId[ci.idProfesor] = nuevo;
                 }
                 else
                 {
@@ -485,13 +487,13 @@ namespace backend.Services.Implementations
         private async Task<int> SyncWebUsersInternalAsync()
         {
             var rows = await _centralProvider.GetAllWebUsersAsync();
+            var byUsuario = await _context.Usuarios.ToDictionaryAsync(u => u.usuario);
             var processed = 0;
             foreach (var eu in rows)
             {
-                var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == eu.usuario);
-                if (existing == null)
+                if (!byUsuario.TryGetValue(eu.usuario, out var existing))
                 {
-                    _context.Usuarios.Add(new Usuario
+                    var nuevo = new Usuario
                     {
                         usuario = eu.usuario,
                         password = eu.password,
@@ -500,7 +502,9 @@ namespace backend.Services.Implementations
                         activo = eu.activo == 1,
                         asistencia = eu.asistencia == 1,
                         esRrhh = eu.esRrhh == 1
-                    });
+                    };
+                    _context.Usuarios.Add(nuevo);
+                    byUsuario[eu.usuario] = nuevo;
                 }
                 else
                 {
@@ -510,9 +514,7 @@ namespace backend.Services.Implementations
                     existing.asistencia = eu.asistencia == 1;
                     existing.esRrhh = eu.esRrhh == 1;
                     if (!existing.password.StartsWith("$2a$") && !existing.password.StartsWith("$2b$"))
-                    {
                         existing.password = eu.password;
-                    }
                 }
                 processed++;
             }
@@ -523,13 +525,14 @@ namespace backend.Services.Implementations
         private async Task<int> SyncStudentsFromSigafiAsync()
         {
             var rows = await _centralProvider.GetAllStudentsFromCentralAsync();
+            // Una sola carga: evita N consultas SELECT por idAlumno durante el espejo automático / Master Sync.
+            var byId = await _context.Estudiantes.ToDictionaryAsync(e => e.idAlumno);
             var processed = 0;
             foreach (var item in rows)
             {
-                var existing = await _context.Estudiantes.FindAsync(item.idAlumno);
-                if (existing == null)
+                if (!byId.TryGetValue(item.idAlumno, out var existing))
                 {
-                    _context.Estudiantes.Add(new Estudiante
+                    var nuevo = new Estudiante
                     {
                         idAlumno = item.idAlumno,
                         primerNombre = item.primerNombre ?? "",
@@ -539,7 +542,9 @@ namespace backend.Services.Implementations
                         celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular,
                         email = item.email?.Length > 100 ? item.email[..100] : item.email,
                         activo = true
-                    });
+                    };
+                    _context.Estudiantes.Add(nuevo);
+                    byId[item.idAlumno] = nuevo;
                 }
                 else
                 {
@@ -559,13 +564,13 @@ namespace backend.Services.Implementations
         private async Task<int> SyncEnrollmentsAsync()
         {
             var rows = await _centralProvider.GetActiveEnrollmentsFromCentralAsync();
+            var byId = await _context.Matriculas.ToDictionaryAsync(m => m.idMatricula);
             var processed = 0;
             foreach (var item in rows)
             {
-                var existing = await _context.Matriculas.FirstOrDefaultAsync(x => x.idMatricula == item.idMatricula);
-                if (existing == null)
+                if (!byId.TryGetValue(item.idMatricula, out var existing))
                 {
-                    _context.Matriculas.Add(new Matricula
+                    var nuevo = new Matricula
                     {
                         idMatricula = item.idMatricula,
                         idAlumno = item.idAlumno,
@@ -582,7 +587,9 @@ namespace backend.Services.Implementations
                         esOyente = item.esOyente == 1,
                         valida = item.valida,
                         estado = "ACTIVO"
-                    });
+                    };
+                    _context.Matriculas.Add(nuevo);
+                    byId[item.idMatricula] = nuevo;
                 }
                 else
                 {
@@ -611,6 +618,8 @@ namespace backend.Services.Implementations
             var rows = await _centralProvider.GetMatriculaExamLinksFromCentralAsync();
             var matSet = (await _context.Matriculas.Select(m => m.idMatricula).ToListAsync()).ToHashSet();
             var catSet = (await _context.CategoriasExamenes.Select(c => c.IdCategoria).ToListAsync()).ToHashSet();
+            var existingByKey = (await _context.MatriculasExamenesConduccion.ToListAsync())
+                .ToDictionary(x => $"{x.idMatricula}:{x.IdCategoria}");
 
             var processed = 0;
             foreach (var item in rows)
@@ -618,8 +627,8 @@ namespace backend.Services.Implementations
                 if (!matSet.Contains(item.idMatricula) || !catSet.Contains(item.IdCategoria))
                     continue;
 
-                var existing = await _context.MatriculasExamenesConduccion
-                    .FirstOrDefaultAsync(x => x.idMatricula == item.idMatricula && x.IdCategoria == item.IdCategoria);
+                var key = $"{item.idMatricula}:{item.IdCategoria}";
+                existingByKey.TryGetValue(key, out var existing);
                 var usuario = item.usuario?.Length > 50 ? item.usuario[..50] : item.usuario;
                 var instructor = item.instructor?.Length > 80 ? item.instructor[..80] : item.instructor;
 
@@ -657,6 +666,10 @@ namespace backend.Services.Implementations
         private async Task<int> SyncPracticesFromSigafiAsync()
         {
             var rows = await _centralProvider.GetAllPracticesFromCentralAsync();
+            var alumnoSet = (await _context.Estudiantes.Select(e => e.idAlumno).ToListAsync()).ToHashSet();
+            var vehiculoSet = (await _context.Vehiculos.Select(v => v.idVehiculo).ToListAsync()).ToHashSet();
+            var profesorSet = (await _context.Instructores.Select(i => i.idProfesor).ToListAsync()).ToHashSet();
+            var existingIds = (await _context.Practicas.Select(p => p.idPractica).ToListAsync()).ToHashSet();
             var processed = 0;
             foreach (var item in rows)
             {
@@ -664,19 +677,19 @@ namespace backend.Services.Implementations
                     continue;
                 if (item.idvehiculo <= 0)
                     continue;
-
-                var existsAlumno = await _context.Estudiantes.AnyAsync(a => a.idAlumno == item.idalumno);
-                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idvehiculo);
-                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
-                if (!existsAlumno || !existsVehiculo || !existsProfesor)
+                if (!alumnoSet.Contains(item.idalumno) || !vehiculoSet.Contains(item.idvehiculo) || !profesorSet.Contains(item.idProfesor))
                     continue;
 
                 var mapped = BuildPracticaFromCentralSyncItem(item);
-                var exists = await _context.Practicas.AnyAsync(p => p.idPractica == item.idPractica);
-                if (!exists)
+                if (!existingIds.Contains(item.idPractica))
+                {
                     _context.Practicas.Add(mapped);
+                    existingIds.Add(item.idPractica);
+                }
                 else
+                {
                     _context.Practicas.Update(mapped);
+                }
 
                 processed++;
             }
@@ -786,19 +799,19 @@ namespace backend.Services.Implementations
         private async Task<int> SyncInstructorVehicleAssignmentsAsync()
         {
             var rows = await _centralProvider.GetInstructorVehicleAssignmentsFromCentralAsync();
+            var vehiculoSet = (await _context.Vehiculos.Select(v => v.idVehiculo).ToListAsync()).ToHashSet();
+            var profesorSet = (await _context.Instructores.Select(i => i.idProfesor).ToListAsync()).ToHashSet();
+            var existingIds = (await _context.AsignacionesInstructores.Select(x => x.idAsignacion).ToListAsync()).ToHashSet();
             var processed = 0;
             foreach (var item in rows)
             {
                 if (string.IsNullOrWhiteSpace(item.idProfesor))
                     continue;
-
-                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idVehiculo);
-                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
-                if (!existsVehiculo || !existsProfesor)
+                if (!vehiculoSet.Contains(item.idVehiculo) || !profesorSet.Contains(item.idProfesor))
                     continue;
 
                 var observacion = item.observacion?.Length > 255 ? item.observacion[..255] : item.observacion;
-                var exists = await _context.AsignacionesInstructores.AnyAsync(x => x.idAsignacion == item.idAsignacion);
+                var exists = existingIds.Contains(item.idAsignacion);
                 if (!exists)
                 {
                     _context.AsignacionesInstructores.Add(new AsignacionInstructorVehiculo
@@ -839,23 +852,23 @@ namespace backend.Services.Implementations
         private async Task<int> SyncStudentVehicleAssignmentsAsync()
         {
             var rows = await _centralProvider.GetStudentVehicleAssignmentsFromCentralAsync();
+            var alumnoSet = (await _context.Estudiantes.Select(e => e.idAlumno).ToListAsync()).ToHashSet();
+            var vehiculoSet = (await _context.Vehiculos.Select(v => v.idVehiculo).ToListAsync()).ToHashSet();
+            var profesorSet = (await _context.Instructores.Select(i => i.idProfesor).ToListAsync()).ToHashSet();
+            var existingIds = (await _context.Asignaciones.Select(x => x.idAsignacion).ToListAsync()).ToHashSet();
             var processed = 0;
             foreach (var item in rows)
             {
                 if (string.IsNullOrWhiteSpace(item.idAlumno) || string.IsNullOrWhiteSpace(item.idProfesor))
                     continue;
-
-                var existsAlumno = await _context.Estudiantes.AnyAsync(a => a.idAlumno == item.idAlumno);
-                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idVehiculo);
-                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
-                if (!existsAlumno || !existsVehiculo || !existsProfesor)
+                if (!alumnoSet.Contains(item.idAlumno) || !vehiculoSet.Contains(item.idVehiculo) || !profesorSet.Contains(item.idProfesor))
                     continue;
 
                 var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
                 if (idPeriodo.Length > 10)
                     idPeriodo = idPeriodo[..10];
 
-                var exists = await _context.Asignaciones.AnyAsync(x => x.idAsignacion == item.idAsignacion);
+                var exists = existingIds.Contains(item.idAsignacion);
                 if (!exists)
                 {
                     _context.Asignaciones.Add(new Asignacion
