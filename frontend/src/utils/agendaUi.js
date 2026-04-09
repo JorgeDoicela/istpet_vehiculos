@@ -1,5 +1,19 @@
 /** Utilidades compartidas para filas de agenda (SIGAFI / logística). */
 
+/**
+ * El API (.NET) serializa en camelCase (`alumnoNombre`); componentes viejos esperan PascalCase.
+ */
+export function normalizeAgendaPractica(ag) {
+  if (!ag || typeof ag !== 'object') return ag;
+  return {
+    ...ag,
+    AlumnoNombre: ag.alumnoNombre ?? ag.AlumnoNombre ?? '',
+    VehiculoDetalle: ag.vehiculoDetalle ?? ag.VehiculoDetalle ?? '',
+    ProfesorNombre: ag.profesorNombre ?? ag.ProfesorNombre ?? '',
+    estadoOperativo: ag.estadoOperativo ?? ag.EstadoOperativo ?? 'sin_sincronizar'
+  };
+}
+
 export function agendaYmdFromApi(fecha) {
   if (!fecha) return '';
   const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);

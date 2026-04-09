@@ -138,27 +138,54 @@ const ControlOperativo = () => {
     useEffect(() => {
         const timer = setTimeout(async () => {
             if (salidaIdAlumno.length >= 3 && salidaIdAlumno.length < 10 && activeTab === 'salida' && !salidaLoading && estudianteData?.idAlumno !== salidaIdAlumno) {
-                const localeMatch = agendadosHoy.filter(ag =>
-                    ag.idalumno.startsWith(salidaIdAlumno) ||
-                    ag.AlumnoNombre?.toLowerCase().includes(salidaIdAlumno.toLowerCase())
-                ).map(ag => ({
-                    idAlumno: ag.idalumno,
-                    nombreCompleto: ag.AlumnoNombre,
-                    esAgendado: true,
-                    isBusy: clasesActivas.some(ca => ca.idAlumno === ag.idalumno),
-                    hora: ag.hora_salida?.split(':').slice(0, 2).join(':'),
-                    vehiculo: ag.VehiculoDetalle,
-                    instructor: ag.ProfesorNombre
-                }));
+                const idKey = (v) => String(v ?? '').trim();
+                const q = salidaIdAlumno.toLowerCase();
+                const horaDesdeAgenda = (ag) => {
+                    const hs = ag?.hora_salida;
+                    if (hs == null || hs === '') return '';
+                    const s = String(hs);
+                    return s.includes(':') ? s.split(':').slice(0, 2).join(':') : s.substring(0, 5);
+                };
+                const busy = (id) => clasesActivas.some((ca) => idKey(ca.idAlumno) === idKey(id));
+
+                const localeMatch = agendadosHoy
+                    .filter(
+                        (ag) =>
+                            idKey(ag.idalumno).startsWith(salidaIdAlumno) ||
+                            (ag.AlumnoNombre || '').toLowerCase().includes(q)
+                    )
+                    .map((ag) => ({
+                        idAlumno: idKey(ag.idalumno),
+                        nombreCompleto: (ag.AlumnoNombre || '').trim() || idKey(ag.idalumno),
+                        esAgendado: true,
+                        isBusy: busy(ag.idalumno),
+                        hora: horaDesdeAgenda(ag),
+                        vehiculo: ag.VehiculoDetalle,
+                        instructor: ag.ProfesorNombre
+                    }));
 
                 try {
                     const serverMatch = await logisticaService.buscarSugerencias(salidaIdAlumno);
                     const combined = [...localeMatch];
-                    serverMatch.forEach(sm => {
-                        if (!combined.find(c => c.idAlumno === sm.idAlumno)) {
+                    serverMatch.forEach((sm) => {
+                        const sid = idKey(sm.idAlumno);
+                        if (combined.some((c) => idKey(c.idAlumno) === sid)) return;
+                        const ag = agendadosHoy.find((a) => idKey(a.idalumno) === sid);
+                        if (ag) {
+                            combined.push({
+                                idAlumno: sid,
+                                nombreCompleto: (sm.nombreCompleto || ag.AlumnoNombre || '').trim() || sid,
+                                esAgendado: true,
+                                isBusy: sm.isBusy || busy(sid),
+                                hora: horaDesdeAgenda(ag),
+                                vehiculo: ag.VehiculoDetalle,
+                                instructor: ag.ProfesorNombre
+                            });
+                        } else {
                             combined.push({
                                 ...sm,
-                                isBusy: sm.isBusy || clasesActivas.some(ca => ca.idAlumno === sm.idAlumno)
+                                idAlumno: sid,
+                                isBusy: sm.isBusy || busy(sid)
                             });
                         }
                     });

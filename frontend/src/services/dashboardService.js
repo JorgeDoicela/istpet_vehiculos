@@ -1,4 +1,5 @@
 import api from './api';
+import { normalizeAgendaPractica } from '../utils/agendaUi';
 
 /**
  * Dashboard Service - Unpacks ApiResponse<T> for UI components
@@ -23,7 +24,7 @@ const dashboardService = {
     }
     const data = body?.data;
     return {
-      practicas: Array.isArray(data?.practicas) ? data.practicas : [],
+      practicas: Array.isArray(data?.practicas) ? data.practicas.map(normalizeAgendaPractica) : [],
       fuenteDatos: data?.fuenteDatos || 'sigafi',
       obtenidoEn: data?.obtenidoEn ?? null
     };

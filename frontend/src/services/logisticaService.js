@@ -1,4 +1,5 @@
 import api from './api';
+import { normalizeAgendaPractica } from '../utils/agendaUi';
 
 /**
  * Extrae el payload de ApiResponse<T> del backend (camelCase JSON).
@@ -67,13 +68,13 @@ export const logisticaService = {
     const data = unwrap(response);
     if (data && typeof data === 'object' && Array.isArray(data.practicas)) {
       return {
-        practicas: data.practicas,
+        practicas: data.practicas.map(normalizeAgendaPractica),
         fuenteDatos: data.fuenteDatos || 'sigafi',
         obtenidoEn: data.obtenidoEn ?? null
       };
     }
     return {
-      practicas: Array.isArray(data) ? data : [],
+      practicas: Array.isArray(data) ? data.map(normalizeAgendaPractica) : [],
       fuenteDatos: 'sigafi',
       obtenidoEn: null
     };
