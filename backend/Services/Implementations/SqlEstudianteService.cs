@@ -31,7 +31,17 @@ namespace backend.Services.Implementations
             if (local != null)
                 return local;
 
-            var central = await _central.GetFromCentralAsync(idAlumno);
+            CentralStudentDto? central;
+            try
+            {
+                central = await _central.GetFromCentralAsync(idAlumno);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SIGAFI no disponible al resolver alumno {Id}", idAlumno);
+                return null;
+            }
+
             if (central == null)
                 return null;
 

@@ -239,6 +239,12 @@ namespace backend.Services.Interfaces
         public string? apellidoMaterno { get; set; }
         public string? celular { get; set; }
         public string? email { get; set; }
+
+        /// <summary>Campos de ficha en <c>alumnos</c> (SIGAFI); alinean espejo local con matrícula vigente.</summary>
+        public string? idPeriodo { get; set; }
+        public int? idNivel { get; set; }
+        public int? idSeccion { get; set; }
+        public int? idModalidad { get; set; }
     }
 
     public interface ICentralStudentProvider

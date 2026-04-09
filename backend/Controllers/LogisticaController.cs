@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Logging;
 using backend.Models;
 
 namespace backend.Controllers
@@ -32,12 +33,18 @@ namespace backend.Controllers
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
+        private readonly ILogger<LogisticaController> _logger;
 
-        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider)
+        public LogisticaController(
+            AppDbContext context,
+            ILogisticaService logisticaService,
+            ICentralStudentProvider centralProvider,
+            ILogger<LogisticaController> logger)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
+            _logger = logger;
         }
 
         [HttpGet("estudiante/{idAlumno}")]
@@ -49,60 +56,39 @@ namespace backend.Controllers
         {
             idAlumno = idAlumno.Trim();
 
-            // 1. SIGAFI primero (fuente de verdad); se materializa en el espejo local.
-            var centralData = await _centralProvider.GetFromCentralAsync(idAlumno);
-            if (centralData != null)
+            // Solo SIGAFI: el espejo local antes rellenaba periodo/nivel viejos (p. ej. ABR2024 / PRIMERO) cuando fallaba la lectura central.
+            CentralStudentDto? centralData;
+            try
             {
-                try
-                {
-                    var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
-                    await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
-                    await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
-                    fromCentral.isBusy = await _context.Practicas
-                        .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
-                    return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
-                }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error al materializar alumno desde SIGAFI: {ex.Message}"));
-                }
+                centralData = await _centralProvider.GetFromCentralAsync(idAlumno);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SIGAFI no disponible al buscar estudiante {idAlumno}", idAlumno);
+                return StatusCode(503, ApiResponse<EstudianteLogisticaResponse>.Fail(
+                    "SIGAFI no disponible. No se muestran datos del espejo local para evitar periodos o niveles desactualizados.",
+                    ex.Message));
             }
 
-            // 2. Respaldo: espejo local (p. ej. SIGAFI no disponible o cédula fuera de alumnos).
-            var localStudent = await (from m in _context.Matriculas
-                                join e in _context.Estudiantes on m.idAlumno equals e.idAlumno
-                                join c in _context.Cursos on m.idNivel equals c.idNivel
-                                join s in _context.Set<Seccion>() on m.idSeccion equals s.idSeccion into sg
-                                from s in sg.DefaultIfEmpty()
-                                where e.idAlumno == idAlumno && m.estado == "ACTIVO"
-                                let jornadaLocal = (s != null && !string.IsNullOrWhiteSpace(s.seccion))
-                                    ? s.seccion!.Trim().ToUpperInvariant()
-                                    : "MATUTINA"
-                                select new EstudianteLogisticaResponse
-                                {
-                                    idAlumno = e.idAlumno,
-                                    nombreCompleto = ($"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}").Trim().ToUpper(),
-                                    nivel = (c.Nivel ?? "S/N").ToUpper(),
-                                    paralelo = m.paralelo ?? "A",
-                                    jornada = jornadaLocal,
-                                    idPeriodo = m.idPeriodo ?? "S/P",
-                                    idMatricula = m.idMatricula,
-                                    detalleMatriculaSigafi = ConstruirDetalleMatriculaSigafi(
-                                        $"{c.Nivel ?? ""}, PARALELO:{m.paralelo ?? "A"} {(s != null ? s.seccion : "")}".Trim(),
-                                        jornadaLocal)
-                                }).FirstOrDefaultAsync();
-
-            if (localStudent != null)
+            if (centralData == null)
             {
-                await EnrichEstudianteLogisticaDesdeSigafiAsync(localStudent);
-                await AplicarContextoFilaAgendaAsync(localStudent, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
-                localStudent.isBusy = await _context.Practicas
-                    .AnyAsync(p => p.idalumno == localStudent.idAlumno && p.ensalida == 1 && p.cancelado == 0);
-                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent,
-                    "Alumno solo en espejo local (no localizado en SIGAFI con los criterios actuales)."));
+                return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail(
+                    "Estudiante no localizado en SIGAFI. Verifique la cédula o que exista en alumnos."));
             }
 
-            return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en SIGAFI."));
+            try
+            {
+                var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
+                await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
+                await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
+                fromCentral.isBusy = await _context.Practicas
+                    .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
+                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error al materializar alumno desde SIGAFI: {ex.Message}"));
+            }
         }
 
         private async Task AplicarContextoFilaAgendaAsync(
@@ -163,7 +149,13 @@ namespace backend.Controllers
                     primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
                     segundoNombre = (centralData.segundoNombre ?? "").ToUpper(),
                     apellidoPaterno = (centralData.apellidoPaterno ?? "S/N").ToUpper(),
-                    apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper()
+                    apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper(),
+                    idPeriodo = !string.IsNullOrEmpty(centralData.idPeriodo) && centralData.idPeriodo != "SIN_MAT"
+                        ? centralData.idPeriodo
+                        : null,
+                    idNivel = centralData.idNivel > 0 ? centralData.idNivel : null,
+                    idSeccion = centralData.idSeccion > 0 ? centralData.idSeccion : null,
+                    idModalidad = centralData.idModalidad > 0 ? centralData.idModalidad : null
                 };
                 _context.Estudiantes.Add(eBase);
             }
@@ -173,6 +165,14 @@ namespace backend.Controllers
                 eBase.segundoNombre = (centralData.segundoNombre ?? "").ToUpper();
                 eBase.apellidoPaterno = (centralData.apellidoPaterno ?? eBase.apellidoPaterno).ToUpper();
                 eBase.apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper();
+                if (!string.IsNullOrEmpty(centralData.idPeriodo) && centralData.idPeriodo != "SIN_MAT")
+                    eBase.idPeriodo = centralData.idPeriodo;
+                if (centralData.idNivel > 0)
+                    eBase.idNivel = centralData.idNivel;
+                if (centralData.idSeccion > 0)
+                    eBase.idSeccion = centralData.idSeccion;
+                if (centralData.idModalidad > 0)
+                    eBase.idModalidad = centralData.idModalidad;
             }
 
             Curso? nivelLocal = null;
@@ -250,6 +250,9 @@ namespace backend.Controllers
 
             var nivelDisplay = (centralData.Nivel ?? nivelLocal?.Nivel ?? "S/N").ToUpper();
             var detalleSigafi = ConstruirDetalleMatriculaSigafi(centralData.DetalleRaw, jornadaEtiqueta);
+            var periodoMostrar = !string.IsNullOrEmpty(centralData.idPeriodo) && centralData.idPeriodo != "SIN_MAT"
+                ? centralData.idPeriodo
+                : matriculaUsada.idPeriodo;
 
             return new EstudianteLogisticaResponse
             {
@@ -259,7 +262,7 @@ namespace backend.Controllers
                 detalleMatriculaSigafi = detalleSigafi,
                 paralelo = matriculaUsada.paralelo ?? "A",
                 jornada = jornadaEtiqueta,
-                idPeriodo = matriculaUsada.idPeriodo,
+                idPeriodo = periodoMostrar,
                 idMatricula = matriculaUsada.idMatricula,
                 fotoBase64 = centralData.FotoBase64,
                 isBusy = false

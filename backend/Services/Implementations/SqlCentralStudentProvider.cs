@@ -32,6 +32,7 @@ namespace backend.Services.Implementations
         {
             try
             {
+                // cursos.Nivel = solo semestre (CUARTO). El nombre de carrera está en carreras (idCarrera), como en la ficha SIGAFI.
                 const string selectBase = @"
                     SELECT
                         a.idAlumno,
@@ -45,35 +46,61 @@ namespace backend.Services.Implementations
                         m.paralelo,
                         s.seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
-                        CONCAT(c.Nivel, ', PARALELO:', m.paralelo, ' ', s.seccion) AS DetalleRaw,
-                        c.Nivel,
-                        p.idPeriodo,
+                        CONCAT(
+                            TRIM(CONCAT_WS(' ', NULLIF(TRIM(car.Carrera), ''), NULLIF(TRIM(c.Nivel), ''))),
+                            ', PARALELO:',
+                            COALESCE(m.paralelo, ''),
+                            ' ',
+                            IFNULL(s.seccion, '')
+                        ) AS DetalleRaw,
+                        TRIM(CONCAT_WS(' ', NULLIF(TRIM(car.Carrera), ''), NULLIF(TRIM(c.Nivel), ''))) AS Nivel,
+                        COALESCE(p.idPeriodo, m.idPeriodo) AS idPeriodo,
                         a.foto";
 
-                // 1) Preferido: matrícula válida en periodo académico marcado activo en SIGAFI.
-                var sqlActivo = selectBase + @"
-                    FROM alumnos a
-                    JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
-                    JOIN periodos p ON p.idPeriodo = m.idPeriodo
-                    LEFT JOIN cursos c ON c.idNivel = m.idNivel
-                    LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
-                    WHERE a.idAlumno = @p0 AND p.activo = 1
+                // 0) Última matrícula válida (no usar alumnos.idPeriodo: en tu caso sigue ABR2024/50 mientras matriculas ya va por ABR2025/52).
+                //    Orden: fechaMatricula más reciente; empate → idMatricula más alto. Sin fecha → solo idMatricula.
+                const string ordenMatriculaMasReciente = @"
+                    ORDER BY (m.fechaMatricula IS NULL) ASC, m.fechaMatricula DESC, m.idMatricula DESC
                     LIMIT 1";
-                var result = await QuerySingleAsync(sqlActivo, idAlumno, MapCentralStudent);
-
-                // 2) Cualquier matrícula válida (p. ej. alta reciente aún no ligada al periodo activo).
-                if (result == null)
-                {
-                    var sqlCualquierPeriodo = selectBase + @"
+                var sqlUltimaMatricula = selectBase + @"
                     FROM alumnos a
-                    JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
-                    JOIN periodos p ON p.idPeriodo = m.idPeriodo
+                    INNER JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
+                    INNER JOIN periodos p ON p.idPeriodo = m.idPeriodo
                     LEFT JOIN cursos c ON c.idNivel = m.idNivel
+                    LEFT JOIN carreras car ON car.idCarrera = c.idCarrera
                     LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
                     WHERE a.idAlumno = @p0
-                    ORDER BY (p.activo = 1) DESC, m.idMatricula DESC
-                    LIMIT 1";
-                    result = await QuerySingleAsync(sqlCualquierPeriodo, idAlumno, MapCentralStudent);
+                    " + ordenMatriculaMasReciente;
+                var result = await QuerySingleAsync(sqlUltimaMatricula, idAlumno, MapCentralStudent);
+
+                // 1) Igual criterio, pero si falta fila en periodos (p. ej. ABR2025 aún no en tabla periodos).
+                if (result == null)
+                {
+                    var sqlUltimaMatriculaSinPeriodo = selectBase + @"
+                    FROM alumnos a
+                    INNER JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
+                    LEFT JOIN periodos p ON p.idPeriodo = m.idPeriodo
+                    LEFT JOIN cursos c ON c.idNivel = m.idNivel
+                    LEFT JOIN carreras car ON car.idCarrera = c.idCarrera
+                    LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
+                    WHERE a.idAlumno = @p0
+                    " + ordenMatriculaMasReciente;
+                    result = await QuerySingleAsync(sqlUltimaMatriculaSinPeriodo, idAlumno, MapCentralStudent);
+                }
+
+                // 2) Respaldo: periodo académico activo (varias matrículas vigentes).
+                if (result == null)
+                {
+                    var sqlActivo = selectBase + @"
+                    FROM alumnos a
+                    JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
+                    JOIN periodos p ON p.idPeriodo = m.idPeriodo
+                    LEFT JOIN cursos c ON c.idNivel = m.idNivel
+                    LEFT JOIN carreras car ON car.idCarrera = c.idCarrera
+                    LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
+                    WHERE a.idAlumno = @p0 AND p.activo = 1
+                    " + ordenMatriculaMasReciente;
+                    result = await QuerySingleAsync(sqlActivo, idAlumno, MapCentralStudent);
                 }
 
                 // 3) Solo ficha en alumnos (evita “no existe” si aún no cargaron matrícula/periodo).
@@ -113,7 +140,7 @@ namespace backend.Services.Implementations
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error consultando alumno SIGAFI {idAlumno}", idAlumno);
-                return null;
+                throw;
             }
         }
 
@@ -538,7 +565,9 @@ WHERE COALESCE(activo, 1) = 0";
 
         public Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno, celular, email FROM alumnos",
+                @"SELECT idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno, celular, email,
+                         idPeriodo, idNivel, idSeccion, idModalidad
+                  FROM alumnos",
                 reader => new CentralAlumnoLiteDto
                 {
                     idAlumno = ReadString(reader, "idAlumno"),
@@ -547,7 +576,11 @@ WHERE COALESCE(activo, 1) = 0";
                     apellidoPaterno = ReadNullableString(reader, "apellidoPaterno"),
                     apellidoMaterno = ReadNullableString(reader, "apellidoMaterno"),
                     celular = ReadNullableString(reader, "celular"),
-                    email = ReadNullableString(reader, "email")
+                    email = ReadNullableString(reader, "email"),
+                    idPeriodo = ReadNullableString(reader, "idPeriodo"),
+                    idNivel = ReadNullableInt(reader, "idNivel"),
+                    idSeccion = ReadNullableInt(reader, "idSeccion"),
+                    idModalidad = ReadNullableInt(reader, "idModalidad")
                 });
 
         public Task<IEnumerable<CentralMatriculaDto>> GetActiveEnrollmentsFromCentralAsync() =>

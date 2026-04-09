@@ -166,24 +166,6 @@
     gap: 0.75rem;
 }
 
-.apple-input-group label {
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--apple-text-sub);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-    padding-left: 0.5rem;
-    transition: all 0.3s ease;
-}
-
-/* Efecto Focus en Label (Similar a Identificación) */
-.apple-input-group:focus-within label {
-    color: var(--istpet-gold);
-    letter-spacing: 0.15em;
-    transform: translateY(-2px);
-    text-shadow: 0 0 10px rgba(181, 148, 74, 0.2);
-}
-
 .apple-field-container {
     position: relative;
     display: flex;
@@ -197,25 +179,51 @@
     height: 20px;
     color: var(--apple-text-sub);
     opacity: 0.4;
+    z-index: 5;
 }
 
+/* Estilos de Entrada de Texto */
 .apple-field-container input {
     width: 100%;
     padding: 1.1rem 5.75rem 1.1rem 3.25rem;
     border-radius: 1.25rem;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--apple-card);
     border: 1.5px solid var(--apple-border);
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--apple-text-main);
-    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: border-color 0.2s ease, background-color 0.2s ease;
+    backdrop-filter: blur(5px);
 }
 
 .apple-field-container input:focus {
     outline: none;
-    background: white;
+    background: var(--apple-card);
     border-color: var(--istpet-gold);
-    box-shadow: 0 8px 20px rgba(181, 148, 74, 0.12);
+    box-shadow: none;
+}
+
+/* Ajustes Específicos para Modo Oscuro en Focus */
+.dark .apple-field-container input:focus {
+    background: rgba(30, 41, 59, 0.8) !important;
+    box-shadow: none;
+}
+
+.apple-input-group label {
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--apple-text-sub);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    padding-left: 0.75rem;
+    transition: color 0.3s ease;
+    opacity: 0.8;
+}
+
+/* Efecto Focus Estático (Exacto a Identificación) */
+.apple-input-group:focus-within label {
+    color: var(--istpet-gold);
+    opacity: 1;
 }
 
 .apple-password-toggle {
@@ -307,7 +315,9 @@
 }
 
 @keyframes apple-spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 /* Footer Credits */
@@ -328,6 +338,7 @@
     .apple-login-wrapper {
         padding: 15px;
     }
+
     .login-glass-card {
         padding: 3rem 2rem;
         border-radius: 2.5rem;

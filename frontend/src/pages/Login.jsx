@@ -46,8 +46,8 @@ const Login = () => {
             </div>
 
             {/* Selector de Tema Premium */}
-            <button 
-                onClick={toggleTheme} 
+            <button
+                onClick={toggleTheme}
                 className="apple-theme-toggle-btn animate-apple-in"
                 aria-label="Cambiar tema"
             >
@@ -140,8 +140,8 @@ const Login = () => {
                             </div>
                         )}
 
-                        <button 
-                            type="submit" 
+                        <button
+                            type="submit"
                             className={`btn-apple-primary apple-submit-btn ${isPending ? 'loading' : ''}`}
                             disabled={isPending}
                         >

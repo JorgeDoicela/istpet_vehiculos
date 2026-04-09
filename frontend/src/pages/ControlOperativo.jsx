@@ -241,7 +241,9 @@ const ControlOperativo = () => {
                 showNotification('Estudiante localizado');
             }
         } catch (err) {
-            showNotification(err.message || 'No localizado', 'error');
+            const d = err.response?.data;
+            const apiMsg = d?.message ?? d?.Message;
+            showNotification(apiMsg || err.message || 'No localizado', 'error');
         } finally {
             setSalidaLoading(false);
         }

@@ -81,6 +81,10 @@ namespace backend.Data
                 entity.Property(e => e.segundoNombre).HasColumnName("segundoNombre");
                 entity.Property(e => e.apellidoPaterno).HasColumnName("apellidoPaterno");
                 entity.Property(e => e.apellidoMaterno).HasColumnName("apellidoMaterno");
+                entity.Property(e => e.idPeriodo).HasColumnName("idPeriodo");
+                entity.Property(e => e.idNivel).HasColumnName("idNivel");
+                entity.Property(e => e.idSeccion).HasColumnName("idSeccion");
+                entity.Property(e => e.idModalidad).HasColumnName("idModalidad");
             });
 
             // 6. MATRÍCULAS (Mirroring 'matriculas' schema)
@@ -91,8 +95,11 @@ namespace backend.Data
                 entity.Property(e => e.idAlumno).HasColumnName("idAlumno");
                 entity.Property(e => e.idNivel).HasColumnName("idNivel");
                 entity.Property(e => e.idSeccion).HasColumnName("idSeccion");
+                entity.Property(e => e.idModalidad).HasColumnName("idModalidad");
                 entity.Property(e => e.idPeriodo).HasColumnName("idPeriodo");
                 entity.Property(e => e.paralelo).HasColumnName("paralelo");
+                entity.Property(e => e.valida).HasColumnName("valida");
+                entity.Property(e => e.estado).HasColumnName("estado");
             });
 
             // 8. CURSOS
@@ -137,10 +144,12 @@ namespace backend.Data
                 entity.HasKey(e => e.idPeriodo);
             });
 
-            // 11. SECCIONES
+            // 11. SECCIONES (sigafi_es.secciones: idSeccion, seccion, sufijo)
             modelBuilder.Entity<Seccion>(entity => {
                 entity.ToTable("secciones");
                 entity.HasKey(e => e.idSeccion);
+                entity.Property(e => e.seccion).HasColumnName("seccion");
+                entity.Property(e => e.sufijo).HasColumnName("sufijo");
             });
 
             modelBuilder.Entity<AsignacionInstructorVehiculo>(entity => {

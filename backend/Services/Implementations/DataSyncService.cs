@@ -541,6 +541,10 @@ namespace backend.Services.Implementations
                         apellidoMaterno = item.apellidoMaterno,
                         celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular,
                         email = item.email?.Length > 100 ? item.email[..100] : item.email,
+                        idPeriodo = item.idPeriodo,
+                        idNivel = item.idNivel,
+                        idSeccion = item.idSeccion,
+                        idModalidad = item.idModalidad,
                         activo = true
                     };
                     _context.Estudiantes.Add(nuevo);
@@ -554,6 +558,10 @@ namespace backend.Services.Implementations
                     existing.apellidoMaterno = item.apellidoMaterno;
                     existing.celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular;
                     existing.email = item.email?.Length > 100 ? item.email[..100] : item.email;
+                    existing.idPeriodo = item.idPeriodo ?? existing.idPeriodo;
+                    existing.idNivel = item.idNivel ?? existing.idNivel;
+                    existing.idSeccion = item.idSeccion ?? existing.idSeccion;
+                    existing.idModalidad = item.idModalidad ?? existing.idModalidad;
                 }
                 processed++;
             }
