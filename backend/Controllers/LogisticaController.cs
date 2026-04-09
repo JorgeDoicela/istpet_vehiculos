@@ -72,16 +72,24 @@ namespace backend.Controllers
             var localStudent = await (from m in _context.Matriculas
                                 join e in _context.Estudiantes on m.idAlumno equals e.idAlumno
                                 join c in _context.Cursos on m.idNivel equals c.idNivel
+                                join s in _context.Set<Seccion>() on m.idSeccion equals s.idSeccion into sg
+                                from s in sg.DefaultIfEmpty()
                                 where e.idAlumno == idAlumno && m.estado == "ACTIVO"
+                                let jornadaLocal = (s != null && !string.IsNullOrWhiteSpace(s.seccion))
+                                    ? s.seccion!.Trim().ToUpperInvariant()
+                                    : "MATUTINA"
                                 select new EstudianteLogisticaResponse
                                 {
                                     idAlumno = e.idAlumno,
-                                    nombreCompleto = $"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}".Trim(),
+                                    nombreCompleto = ($"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}").Trim().ToUpper(),
                                     nivel = (c.Nivel ?? "S/N").ToUpper(),
                                     paralelo = m.paralelo ?? "A",
-                                    jornada = "MATUTINA",
+                                    jornada = jornadaLocal,
                                     idPeriodo = m.idPeriodo ?? "S/P",
-                                    idMatricula = m.idMatricula
+                                    idMatricula = m.idMatricula,
+                                    detalleMatriculaSigafi = ConstruirDetalleMatriculaSigafi(
+                                        $"{c.Nivel ?? ""}, PARALELO:{m.paralelo ?? "A"} {(s != null ? s.seccion : "")}".Trim(),
+                                        jornadaLocal)
                                 }).FirstOrDefaultAsync();
 
             if (localStudent != null)
@@ -133,6 +141,17 @@ namespace backend.Controllers
             }
         }
 
+        private static string ConstruirDetalleMatriculaSigafi(string? detalleRaw, string? jornadaDisplay)
+        {
+            var det = (detalleRaw ?? "").Trim();
+            var j = string.IsNullOrWhiteSpace(jornadaDisplay) ? "MATUTINA" : jornadaDisplay.Trim();
+            if (string.IsNullOrEmpty(det))
+                return j.ToUpperInvariant();
+            if (!string.IsNullOrEmpty(j) && det.IndexOf(j, StringComparison.OrdinalIgnoreCase) < 0)
+                return $"{det} {j}".Trim();
+            return det;
+        }
+
         private async Task<EstudianteLogisticaResponse> BuildLogisticaFromSigafiAndPersistAsync(CentralStudentDto centralData)
         {
             var eBase = await _context.Estudiantes.FindAsync(centralData.idAlumno);
@@ -156,8 +175,20 @@ namespace backend.Controllers
                 eBase.apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper();
             }
 
-            var nivelLocal = await _context.Cursos.FirstOrDefaultAsync()
-                             ?? new Curso { idNivel = 1, Nivel = centralData.Nivel };
+            Curso? nivelLocal = null;
+            if (centralData.idNivel > 0)
+                nivelLocal = await _context.Cursos.FirstOrDefaultAsync(c => c.idNivel == centralData.idNivel);
+            if (nivelLocal == null)
+                nivelLocal = await _context.Cursos.OrderBy(c => c.idNivel).FirstOrDefaultAsync();
+
+            var idNivelPersist = centralData.idNivel > 0 ? centralData.idNivel : (nivelLocal?.idNivel ?? 1);
+            var idSeccionPersist = centralData.idSeccion > 0 ? centralData.idSeccion : 1;
+            var idModalidadPersist = centralData.idModalidad > 0 ? centralData.idModalidad : 1;
+            var jornadaEtiqueta = !string.IsNullOrWhiteSpace(centralData.seccion)
+                ? centralData.seccion.Trim().ToUpperInvariant()
+                : (!string.IsNullOrWhiteSpace(centralData.JornadaSigafi)
+                    ? centralData.JornadaSigafi.Trim().ToUpperInvariant()
+                    : "MATUTINA");
 
             Matricula matriculaUsada;
             if (centralData.idPeriodo == "SIN_MAT")
@@ -172,9 +203,9 @@ namespace backend.Controllers
                     matriculaUsada = new Matricula
                     {
                         idAlumno = eBase.idAlumno,
-                        idNivel = nivelLocal.idNivel,
-                        idSeccion = 1,
-                        idModalidad = 1,
+                        idNivel = idNivelPersist,
+                        idSeccion = idSeccionPersist,
+                        idModalidad = idModalidadPersist,
                         idPeriodo = "SIN_MAT",
                         paralelo = centralData.paralelo ?? "A",
                         estado = "ACTIVO"
@@ -193,9 +224,9 @@ namespace backend.Controllers
                     matriculaUsada = new Matricula
                     {
                         idAlumno = eBase.idAlumno,
-                        idNivel = nivelLocal.idNivel,
-                        idSeccion = 1,
-                        idModalidad = 1,
+                        idNivel = idNivelPersist,
+                        idSeccion = idSeccionPersist,
+                        idModalidad = idModalidadPersist,
                         idPeriodo = centralData.idPeriodo,
                         paralelo = centralData.paralelo ?? "A",
                         estado = "ACTIVO"
@@ -206,18 +237,28 @@ namespace backend.Controllers
                 {
                     matriculaUsada.paralelo = centralData.paralelo ?? matriculaUsada.paralelo;
                     matriculaUsada.estado = "ACTIVO";
+                    if (centralData.idNivel > 0)
+                        matriculaUsada.idNivel = centralData.idNivel;
+                    if (centralData.idSeccion > 0)
+                        matriculaUsada.idSeccion = centralData.idSeccion;
+                    if (centralData.idModalidad > 0)
+                        matriculaUsada.idModalidad = centralData.idModalidad;
                 }
             }
 
             await _context.SaveChangesAsync();
 
+            var nivelDisplay = (centralData.Nivel ?? nivelLocal?.Nivel ?? "S/N").ToUpper();
+            var detalleSigafi = ConstruirDetalleMatriculaSigafi(centralData.DetalleRaw, jornadaEtiqueta);
+
             return new EstudianteLogisticaResponse
             {
                 idAlumno = eBase.idAlumno,
-                nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
-                nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
+                nombreCompleto = (centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}").Trim().ToUpper(),
+                nivel = nivelDisplay,
+                detalleMatriculaSigafi = detalleSigafi,
                 paralelo = matriculaUsada.paralelo ?? "A",
-                jornada = "MATUTINA",
+                jornada = jornadaEtiqueta,
                 idPeriodo = matriculaUsada.idPeriodo,
                 idMatricula = matriculaUsada.idMatricula,
                 fotoBase64 = centralData.FotoBase64,

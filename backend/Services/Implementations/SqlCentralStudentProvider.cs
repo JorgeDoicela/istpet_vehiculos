@@ -39,6 +39,9 @@ namespace backend.Services.Implementations
                         a.apellidoPaterno,
                         a.apellidoMaterno,
                         a.segundoNombre,
+                        m.idNivel,
+                        COALESCE(m.idSeccion, 0) AS idSeccion,
+                        COALESCE(m.idModalidad, 0) AS idModalidad,
                         m.paralelo,
                         s.seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
@@ -83,6 +86,9 @@ namespace backend.Services.Implementations
                         a.apellidoPaterno,
                         a.apellidoMaterno,
                         a.segundoNombre,
+                        0 AS idNivel,
+                        0 AS idSeccion,
+                        0 AS idModalidad,
                         NULL AS paralelo,
                         NULL AS seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
@@ -95,6 +101,9 @@ namespace backend.Services.Implementations
                     LIMIT 1";
                     result = await QuerySingleAsync(sqlSoloAlumno, idAlumno, MapCentralStudent);
                 }
+
+                if (result != null && string.IsNullOrWhiteSpace(result.seccion) && result.idModalidad > 0)
+                    result.JornadaSigafi = await TryGetModalidadDescripcionAsync(result.idModalidad);
 
                 if (result?.foto != null)
                     result.FotoBase64 = Convert.ToBase64String(result.foto);
@@ -730,6 +739,9 @@ WHERE COALESCE(activo, 1) = 0";
             apellidoPaterno = ReadNullableString(reader, "apellidoPaterno"),
             apellidoMaterno = ReadNullableString(reader, "apellidoMaterno"),
             segundoNombre = ReadNullableString(reader, "segundoNombre"),
+            idNivel = ReadInt(reader, "idNivel"),
+            idSeccion = ReadInt(reader, "idSeccion"),
+            idModalidad = ReadInt(reader, "idModalidad"),
             paralelo = ReadNullableString(reader, "paralelo"),
             seccion = ReadNullableString(reader, "seccion"),
             NombreCompleto = ReadNullableString(reader, "NombreCompleto"),
@@ -738,6 +750,37 @@ WHERE COALESCE(activo, 1) = 0";
             idPeriodo = ReadString(reader, "idPeriodo"),
             foto = ReadNullableBytes(reader, "foto")
         };
+
+        /// <summary>
+        /// Intenta leer la etiqueta de modalidad/jornada en SIGAFI (nombres de columna varían entre instalaciones).
+        /// </summary>
+        private async Task<string?> TryGetModalidadDescripcionAsync(int idModalidad)
+        {
+            await using var conn = new MySqlConnection(_connectionString);
+            await conn.OpenAsync();
+            foreach (var sql in new[]
+                     {
+                         "SELECT TRIM(modalidad) AS t FROM modalidades WHERE idModalidad = @p0 LIMIT 1",
+                         "SELECT TRIM(descripcion) AS t FROM modalidades WHERE idModalidad = @p0 LIMIT 1"
+                     })
+            {
+                try
+                {
+                    await using var cmd = new MySqlCommand(sql, conn);
+                    cmd.Parameters.AddWithValue("@p0", idModalidad);
+                    var o = await cmd.ExecuteScalarAsync();
+                    var s = o?.ToString()?.Trim();
+                    if (!string.IsNullOrEmpty(s))
+                        return s;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogDebug(ex, "Lectura modalidad SIGAFI omitida (sql incompatible con esta BD).");
+                }
+            }
+
+            return null;
+        }
 
         private static CentralInstructorDto MapCentralInstructor(MySqlDataReader reader) => new()
         {

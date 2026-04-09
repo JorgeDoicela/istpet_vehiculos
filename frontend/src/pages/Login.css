@@ -12,6 +12,44 @@
     font-family: 'Outfit', 'Inter', sans-serif;
 }
 
+/* Premium Theme Toggle Button */
+.apple-theme-toggle-btn {
+    position: absolute;
+    top: 2.5rem;
+    right: 2.5rem;
+    width: 48px;
+    height: 48px;
+    border-radius: 1.25rem;
+    background: var(--apple-card);
+    border: 1px solid var(--apple-border);
+    color: var(--istpet-gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    backdrop-filter: blur(10px);
+}
+
+.apple-theme-toggle-btn:hover {
+    transform: scale(1.1) rotate(5deg);
+    background: white;
+    border-color: var(--istpet-gold);
+    box-shadow: 0 10px 40px rgba(181, 148, 74, 0.2);
+}
+
+.theme-toggle-icon {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+}
+
+.dark .apple-theme-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
 /* Background Visuals (Floating Orbs) */
 .apple-visual-background {
     position: absolute;
@@ -133,8 +171,17 @@
     font-weight: 800;
     color: var(--apple-text-sub);
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.1em;
     padding-left: 0.5rem;
+    transition: all 0.3s ease;
+}
+
+/* Efecto Focus en Label (Similar a Identificación) */
+.apple-input-group:focus-within label {
+    color: var(--istpet-gold);
+    letter-spacing: 0.15em;
+    transform: translateY(-2px);
+    text-shadow: 0 0 10px rgba(181, 148, 74, 0.2);
 }
 
 .apple-field-container {

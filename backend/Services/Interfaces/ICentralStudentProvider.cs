@@ -18,10 +18,25 @@ namespace backend.Services.Interfaces
         public string? apellidoMaterno { get; set; }
         public string? segundoNombre { get; set; }
         public string? paralelo { get; set; }
+
+        /// <summary>Texto de jornada desde SIGAFI: <c>secciones.seccion</c> (MATUTINA, VESPERTINA, etc.).</summary>
         public string? seccion { get; set; }
+
         public string? Nivel { get; set; }
         public string idPeriodo { get; set; } = string.Empty;
         public byte[]? foto { get; set; }
+
+        /// <summary>idNivel de la matrícula SIGAFI (cursos.idNivel).</summary>
+        public int idNivel { get; set; }
+
+        /// <summary>idModalidad en <c>matriculas</c>; respaldo si no hay texto en <see cref="seccion"/>.</summary>
+        public int idModalidad { get; set; }
+
+        /// <summary>Etiqueta desde tabla modalidades solo si <see cref="seccion"/> viene vacía (respaldo).</summary>
+        public string? JornadaSigafi { get; set; }
+
+        /// <summary><c>matriculas.idSeccion</c> → <c>secciones</c>.</summary>
+        public int idSeccion { get; set; }
 
         // --- Helper for UI Compatibility ---
         public string? NombreCompleto { get; set; } 

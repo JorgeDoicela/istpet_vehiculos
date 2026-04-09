@@ -464,8 +464,10 @@ const ControlOperativo = () => {
                                                         
                                                         {/* 📅 Horario Granular Discovery Integration */}
                                                         <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide opacity-60">
-                                                                {estudianteData.nivel} • {estudianteData.paralelo}
+                                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide opacity-60 leading-snug">
+                                                                {estudianteData.detalleMatriculaSigafi?.trim()
+                                                                    ? estudianteData.detalleMatriculaSigafi
+                                                                    : `${estudianteData.nivel} • ${estudianteData.paralelo}`}
                                                             </p>
                                                             {estudianteData.horarioProximo && (
                                                                 <div className="flex items-center gap-2 px-2 py-0.5 bg-[var(--apple-primary)]/10 rounded-full border border-[var(--apple-primary)]/20 animate-apple-in">
@@ -484,7 +486,7 @@ const ControlOperativo = () => {
 
                                                     <div className="flex items-center justify-around lg:justify-end gap-5 lg:gap-7 py-2 lg:py-0 lg:pl-7">
                                                         <div className="text-center group/stat">
-                                                            <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50 group-hover/stat:text-[var(--istpet-gold)] transition-colors">Estado</span>
+                                                            <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50 group-hover/stat:text-[var(--istpet-gold)] transition-colors">Asistencia</span>
                                                             <span className={`block text-[10px] font-black leading-none uppercase ${estudianteData.asistenciaHoy ? 'text-emerald-500' : 'text-amber-500'}`}>
                                                                 {estudianteData.asistenciaHoy ? 'PRESENTE' : 'PENDIENTE'}
                                                             </span>

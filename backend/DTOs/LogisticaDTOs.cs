@@ -9,6 +9,8 @@ namespace backend.DTOs
         public string idAlumno { get; set; } = string.Empty;
         public string nombreCompleto { get; set; } = string.Empty;
         public string nivel { get; set; } = string.Empty;
+        /// <summary>Línea tipo SIGAFI: carrera/nivel, paralelo, sección y jornada (cuadro blanco central).</summary>
+        public string detalleMatriculaSigafi { get; set; } = string.Empty;
         public string idPeriodo { get; set; } = string.Empty;
         public string paralelo { get; set; } = string.Empty;
         public string jornada { get; set; } = string.Empty;
