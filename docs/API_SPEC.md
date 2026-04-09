@@ -222,13 +222,7 @@ Registra el retorno de un vehículo. Automáticamente **calcula y acumula las ho
 
 ---
 
-### GET `/api/logistica/agendados-hoy`
-
-Consulta la tabla `cond_alumnos_practicas` de la BD Central SIGAFI para obtener el listado de prácticas agendadas para el día actual (`CURDATE()`). Si la BD central no está disponible, retorna lista vacía sin romper el sistema.
-
----
-
-## Dashboard — `/api/dashboard`
+## Dashboard — `/api/Dashboard`
 
 ### GET `/api/dashboard/clases-activas`
 
@@ -258,6 +252,10 @@ Consulta la vista SQL `v_clases_activas` para obtener los vehículos que están 
 ### GET `/api/dashboard/alertas-mantenimiento`
 
 Consulta la vista SQL `v_alerta_mantenimiento` retornando vehículos con estado `MANTENIMIENTO`.
+
+### GET `/api/Dashboard/agenda-reciente?limit=100`
+
+Agenda reciente (servicio `IAgendaPanelService`): lectura desde SIGAFI (`cond_alumnos_practicas`), estado desde `cancelado` / `ensalida` / `hora_llegada` y, si hay fila en el espejo local, override con `Practicas` local. Si SIGAFI no devuelve filas, se usa el espejo local. Roles: `admin`, `logistica`, `guardia`.
 
 ---
 

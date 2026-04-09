@@ -63,7 +63,7 @@ export const logisticaService = {
     }
   },
   getAgendadosHoy: async () => {
-    const response = await api.get('/logistica/agendados-hoy');
+    const response = await api.get('/Dashboard/agenda-reciente?limit=100');
     const data = unwrap(response);
     if (data && typeof data === 'object' && Array.isArray(data.practicas)) {
       return {

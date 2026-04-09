@@ -158,7 +158,7 @@ export default api;
 | `getInstructores()` | GET | `/logistica/instructores` | Lista de instructores activos |
 | `registrarSalida(idMat, idVeh, idInst)` | POST | `/logistica/salida` | Registra salida |
 | `registrarLlegada(idRegistro)` | POST | `/logistica/llegada` | Registra llegada |
-| `getAgendadosHoy()` | GET | `/logistica/agendados-hoy` | Agenda SIGAFI del día |
+| `getAgendadosHoy()` | GET | `/Dashboard/agenda-reciente?limit=100` | Agenda reciente (mismo servicio que monitoreo) |
 
 ---
 

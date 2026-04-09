@@ -189,7 +189,7 @@ LIMIT 1;
 ```
 
 ### 4. Agenda (panel lateral)
-`GetRecentSchedulesAsync` alimenta `GET /api/logistica/agendados-hoy`: prácticas no canceladas, orden **fecha y hora descendente** (últimas ~100). Si SIGAFI no devuelve filas, el API usa el espejo local con el mismo criterio.
+`GetRecentSchedulesAsync` alimenta `GET /api/Dashboard/agenda-reciente` (vía `IAgendaPanelService`): prácticas no canceladas, orden **fecha y hora descendente** (límite por query). Si SIGAFI no devuelve filas, el API usa el espejo local con el mismo criterio.
 
 ## Lógica de Sincronización Automática (Bajo Demanda)
 

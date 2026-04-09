@@ -32,18 +32,12 @@ namespace backend.Controllers
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
-        private readonly IAgendaPanelService _agendaPanel;
 
-        public LogisticaController(
-            AppDbContext context,
-            ILogisticaService logisticaService,
-            ICentralStudentProvider centralProvider,
-            IAgendaPanelService agendaPanel)
+        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
-            _agendaPanel = agendaPanel;
         }
 
         [HttpGet("estudiante/{idAlumno}")]
@@ -438,13 +432,6 @@ namespace backend.Controllers
             }
 
             return Ok(ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>.Ok(list));
-        }
-
-        [HttpGet("agendados-hoy")]
-        public async Task<ActionResult<ApiResponse<AgendaLogisticaResponseDto>>> GetAgendadosHoy()
-        {
-            var payload = await _agendaPanel.GetAgendaAsync(100);
-            return Ok(ApiResponse<AgendaLogisticaResponseDto>.Ok(payload));
         }
     }
 }
