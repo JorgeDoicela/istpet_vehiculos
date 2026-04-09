@@ -223,7 +223,7 @@ namespace backend.Services.Interfaces
         Task<CentralInstructorDto?> GetAssignedTutorAsync(string idAlumno);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string idAlumno);
         Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno);
-        Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
+        Task<IEnumerable<ScheduledPracticeDto>> GetRecentSchedulesAsync(int limit = 100);
         Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();
         /// <summary>Lectura directa de un usuario en SIGAFI (usuarios_web).</summary>
         Task<CentralUserDto?> GetWebUserFromSigafiAsync(string usuario);

@@ -223,11 +223,12 @@ namespace backend.Services.Implementations
             }
         }
 
-        public async Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync()
+        public async Task<IEnumerable<ScheduledPracticeDto>> GetRecentSchedulesAsync(int limit = 100)
         {
             try
             {
-                const string sql = @"
+                var take = Math.Clamp(limit, 1, 200);
+                var sql = $@"
                     SELECT
                         p.idPractica,
                         p.idalumno,
@@ -242,14 +243,14 @@ namespace backend.Services.Implementations
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.fecha >= CURDATE()
-                    ORDER BY p.fecha ASC, p.hora_salida ASC
-                    LIMIT 100";
+                    WHERE COALESCE(p.cancelado, 0) = 0
+                    ORDER BY p.fecha DESC, p.hora_salida DESC
+                    LIMIT {take}";
                 return await QueryListAsync(sql, MapScheduledPractice);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error consultando agenda diaria SIGAFI.");
+                _logger.LogError(ex, "Error consultando prácticas recientes SIGAFI.");
                 return new List<ScheduledPracticeDto>();
             }
         }

@@ -188,10 +188,8 @@ WHERE p.idalumno = @cedula AND p.fecha = CURDATE()
 LIMIT 1;
 ```
 
-### 4. Agenda Completa del Día
-Ejecutado por `GetSchedulesForTodayAsync()` para el widget "Agenda SIGAFI Hoy" del panel lateral.
-
-Similar al anterior pero sin filtro de cédula, devuelve todas las prácticas del día.
+### 4. Agenda (panel lateral)
+`GetRecentSchedulesAsync` alimenta `GET /api/logistica/agendados-hoy`: prácticas no canceladas, orden **fecha y hora descendente** (últimas ~100). Si SIGAFI no devuelve filas, el API usa el espejo local con el mismo criterio.
 
 ## Lógica de Sincronización Automática (Bajo Demanda)
 

@@ -56,6 +56,19 @@ const ControlOperativo = () => {
         setTimeout(() => setNotification(null), 4000);
     };
 
+    const fmtFechaAgenda = (fecha) => {
+        if (!fecha) return '';
+        const s = String(fecha);
+        const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (m) {
+            const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+            return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
+        }
+        const d = new Date(fecha);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
+    };
+
     // Reloj para Hora Retorno (Llegada)
     useEffect(() => {
         const clockInt = setInterval(() => {
@@ -641,16 +654,19 @@ const ControlOperativo = () => {
                         <div className="apple-glass rounded-[2rem] p-5 border border-[var(--apple-border)] relative overflow-hidden group">
                             <div className="flex items-center justify-between mb-4">
                                 <h4 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI</h4>
-                                <span className="text-[9px] font-black text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendadosHoy.length} HOY</span>
+                                <span className="text-[9px] font-black text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendadosHoy.length} recientes</span>
                             </div>
 
                             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
                                 {agendadosHoy.length > 0 ? (
                                     agendadosHoy.map(ag => (
                                         <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-black text-[var(--apple-primary)]">{ag.hora_salida?.substring(0, 5)}</span>
-                                                <span className="text-[9px] font-black bg-[var(--apple-bg)] text-[var(--apple-text-sub)] px-1.5 py-0.5 rounded tracking-tighter uppercase font-mono">{ag.VehiculoDetalle}</span>
+                                            <div className="flex justify-between items-start mb-2 gap-2">
+                                                <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
+                                                    <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
+                                                    {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
+                                                </span>
+                                                <span className="text-[9px] font-black bg-[var(--apple-bg)] text-[var(--apple-text-sub)] px-1.5 py-0.5 rounded tracking-tighter uppercase font-mono shrink-0">{ag.VehiculoDetalle}</span>
                                             </div>
                                             <p className="text-[11px] font-bold text-[var(--apple-text-main)] uppercase truncate mb-1">{ag.AlumnoNombre || ag.idalumno}</p>
                                             <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter truncate opacity-60 italic">{ag.ProfesorNombre}</p>
@@ -694,7 +710,10 @@ const ControlOperativo = () => {
                     <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
                         <div className="flex items-center justify-between px-6 py-5">
-                            <div><h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3></div>
+                            <div>
+                                <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3>
+                                <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-0.5 opacity-70">Más recientes primero</p>
+                            </div>
                             <button onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
                         <div className="overflow-y-auto flex-1 custom-scrollbar pb-10">
@@ -703,9 +722,10 @@ const ControlOperativo = () => {
                                     <div className={`flex items-start gap-3 py-5 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40' : ''}`}>
                                         <div className="flex-1 min-w-0">
                                             <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre || ag.idalumno}</p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida?.substring(0, 5)}</span>
-                                                <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase">#{ag.VehiculoDetalle}</span>
+                                            <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                <span className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase px-2 py-0.5 rounded-md bg-[var(--apple-border)]/30">{fmtFechaAgenda(ag.fecha)}</span>
+                                                <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
+                                                <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[10rem]">{ag.VehiculoDetalle}</span>
                                             </div>
                                         </div>
                                         <button onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda'); }} className="px-5 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest">Cargar</button>
