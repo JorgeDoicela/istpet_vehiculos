@@ -82,11 +82,16 @@ dotnet restore
 dotnet run
 ```
 
-La API estará disponible en:
-- API: `http://localhost:5000`
-- Swagger UI: `http://localhost:5000/swagger`
+La API estará disponible en el puerto que indique la consola al arrancar. En desarrollo, `backend/Properties/launchSettings.json` define por defecto **HTTP `5112`** o **`5113`** (perfil `https-alt`). Ejemplos:
+
+- API: `http://localhost:5112`
+- Swagger UI: `http://localhost:5112/swagger`
+
+Si tu entorno usa otro puerto (por ejemplo `5000`), usa esa URL en el navegador y en el frontend.
 
 > En producción, usar `dotnet publish -c Release` y servir con IIS, nginx o como servicio de Windows.
+
+Para validar **lectura de SIGAFI** y **Master Sync** desde Swagger y con SQL, sigue **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
 
 ---
 
@@ -122,8 +127,10 @@ La interfaz estará disponible en `http://localhost:5173`.
 1. Abrir `http://localhost:5173` en el navegador.
 2. Aparecerá la pantalla de **Control Operativo**.
 3. Las listas de vehículos e instructores deben cargarse desde el menú de Salida.
-4. Ir a `http://localhost:5000/swagger` para verificar que la API responde correctamente.
+4. Abrir Swagger en el puerto del backend (p. ej. `http://localhost:5112/swagger`) y comprobar que la API responde.
 5. Probar el endpoint `GET /api/dashboard/clases-activas` — debe devolver `[]` si no hay clases activas.
+
+**Conexión SIGAFI y espejo:** guía paso a paso con `ping-sigafi`, `sigafi-probe`, `POST /api/Sync/master` y consultas SQL en **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
 
 ---
 

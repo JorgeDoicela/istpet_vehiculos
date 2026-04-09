@@ -1,8 +1,10 @@
 # Especificación de la API REST — ISTPET Logística
 
-Base URL (desarrollo): `http://localhost:5000/api`
+Base URL (desarrollo): la que muestre la consola al ejecutar el backend; suele ser `http://localhost:5112/api` o `http://localhost:5113/api` según `launchSettings.json`.
 
-Swagger UI (desarrollo): `http://localhost:5000/swagger`
+Swagger UI (desarrollo): `http://localhost:5112/swagger` (o el puerto equivalente).
+
+**Verificación SIGAFI + Master Sync desde Swagger:** ver **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
 
 Todas las respuestas utilizan el envelope estándar `ApiResponse<T>`:
 ```json
@@ -259,15 +261,35 @@ Consulta la vista SQL `v_alerta_mantenimiento` retornando vehículos con estado 
 
 ---
 
-## Sincronización — `/api/sync`
+## Sincronización — `/api/Sync`
 
-### POST `/api/sync/students`
+> Rutas con prefijo **`/api/Sync`** (ASP.NET acepta mayúsculas/minúsculas). Requieren rol **`admin`** salvo que se indique lo contrario.
+
+### GET `/api/Sync/ping-sigafi`
+
+Comprueba que `SigafiConnection` alcanza la base `sigafi_es`. **200** si la conexión responde; **503** si no hay conectividad o credenciales incorrectas.
+
+### GET `/api/Sync/sigafi-probe`
+
+Ejecuta las mismas lecturas que usa el Master Sync (por módulo) **sin escribir** en `istpet_vehiculos`. Devuelve `rowCount` y `ok` por tabla/consulta y una prueba de detalle de alumno (`sampleAlumnoDetailOk`). Sirve para validar extracción antes de un sync masivo.
+
+### POST `/api/Sync/master`
+
+Ejecuta la sincronización integral desde SIGAFI hacia el espejo local. Respuesta tipo `SyncLog`: `estado` (`OK` / `ADVERTENCIA`), `registrosProcesados`, `registrosFallidos`. El contador de procesados es la suma por pasos del pipeline, no necesariamente la suma de los `rowCount` del probe.
+
+### POST `/api/Sync/instructors`
+
+Sincroniza instructores desde SIGAFI hacia la BD local.
+
+### POST `/api/Sync/students`
 
 Recibe un arreglo JSON de estudiantes externos y los ingesta con protección del **Data Shield**. Válida cada registro, rechaza cédulas inválidas, limpia nombres con caracteres especiales y persiste los nuevos estudiantes. Retorna un `SyncLog` con el resultado.
 
 **Request Body:** `[{ "id_externo": "1725555377", "nombre_completo": "Jorge Rodriguez", "correo_universidad": "jorge@istpet.edu" }, ...]`
 
 Si se envía el arreglo vacío, ejecuta un ciclo de demostración con datos de prueba predefinidos (incluyendo un dato válido, uno con cédula inválida y uno con nombre malformado).
+
+**Flujo recomendado en Swagger:** login → Authorize `Bearer` → `ping-sigafi` → `sigafi-probe` → `master`. Detalle en **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
 
 ---
 

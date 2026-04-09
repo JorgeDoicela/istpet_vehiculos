@@ -1,7 +1,14 @@
 -- ============================================================
 -- 99_MASTER_DEPLOYMENT.sql
--- Version: 2026.1 (Cloud Testing Edition)
+-- Version: 2026.2 (Cloud Testing Edition)
 -- Propósito: Despliegue unificado para entornos de prueba en la nube.
+--
+-- IMPORTANTE — Alineación con el backend:
+-- - Este archivo es un SUBCONJUNTO del esquema completo (docs/Scripts/01_ISTPET_LOGISTICS_SCHEMA.sql).
+-- - Para paridad total con Master Sync y EF Core en istpet_vehiculos, tras CREATE DATABASE
+--   ejecute 01_ISTPET_LOGISTICS_SCHEMA.sql (comentando el DROP de sigafi_es si ya lo usa aquí).
+-- - Corregido 2026.04: mock sigafi_es incluye asignacion_instructores_vehiculos (antes faltaba y
+--   fallaba el INSERT IGNORE línea ~66).
 -- ============================================================
 
 -- 1. Reset de bases de datos
@@ -23,6 +30,17 @@ CREATE TABLE categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR
 CREATE TABLE cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT, idFecha INT, idHora INT, asiste INT DEFAULT 0, activo INT DEFAULT 1);
 CREATE TABLE cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY, idAlumno VARCHAR(15), idVehiculo INT, idProfesor VARCHAR(15), activa INT DEFAULT 1);
 CREATE TABLE cond_alumnos_practicas (idPractica INT PRIMARY KEY AUTO_INCREMENT, idalumno VARCHAR(15), idvehiculo INT, idProfesor VARCHAR(15), fecha DATE, hora_salida TIME, hora_llegada TIME, cancelado INT DEFAULT 0, user_asigna VARCHAR(20));
+-- Requerido por INSERT IGNORE hacia istpet (misma forma que SIGAFI real)
+CREATE TABLE asignacion_instructores_vehiculos (
+    idAsignacion INT PRIMARY KEY,
+    idVehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    fecha_asignacion DATETIME NULL,
+    activo INT DEFAULT 1,
+    observacion TEXT NULL,
+    FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
+);
 
 -- Data Mock Inicial
 INSERT INTO cursos VALUES (1, 1, 'PRIMERO - CONDUCCIÓN PROFESIONAL C');
@@ -34,20 +52,110 @@ INSERT INTO matriculas (idMatricula, idAlumno, idNivel, idPeriodo, paralelo) VAL
 INSERT INTO categoria_vehiculos VALUES (1, 'LIVIANO');
 INSERT INTO cond_alumnos_vehiculos VALUES (1, '1725555377', 35, '1712345678', 1);
 INSERT INTO cond_alumnos_horarios VALUES (1, 1, 1, 1, 0, 1);
+INSERT INTO asignacion_instructores_vehiculos (idAsignacion, idVehiculo, idProfesor, activo) VALUES (1, 35, '1712345678', 1);
 
--- 3. Esquema de Logística (Lógica del Sistema)
+-- 3. Esquema de Logística (subconjunto; ver 01_ISTPET_LOGISTICS_SCHEMA.sql para paridad completa)
 USE istpet_vehiculos;
-CREATE TABLE tipo_licencia (id_tipo INT PRIMARY KEY AUTO_INCREMENT, codigo VARCHAR(10) UNIQUE NOT NULL, descripcion VARCHAR(200));
+CREATE TABLE tipo_licencia (
+    id_tipo INT PRIMARY KEY AUTO_INCREMENT,
+    codigo VARCHAR(10) UNIQUE NOT NULL,
+    descripcion VARCHAR(200),
+    activo BOOLEAN DEFAULT TRUE,
+    id_categoria_sigafi INT NULL UNIQUE
+);
 CREATE TABLE profesores (idProfesor VARCHAR(15) PRIMARY KEY, primerNombre VARCHAR(80), segundoNombre VARCHAR(80), primerApellido VARCHAR(80), segundoApellido VARCHAR(80), nombres VARCHAR(160), apellidos VARCHAR(160), activo BOOLEAN DEFAULT TRUE);
 CREATE TABLE alumnos (idAlumno VARCHAR(15) PRIMARY KEY, primerNombre VARCHAR(80), segundoNombre VARCHAR(80), apellidoPaterno VARCHAR(80), apellidoMaterno VARCHAR(80), activo BOOLEAN DEFAULT TRUE);
 CREATE TABLE cursos (idNivel INT PRIMARY KEY, idCarrera INT, Nivel VARCHAR(100), activo BOOLEAN DEFAULT TRUE);
 CREATE TABLE usuarios_web (usuario VARCHAR(50) PRIMARY KEY, password VARCHAR(255) NOT NULL, salida TINYINT DEFAULT 0, ingreso TINYINT DEFAULT 0, activo BOOLEAN DEFAULT TRUE, asistencia TINYINT DEFAULT 0, esRrhh TINYINT DEFAULT 0);
-CREATE TABLE vehiculos (idVehiculo INT PRIMARY KEY, idSubcategoria INT, numero_vehiculo VARCHAR(10), placa VARCHAR(15), marca VARCHAR(100), anio INT, idCategoria INT, activo BOOLEAN DEFAULT TRUE, observacion TEXT, chasis VARCHAR(100), motor VARCHAR(100), modelo VARCHAR(100), id_instructor_fijo VARCHAR(15), id_tipo_licencia INT);
-CREATE TABLE matriculas (idMatricula INT PRIMARY KEY, idAlumno VARCHAR(15) NOT NULL, idNivel INT NOT NULL, idPeriodo VARCHAR(10), paralelo VARCHAR(5), FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno), FOREIGN KEY (idNivel) REFERENCES cursos(idNivel));
+CREATE TABLE categorias_examenes_conduccion (
+    IdCategoria INT PRIMARY KEY,
+    categoria VARCHAR(160) NOT NULL,
+    tieneNota BOOLEAN DEFAULT TRUE,
+    activa BOOLEAN DEFAULT TRUE
+);
+CREATE TABLE vehiculos (
+    idVehiculo INT PRIMARY KEY,
+    idSubcategoria INT,
+    numero_vehiculo VARCHAR(10),
+    placa VARCHAR(15),
+    marca VARCHAR(100),
+    anio INT,
+    idCategoria INT,
+    activo BOOLEAN DEFAULT TRUE,
+    observacion TEXT,
+    chasis VARCHAR(100),
+    motor VARCHAR(100),
+    modelo VARCHAR(100),
+    id_instructor_fijo VARCHAR(15),
+    id_tipo_licencia INT,
+    estado_mecanico VARCHAR(30) DEFAULT 'OPERATIVO',
+    FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia(id_tipo)
+);
+CREATE TABLE matriculas (
+    idMatricula INT PRIMARY KEY,
+    idAlumno VARCHAR(15) NOT NULL,
+    idNivel INT NOT NULL,
+    idSeccion INT DEFAULT 1,
+    idModalidad INT DEFAULT 1,
+    idPeriodo VARCHAR(10),
+    paralelo VARCHAR(5),
+    estado VARCHAR(20) DEFAULT 'ACTIVO',
+    valida TINYINT DEFAULT 1,
+    FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
+    FOREIGN KEY (idNivel) REFERENCES cursos(idNivel)
+);
+CREATE TABLE matriculas_examen_conduccion (
+    idMatricula INT NOT NULL,
+    idCategoria INT NOT NULL,
+    nota DECIMAL(6,2) NULL,
+    observacion TEXT NULL,
+    PRIMARY KEY (idMatricula, idCategoria),
+    FOREIGN KEY (idMatricula) REFERENCES matriculas(idMatricula),
+    FOREIGN KEY (idCategoria) REFERENCES categorias_examenes_conduccion(IdCategoria)
+);
 CREATE TABLE categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR(100));
-CREATE TABLE cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT, idFecha INT, idHora INT, asiste INT DEFAULT 0, activo INT DEFAULT 1);
-CREATE TABLE asignacion_instructores_vehiculos (idAsignacion INT PRIMARY KEY, idVehiculo INT NOT NULL, idProfesor VARCHAR(15) NOT NULL, activo BOOLEAN DEFAULT TRUE, FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo), FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor));
-CREATE TABLE cond_alumnos_practicas (idPractica INT PRIMARY KEY AUTO_INCREMENT, idalumno VARCHAR(15) NOT NULL, idvehiculo INT NOT NULL, idProfesor VARCHAR(15) NOT NULL, fecha DATE NOT NULL, hora_salida TIME, hora_llegada TIME, ensalida TINYINT DEFAULT 1, cancelado TINYINT DEFAULT 0, FOREIGN KEY (idalumno) REFERENCES alumnos(idAlumno), FOREIGN KEY (idvehiculo) REFERENCES vehiculos(idVehiculo), FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor));
+CREATE TABLE cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT, idFecha INT, idHora INT, asiste INT DEFAULT 0, activo INT DEFAULT 1, observacion TEXT);
+CREATE TABLE cond_alumnos_vehiculos (
+    idAsignacion INT PRIMARY KEY AUTO_INCREMENT,
+    idAlumno VARCHAR(15) NOT NULL,
+    idVehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    activa TINYINT DEFAULT 1,
+    FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
+    FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
+);
+CREATE TABLE asignacion_instructores_vehiculos (
+    idAsignacion INT PRIMARY KEY,
+    idVehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    activo BOOLEAN DEFAULT TRUE,
+    observacion TEXT,
+    FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
+);
+CREATE TABLE cond_alumnos_practicas (
+    idPractica INT PRIMARY KEY AUTO_INCREMENT,
+    idalumno VARCHAR(15) NOT NULL,
+    idvehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    fecha DATE NOT NULL,
+    hora_salida TIME,
+    hora_llegada TIME,
+    ensalida TINYINT DEFAULT 1,
+    cancelado TINYINT DEFAULT 0,
+    observaciones TEXT,
+    FOREIGN KEY (idalumno) REFERENCES alumnos(idAlumno),
+    FOREIGN KEY (idvehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
+);
+CREATE TABLE cond_practicas_horarios_alumnos (
+    idPractica INT NOT NULL,
+    idAsignacionHorario INT NOT NULL,
+    PRIMARY KEY (idPractica, idAsignacionHorario),
+    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica),
+    FOREIGN KEY (idAsignacionHorario) REFERENCES cond_alumnos_horarios(idAsignacionHorario)
+);
 
 -- 4. Sincronización Inicial (Extract SIGAFI -> Load ISTPET)
 -- Nota: En la nube, este paso 'jala' datos de la DB mock creada arriba.

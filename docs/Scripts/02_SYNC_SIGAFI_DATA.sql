@@ -3,7 +3,8 @@
 -- Modelo: SIGAFI (servidor remoto, sigafi_es) = fuente de verdad con todos los datos.
 --         istpet_vehiculos (local) = espejo alimentado desde SIGAFI.
 -- Propósito de este script: INSERT…SELECT desde sigafi_es hacia local (solo referencia / manual).
--- Nota 2026: la ingesta operativa vive en el API → POST /api/sync/master (Master Sync C#).
+-- Nota 2026: la ingesta operativa vive en el API → POST /api/Sync/master (Master Sync C#).
+-- No incluye matriculas_examen_conduccion (lo cubre el Master Sync). Índice: docs/Scripts/README.md
 -- ============================================================
 
 USE istpet_vehiculos;

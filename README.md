@@ -39,10 +39,13 @@ Sistema web para la gestión operativa de la escuela de conducción del Tecnoló
 ### Base de Datos
 - **[DATABASE.md](docs/DATABASE.md)** — Esquema ERD, 11 tablas y vistas SQL
 - **[SQL_SCHEMA.md](docs/SQL_SCHEMA.md)** — Script de creación de base de datos comentado
+- **[Scripts/README.md](docs/Scripts/README.md)** — Qué script usar (`01`, `02`, cloud `99`) y alineación con el API
 - **[CENTRAL_DB.md](docs/CENTRAL_DB.md)** — Integración con la BD Central SIGAFI del ISTPET
 
 ### Operaciones y Seguridad
 - **[INSTALLATION.md](docs/INSTALLATION.md)** — Guía de configuración y puesta en marcha
+- **[DEPLOYMENT_CLOUD.md](docs/DEPLOYMENT_CLOUD.md)** — Render (API), Vercel (frontend), TiDB Cloud y conexión a SIGAFI
+- **[SYNC_VERIFICATION.md](docs/SYNC_VERIFICATION.md)** — Swagger: ping SIGAFI, probe, Master Sync y comprobación SQL del espejo
 - **[SECURITY_DATA_SHIELD.md](docs/SECURITY_DATA_SHIELD.md)** — Autenticación híbrida y protección de datos
 - **[PIPELINES.md](docs/PIPELINES.md)** — Pipelines de CI/CD con GitHub Actions
 

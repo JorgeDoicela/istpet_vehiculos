@@ -244,3 +244,9 @@ Este script crea la base de datos `sigafi_es` con estructura y datos de prueba, 
 - Flota de vehículos de prueba.
 - **Tutorías asignadas** en `cond_alumnos_vehiculos`.
 - **Prácticas agendadas** en `cond_alumnos_practicas` vinculadas al día actual (`CURDATE()`).
+
+---
+
+## Verificación operativa (API y SQL)
+
+Para comprobar conexión, extracción módulo a módulo, Master Sync desde Swagger y consultas de conteo/comparación entre `sigafi_es` e `istpet_vehiculos`, ver **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
