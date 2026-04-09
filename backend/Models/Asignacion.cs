@@ -19,7 +19,7 @@ namespace backend.Models
         public int idVehiculo { get; set; }
 
         [Required]
-        [MaxLength(7)]
+        [MaxLength(10)]
         public string idPeriodo { get; set; } = string.Empty;
 
         [MaxLength(14)]

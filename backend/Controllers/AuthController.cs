@@ -72,13 +72,14 @@ namespace backend.Controllers
             }
             else
             {
-                user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
-                if (user == null)
+                var localUser = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
+                if (localUser == null)
                 {
                     await Task.Delay(500);
                     return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
                 }
 
+                user = localUser;
                 var storedPassword = user.password ?? string.Empty;
                 if (!TryValidatePassword(storedPassword, req.password, out var needsRehash))
                     return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));

@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.DTOs;
+using backend.Services.Helpers;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -42,7 +43,25 @@ namespace backend.Controllers
         {
             idAlumno = idAlumno.Trim();
 
-            // 1. LOCAL SEARCH
+            // 1. SIGAFI primero (fuente de verdad); se materializa en el espejo local.
+            var centralData = await _centralProvider.GetFromCentralAsync(idAlumno);
+            if (centralData != null)
+            {
+                try
+                {
+                    var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
+                    await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
+                    fromCentral.isBusy = await _context.Practicas
+                        .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
+                    return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error al materializar alumno desde SIGAFI: {ex.Message}"));
+                }
+            }
+
+            // 2. Respaldo: espejo local (p. ej. SIGAFI no disponible o cédula fuera de alumnos).
             var localStudent = await (from m in _context.Matriculas
                                 join e in _context.Estudiantes on m.idAlumno equals e.idAlumno
                                 join c in _context.Cursos on m.idNivel equals c.idNivel
@@ -60,174 +79,163 @@ namespace backend.Controllers
 
             if (localStudent != null)
             {
-                var scheduled = await _centralProvider.GetScheduledPracticeAsync(localStudent.idAlumno);
-                CentralInstructorDto? tutor = null;
-                if (scheduled == null)
-                    tutor = await _centralProvider.GetAssignedTutorAsync(localStudent.idAlumno);
-
-                string? profCedula = (scheduled?.idProfesor ?? tutor?.idProfesor)?.Trim();
-                if (!string.IsNullOrEmpty(profCedula))
-                {
-                    var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == profCedula);
-                    if (localProf == null)
-                    {
-                        var cp = scheduled != null ? new CentralInstructorDto { idProfesor = scheduled.idProfesor, nombres = scheduled.ProfesorNombre, apellidos = "" } : tutor;
-                        if (cp != null)
-                        {
-                            localProf = new Instructor
-                            {
-                                idProfesor = cp.idProfesor,
-                                primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
-                                primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
-                                nombres = (cp.nombres ?? "").ToUpper(),
-                                apellidos = (cp.apellidos ?? "").ToUpper(),
-                                activo = true
-                            };
-                            _context.Instructores.Add(localProf);
-                            await _context.SaveChangesAsync();
-                        }
-                    }
-
-                    localStudent.practicaInstructor = localProf != null ? $"{localProf.apellidos} {localProf.nombres}" : (scheduled?.ProfesorNombre ?? $"{tutor?.apellidos} {tutor?.nombres}");
-                    localStudent.idPracticaCentral = scheduled?.idvehiculo;
-                    localStudent.practicaVehiculo = scheduled?.VehiculoDetalle;
-                    localStudent.practicaHora = scheduled?.hora_salida?.ToString(@"hh\:mm");
-
-                    // 🚀 Agenda Granular SIGAFI
-                    var nextSched = await _centralProvider.GetNextScheduleAsync(localStudent.idAlumno);
-                    if (nextSched != null)
-                    {
-                        localStudent.horarioProximo = nextSched.Hora;
-                        localStudent.asistenciaHoy = nextSched.asiste == 1;
-                    }
-                }
-
+                await EnrichEstudianteLogisticaDesdeSigafiAsync(localStudent);
                 localStudent.isBusy = await _context.Practicas
                     .AnyAsync(p => p.idalumno == localStudent.idAlumno && p.ensalida == 1 && p.cancelado == 0);
-
-                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent, "Alumno localizado (Local)."));
+                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent,
+                    "Alumno solo en espejo local (no localizado en SIGAFI con los criterios actuales)."));
             }
 
-            // 2. REMOTE SEARCH & AUTO-SYNC
-            var centralData = await _centralProvider.GetFromCentralAsync(idAlumno);
-            if (centralData == null) return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en SIGAFI."));
+            return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en SIGAFI."));
+        }
 
-            try
+        private async Task<EstudianteLogisticaResponse> BuildLogisticaFromSigafiAndPersistAsync(CentralStudentDto centralData)
+        {
+            var eBase = await _context.Estudiantes.FindAsync(centralData.idAlumno);
+            if (eBase == null)
             {
-                var eBase = await _context.Estudiantes.FindAsync(centralData.idAlumno);
-                if (eBase == null)
+                eBase = new Estudiante
                 {
-                    eBase = new Estudiante
-                    {
-                        idAlumno = centralData.idAlumno,
-                        primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
-                        segundoNombre = (centralData.segundoNombre ?? "").ToUpper(),
-                        apellidoPaterno = (centralData.apellidoPaterno ?? "S/N").ToUpper(),
-                        apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper()
-                    };
-                    _context.Estudiantes.Add(eBase);
-                }
-
-                var nivelLocal = await _context.Cursos.FirstOrDefaultAsync()
-                                  ?? new Curso { idNivel = 1, Nivel = centralData.Nivel };
-
-                var nuevaMatricula = new Matricula
-                {
-                    idAlumno = eBase.idAlumno,
-                    idNivel = nivelLocal.idNivel,
-                    idSeccion = 1,
-                    idModalidad = 1,
-                    idPeriodo = centralData.idPeriodo,
-                    paralelo = centralData.paralelo ?? "A",
-                    estado = "ACTIVO"
+                    idAlumno = centralData.idAlumno,
+                    primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
+                    segundoNombre = (centralData.segundoNombre ?? "").ToUpper(),
+                    apellidoPaterno = (centralData.apellidoPaterno ?? "S/N").ToUpper(),
+                    apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper()
                 };
-                _context.Matriculas.Add(nuevaMatricula);
-                await _context.SaveChangesAsync();
+                _context.Estudiantes.Add(eBase);
+            }
+            else
+            {
+                eBase.primerNombre = (centralData.primerNombre ?? eBase.primerNombre).ToUpper();
+                eBase.segundoNombre = (centralData.segundoNombre ?? "").ToUpper();
+                eBase.apellidoPaterno = (centralData.apellidoPaterno ?? eBase.apellidoPaterno).ToUpper();
+                eBase.apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper();
+            }
 
-                    var scheduledResult = await _centralProvider.GetScheduledPracticeAsync(eBase.idAlumno);
-                    var schedNext = await _centralProvider.GetNextScheduleAsync(eBase.idAlumno);
+            var nivelLocal = await _context.Cursos.FirstOrDefaultAsync()
+                             ?? new Curso { idNivel = 1, Nivel = centralData.Nivel };
 
-                    return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
+            Matricula matriculaUsada;
+            if (centralData.idPeriodo == "SIN_MAT")
+            {
+                matriculaUsada = await _context.Matriculas
+                    .Where(m => m.idAlumno == eBase.idAlumno && m.estado == "ACTIVO")
+                    .OrderByDescending(m => m.idMatricula)
+                    .FirstOrDefaultAsync() ?? new Matricula();
+
+                if (matriculaUsada.idMatricula == 0)
+                {
+                    matriculaUsada = new Matricula
                     {
                         idAlumno = eBase.idAlumno,
-                        nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
-                        nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
-                        paralelo = nuevaMatricula.paralelo,
-                        jornada = "MATUTINA",
-                        idPeriodo = nuevaMatricula.idPeriodo,
-                        idMatricula = nuevaMatricula.idMatricula,
-                        fotoBase64 = centralData.FotoBase64,
-                        idPracticaCentral = scheduledResult?.idvehiculo,
-                        practicaVehiculo = scheduledResult?.VehiculoDetalle,
-                        practicaHora = scheduledResult?.hora_salida?.ToString(@"hh\:mm"),
-                        horarioProximo = schedNext?.Hora,
-                        asistenciaHoy = schedNext?.asiste == 1,
-                        isBusy = false
-                    }, "Sincronizado desde SIGAFI."));
+                        idNivel = nivelLocal.idNivel,
+                        idSeccion = 1,
+                        idModalidad = 1,
+                        idPeriodo = "SIN_MAT",
+                        paralelo = centralData.paralelo ?? "A",
+                        estado = "ACTIVO"
+                    };
+                    _context.Matriculas.Add(matriculaUsada);
+                }
             }
-            catch (System.Exception ex) { return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error Sync: {ex.Message}")); }
+            else
+            {
+                matriculaUsada = await _context.Matriculas
+                                     .FirstOrDefaultAsync(m => m.idAlumno == eBase.idAlumno && m.idPeriodo == centralData.idPeriodo)
+                                 ?? new Matricula();
+
+                if (matriculaUsada.idMatricula == 0)
+                {
+                    matriculaUsada = new Matricula
+                    {
+                        idAlumno = eBase.idAlumno,
+                        idNivel = nivelLocal.idNivel,
+                        idSeccion = 1,
+                        idModalidad = 1,
+                        idPeriodo = centralData.idPeriodo,
+                        paralelo = centralData.paralelo ?? "A",
+                        estado = "ACTIVO"
+                    };
+                    _context.Matriculas.Add(matriculaUsada);
+                }
+                else
+                {
+                    matriculaUsada.paralelo = centralData.paralelo ?? matriculaUsada.paralelo;
+                    matriculaUsada.estado = "ACTIVO";
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            return new EstudianteLogisticaResponse
+            {
+                idAlumno = eBase.idAlumno,
+                nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
+                nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
+                paralelo = matriculaUsada.paralelo ?? "A",
+                jornada = "MATUTINA",
+                idPeriodo = matriculaUsada.idPeriodo,
+                idMatricula = matriculaUsada.idMatricula,
+                fotoBase64 = centralData.FotoBase64,
+                isBusy = false
+            };
+        }
+
+        private async Task EnrichEstudianteLogisticaDesdeSigafiAsync(EstudianteLogisticaResponse student)
+        {
+            var scheduled = await _centralProvider.GetScheduledPracticeAsync(student.idAlumno);
+            CentralInstructorDto? tutor = null;
+            if (scheduled == null)
+                tutor = await _centralProvider.GetAssignedTutorAsync(student.idAlumno);
+
+            string? profCedula = (scheduled?.idProfesor ?? tutor?.idProfesor)?.Trim();
+            if (string.IsNullOrEmpty(profCedula))
+                return;
+
+            var localProf = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == profCedula);
+            if (localProf == null)
+            {
+                var cp = scheduled != null
+                    ? new CentralInstructorDto { idProfesor = scheduled.idProfesor, nombres = scheduled.ProfesorNombre, apellidos = "" }
+                    : tutor;
+                if (cp != null)
+                {
+                    localProf = new Instructor
+                    {
+                        idProfesor = cp.idProfesor,
+                        primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
+                        primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
+                        nombres = (cp.nombres ?? "").ToUpper(),
+                        apellidos = (cp.apellidos ?? "").ToUpper(),
+                        activo = true
+                    };
+                    _context.Instructores.Add(localProf);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            student.practicaInstructor = localProf != null
+                ? $"{localProf.apellidos} {localProf.nombres}"
+                : (scheduled?.ProfesorNombre ?? $"{tutor?.apellidos} {tutor?.nombres}");
+            student.idPracticaCentral = scheduled?.idvehiculo;
+            student.practicaVehiculo = scheduled?.VehiculoDetalle;
+            student.practicaHora = scheduled?.hora_salida?.ToString(@"hh\:mm");
+
+            var nextSched = await _centralProvider.GetNextScheduleAsync(student.idAlumno);
+            if (nextSched != null)
+            {
+                student.horarioProximo = nextSched.observacion ?? string.Empty;
+                student.asistenciaHoy = nextSched.asiste == 1;
+            }
         }
 
         [HttpGet("vehiculos-disponibles")]
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoLogisticaResponse>>>> GetVehiculosDisponibles()
         {
+            var centralVehicles = await _centralProvider.GetAllVehiclesFromCentralAsync();
+            await SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
+
             var rawList = await GetVehiculosOperativosLocalesAsync();
-
-            // Comportamiento esperado por operación: al buscar, intentar refrescar desde SIGAFI si no hay datos locales.
-            if (rawList.Count == 0)
-            {
-                var centralVehicles = await _centralProvider.GetAllVehiclesFromCentralAsync();
-                var normalizedVehicles = centralVehicles
-                    .GroupBy(r => !string.IsNullOrWhiteSpace(r.numero_vehiculo)
-                        ? $"NUM:{r.numero_vehiculo}"
-                        : !string.IsNullOrWhiteSpace(r.placa)
-                            ? $"PLA:{r.placa}"
-                            : $"ID:{r.idVehiculo}")
-                    .Select(g => g.First());
-
-                foreach (var cv in normalizedVehicles)
-                {
-                    var existing = await _context.Vehiculos.FirstOrDefaultAsync(v =>
-                        v.idVehiculo == cv.idVehiculo
-                        || (!string.IsNullOrEmpty(cv.numero_vehiculo) && v.numero_vehiculo == cv.numero_vehiculo)
-                        || (!string.IsNullOrEmpty(cv.placa) && v.placa == cv.placa));
-                    if (existing == null)
-                    {
-                        _context.Vehiculos.Add(new Vehiculo
-                        {
-                            idVehiculo = cv.idVehiculo,
-                            idSubcategoria = cv.idSubcategoria,
-                            numero_vehiculo = cv.numero_vehiculo,
-                            placa = cv.placa,
-                            marca = cv.marca,
-                            anio = cv.anio,
-                            idCategoria = cv.idCategoria,
-                            activo = cv.activo == 1,
-                            observacion = cv.observacion,
-                            chasis = cv.chasis,
-                            motor = cv.motor,
-                            modelo = cv.modelo
-                        });
-                    }
-                    else
-                    {
-                        existing.idSubcategoria = cv.idSubcategoria;
-                        existing.numero_vehiculo = cv.numero_vehiculo;
-                        existing.placa = cv.placa;
-                        existing.marca = cv.marca;
-                        existing.anio = cv.anio;
-                        existing.idCategoria = cv.idCategoria;
-                        existing.activo = cv.activo == 1;
-                        existing.observacion = cv.observacion;
-                        existing.chasis = cv.chasis;
-                        existing.motor = cv.motor;
-                        existing.modelo = cv.modelo;
-                    }
-                }
-
-                await _context.SaveChangesAsync();
-                rawList = await GetVehiculosOperativosLocalesAsync();
-            }
 
             var query = rawList.Select(v => new VehiculoLogisticaResponse {
                 idVehiculo = v.idVehiculo,
@@ -252,40 +260,75 @@ namespace backend.Controllers
                           }).ToListAsync();
         }
 
-        [HttpGet("instructor/{idProfesor}")]
-        public async Task<ActionResult<ApiResponse<InstructorLogisticaResponse>>> BuscarInstructor(string idProfesor)
+        [HttpGet("instructores")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<InstructorLogisticaResponse>>>> GetInstructoresCatalogo()
         {
-            var localInstr = await _context.Instructores
-                .Where(i => i.idProfesor == idProfesor && i.activo)
+            var list = await _centralProvider.GetAllInstructorsFromCentralAsync();
+            var dto = list
+                .Where(i => i.activo == 1)
                 .Select(i => new InstructorLogisticaResponse
                 {
                     idInstructor = i.idProfesor,
-                    fullName = $"{i.apellidos} {i.nombres}".Trim().ToUpper()
+                    fullName = (!string.IsNullOrWhiteSpace(i.apellidos) || !string.IsNullOrWhiteSpace(i.nombres))
+                        ? $"{i.apellidos} {i.nombres}".Trim().ToUpper()
+                        : $"{i.primerApellido} {i.segundoApellido} {i.primerNombre} {i.segundoNombre}".Trim().ToUpper()
                 })
-                .FirstOrDefaultAsync();
+                .OrderBy(x => x.fullName)
+                .ToList();
 
-            if (localInstr != null) return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(localInstr, "Instructor localizado (Local)."));
+            return Ok(ApiResponse<IEnumerable<InstructorLogisticaResponse>>.Ok(dto, "Catálogo desde SIGAFI."));
+        }
 
+        [HttpGet("instructor/{idProfesor}")]
+        public async Task<ActionResult<ApiResponse<InstructorLogisticaResponse>>> BuscarInstructor(string idProfesor)
+        {
+            idProfesor = idProfesor.Trim();
             var centralData = await _centralProvider.GetInstructorFromCentralAsync(idProfesor);
-            if (centralData == null) return NotFound(ApiResponse<InstructorLogisticaResponse>.Fail("No hallado en SIGAFI."));
-
-            var nuevoInstr = new Instructor
+            if (centralData == null)
             {
-                idProfesor = centralData.idProfesor,
-                primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
-                primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
-                nombres = (centralData.nombres ?? "").ToUpper(),
-                apellidos = (centralData.apellidos ?? "").ToUpper(),
-                activo = true
-            };
-            _context.Instructores.Add(nuevoInstr);
+                var localOnly = await _context.Instructores
+                    .Where(i => i.idProfesor == idProfesor && i.activo)
+                    .Select(i => new InstructorLogisticaResponse
+                    {
+                        idInstructor = i.idProfesor,
+                        fullName = $"{i.apellidos} {i.nombres}".Trim().ToUpper()
+                    })
+                    .FirstOrDefaultAsync();
+                if (localOnly != null)
+                    return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(localOnly, "Instructor solo en espejo local (no hallado en SIGAFI)."));
+                return NotFound(ApiResponse<InstructorLogisticaResponse>.Fail("No hallado en SIGAFI."));
+            }
+
+            var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == centralData.idProfesor);
+            if (existing == null)
+            {
+                existing = new Instructor
+                {
+                    idProfesor = centralData.idProfesor,
+                    primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
+                    primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
+                    nombres = (centralData.nombres ?? "").ToUpper(),
+                    apellidos = (centralData.apellidos ?? "").ToUpper(),
+                    activo = centralData.activo == 1
+                };
+                _context.Instructores.Add(existing);
+            }
+            else
+            {
+                existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre).ToUpper();
+                existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido).ToUpper();
+                existing.nombres = (centralData.nombres ?? existing.nombres).ToUpper();
+                existing.apellidos = (centralData.apellidos ?? existing.apellidos).ToUpper();
+                existing.activo = centralData.activo == 1;
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(new InstructorLogisticaResponse
             {
-                idInstructor = nuevoInstr.idProfesor,
-                fullName = $"{nuevoInstr.apellidos} {nuevoInstr.nombres}".Trim().ToUpper()
-            }, "Sincronizado desde SIGAFI."));
+                idInstructor = existing.idProfesor,
+                fullName = $"{existing.apellidos} {existing.nombres}".Trim().ToUpper()
+            }, "Datos vigentes desde SIGAFI."));
         }
 
         [HttpPost("salida")]

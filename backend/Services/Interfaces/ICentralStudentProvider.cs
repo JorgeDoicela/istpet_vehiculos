@@ -1,4 +1,5 @@
 using backend.DTOs;
+using backend.Models;
 using System.Threading.Tasks;
 
 namespace backend.Services.Interfaces
@@ -56,13 +57,16 @@ namespace backend.Services.Interfaces
         public string ProfesorNombre { get; set; } = string.Empty;
     }
 
+    /// <summary>Filas de sigafi_es.cond_alumnos_horarios (sin columnas inventadas).</summary>
     public class CentralHorarioDto
     {
         public int idAsignacionHorario { get; set; }
         public int idAsignacion { get; set; }
-        public DateTime Fecha { get; set; }
-        public string Hora { get; set; } = string.Empty;
+        public int? idFecha { get; set; }
+        public int? idHora { get; set; }
         public int asiste { get; set; }
+        public int activo { get; set; }
+        public string? observacion { get; set; }
     }
 
     public class CentralVehiculoDto
@@ -224,6 +228,8 @@ namespace backend.Services.Interfaces
         /// <summary>Lectura directa de un usuario en SIGAFI (usuarios_web).</summary>
         Task<CentralUserDto?> GetWebUserFromSigafiAsync(string usuario);
         Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync();
+        /// <summary>Lectura directa en SIGAFI por placa (fuente de verdad).</summary>
+        Task<CentralVehiculoDto?> GetVehicleByPlacaFromCentralAsync(string placa);
         Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync();
         Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync();
         Task<IEnumerable<CentralCategoriaVehiculoDto>> GetAllVehicleCategoriesFromCentralAsync();
@@ -236,6 +242,10 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync();
         Task<IEnumerable<CentralMatriculaExamenDto>> GetMatriculaExamLinksFromCentralAsync();
         Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync();
+        /// <summary>Prácticas en ruta en SIGAFI (ensalida=1, no canceladas).</summary>
+        Task<IReadOnlyList<ClaseActiva>> GetClasesActivasEnRutaFromCentralAsync();
+        /// <summary>Vehículos inactivos en SIGAFI (p. ej. alerta operativa).</summary>
+        Task<IReadOnlyList<AlertaMantenimiento>> GetAlertasVehiculoDesdeCentralAsync();
         Task<bool> PingSigafiAsync();
     }
 }

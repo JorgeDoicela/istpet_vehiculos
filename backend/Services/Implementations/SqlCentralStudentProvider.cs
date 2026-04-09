@@ -1,4 +1,5 @@
 using backend.Data;
+using backend.Models;
 using backend.Services.Interfaces;
 using backend.DTOs;
 using System.Threading.Tasks;
@@ -31,7 +32,7 @@ namespace backend.Services.Implementations
         {
             try
             {
-                const string sql = @"
+                const string selectBase = @"
                     SELECT
                         a.idAlumno,
                         a.primerNombre,
@@ -44,20 +45,59 @@ namespace backend.Services.Implementations
                         CONCAT(c.Nivel, ', PARALELO:', m.paralelo, ' ', s.seccion) AS DetalleRaw,
                         c.Nivel,
                         p.idPeriodo,
-                        a.foto
+                        a.foto";
+
+                // 1) Preferido: matrícula válida en periodo académico marcado activo en SIGAFI.
+                var sqlActivo = selectBase + @"
                     FROM alumnos a
-                    JOIN matriculas m ON m.idAlumno = a.idAlumno
+                    JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
                     JOIN periodos p ON p.idPeriodo = m.idPeriodo
                     LEFT JOIN cursos c ON c.idNivel = m.idNivel
                     LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
                     WHERE a.idAlumno = @p0 AND p.activo = 1
                     LIMIT 1";
-                var result = await QuerySingleAsync(sql, idAlumno, MapCentralStudent);
+                var result = await QuerySingleAsync(sqlActivo, idAlumno, MapCentralStudent);
+
+                // 2) Cualquier matrícula válida (p. ej. alta reciente aún no ligada al periodo activo).
+                if (result == null)
+                {
+                    var sqlCualquierPeriodo = selectBase + @"
+                    FROM alumnos a
+                    JOIN matriculas m ON m.idAlumno = a.idAlumno AND COALESCE(m.valida, 1) = 1
+                    JOIN periodos p ON p.idPeriodo = m.idPeriodo
+                    LEFT JOIN cursos c ON c.idNivel = m.idNivel
+                    LEFT JOIN secciones s ON s.idSeccion = m.idSeccion
+                    WHERE a.idAlumno = @p0
+                    ORDER BY (p.activo = 1) DESC, m.idMatricula DESC
+                    LIMIT 1";
+                    result = await QuerySingleAsync(sqlCualquierPeriodo, idAlumno, MapCentralStudent);
+                }
+
+                // 3) Solo ficha en alumnos (evita “no existe” si aún no cargaron matrícula/periodo).
+                if (result == null)
+                {
+                    const string sqlSoloAlumno = @"
+                    SELECT
+                        a.idAlumno,
+                        a.primerNombre,
+                        a.apellidoPaterno,
+                        a.apellidoMaterno,
+                        a.segundoNombre,
+                        NULL AS paralelo,
+                        NULL AS seccion,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
+                        'Alumno en SIGAFI sin matrícula registrada' AS DetalleRaw,
+                        NULL AS Nivel,
+                        'SIN_MAT' AS idPeriodo,
+                        a.foto
+                    FROM alumnos a
+                    WHERE a.idAlumno = @p0
+                    LIMIT 1";
+                    result = await QuerySingleAsync(sqlSoloAlumno, idAlumno, MapCentralStudent);
+                }
 
                 if (result?.foto != null)
-                {
                     result.FotoBase64 = Convert.ToBase64String(result.foto);
-                }
 
                 return result;
             }
@@ -270,13 +310,15 @@ namespace backend.Services.Implementations
                     SELECT 
                         h.idAsignacionHorario,
                         h.idAsignacion,
-                        CURDATE() as Fecha,
-                        'PROGRAMADO' as Hora,
-                        CAST(h.asiste AS SIGNED) as asiste
+                        h.idFecha,
+                        h.idHora,
+                        CAST(h.asiste AS SIGNED) AS asiste,
+                        CAST(COALESCE(h.activo, 1) AS SIGNED) AS activo,
+                        h.observacion
                     FROM cond_alumnos_horarios h
                     JOIN cond_alumnos_vehiculos a ON a.idAsignacion = h.idAsignacion
                     WHERE a.idAlumno = @p0 
-                    AND h.activo = 1
+                    AND COALESCE(h.activo, 1) = 1
                     ORDER BY h.idAsignacionHorario DESC
                     LIMIT 1";
                 return await QuerySingleAsync(sql, idAlumno, MapCentralHorario);
@@ -288,24 +330,124 @@ namespace backend.Services.Implementations
             }
         }
 
+        private const string SqlVehiculosSelect = @"
+                SELECT idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria,
+                       CAST(activo AS SIGNED) AS activo, observacion, chasis, motor, modelo
+                FROM vehiculos";
+
+        private static CentralVehiculoDto MapCentralVehiculo(MySqlDataReader reader) => new()
+        {
+            idVehiculo = ReadInt(reader, "idVehiculo"),
+            idSubcategoria = ReadNullableInt(reader, "idSubcategoria"),
+            numero_vehiculo = ReadNullableString(reader, "numero_vehiculo"),
+            placa = ReadNullableString(reader, "placa"),
+            marca = ReadNullableString(reader, "marca"),
+            anio = ReadNullableInt(reader, "anio"),
+            idCategoria = ReadNullableInt(reader, "idCategoria"),
+            activo = ReadInt(reader, "activo"),
+            observacion = ReadNullableString(reader, "observacion"),
+            chasis = ReadNullableString(reader, "chasis"),
+            motor = ReadNullableString(reader, "motor"),
+            modelo = ReadNullableString(reader, "modelo")
+        };
+
         public Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria, CAST(activo AS SIGNED) AS activo, observacion, chasis, motor, modelo FROM vehiculos",
-                reader => new CentralVehiculoDto
+            QueryListAsync(SqlVehiculosSelect, MapCentralVehiculo);
+
+        public Task<CentralVehiculoDto?> GetVehicleByPlacaFromCentralAsync(string placa) =>
+            QuerySingleAsync(
+                SqlVehiculosSelect + " WHERE placa = @p0 LIMIT 1",
+                placa.Trim(),
+                MapCentralVehiculo);
+
+        public async Task<IReadOnlyList<ClaseActiva>> GetClasesActivasEnRutaFromCentralAsync()
+        {
+            var list = new List<ClaseActiva>();
+            try
+            {
+                const string sql = @"
+SELECT
+    p.idPractica,
+    p.idvehiculo AS idVehiculo,
+    p.idalumno,
+    TRIM(CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre)) AS estudiante,
+    COALESCE(v.placa, '') AS placa,
+    v.numero_vehiculo AS numero_vehiculo_raw,
+    TRIM(CONCAT_WS(' ', pr.apellidos, pr.nombres)) AS instructor,
+    p.fecha,
+    p.hora_salida
+FROM cond_alumnos_practicas p
+INNER JOIN alumnos a ON a.idAlumno = p.idalumno
+INNER JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+INNER JOIN profesores pr ON pr.idProfesor = p.idProfesor
+WHERE COALESCE(p.cancelado, 0) = 0 AND COALESCE(p.ensalida, 0) = 1";
+
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand(sql, conn);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
                 {
-                    idVehiculo = ReadInt(reader, "idVehiculo"),
-                    idSubcategoria = ReadNullableInt(reader, "idSubcategoria"),
-                    numero_vehiculo = ReadNullableString(reader, "numero_vehiculo"),
-                    placa = ReadNullableString(reader, "placa"),
-                    marca = ReadNullableString(reader, "marca"),
-                    anio = ReadNullableInt(reader, "anio"),
-                    idCategoria = ReadNullableInt(reader, "idCategoria"),
-                    activo = ReadInt(reader, "activo"),
-                    observacion = ReadNullableString(reader, "observacion"),
-                    chasis = ReadNullableString(reader, "chasis"),
-                    motor = ReadNullableString(reader, "motor"),
-                    modelo = ReadNullableString(reader, "modelo")
-                });
+                    var fecha = ReadDate(reader, "fecha");
+                    var hs = ReadNullableTime(reader, "hora_salida");
+                    var salidaDt = hs.HasValue ? fecha.Date.Add(hs.Value) : fecha.Date;
+
+                    var num = ReadNumeroVehiculoFlexible(reader, "numero_vehiculo_raw");
+
+                    list.Add(new ClaseActiva
+                    {
+                        idPractica = ReadInt(reader, "idPractica"),
+                        idVehiculo = ReadInt(reader, "idVehiculo"),
+                        idAlumno = ReadString(reader, "idalumno"),
+                        estudiante = ReadNullableString(reader, "estudiante") ?? "",
+                        placa = ReadNullableString(reader, "placa") ?? "",
+                        numeroVehiculo = num,
+                        instructor = ReadNullableString(reader, "instructor") ?? "",
+                        salida = salidaDt
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error leyendo clases en ruta desde SIGAFI.");
+            }
+
+            return list;
+        }
+
+        public async Task<IReadOnlyList<AlertaMantenimiento>> GetAlertasVehiculoDesdeCentralAsync()
+        {
+            var list = new List<AlertaMantenimiento>();
+            try
+            {
+                const string sql = @"
+SELECT idVehiculo, numero_vehiculo, placa
+FROM vehiculos
+WHERE COALESCE(activo, 1) = 0";
+
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand(sql, conn);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var num = ReadNumeroVehiculoFlexible(reader, "numero_vehiculo");
+
+                    list.Add(new AlertaMantenimiento
+                    {
+                        id_vehiculo = ReadInt(reader, "idVehiculo"),
+                        numero_vehiculo = num,
+                        placa = ReadNullableString(reader, "placa") ?? ""
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error leyendo vehículos inactivos (alerta) desde SIGAFI.");
+            }
+
+            return list;
+        }
 
         public Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync() =>
             QueryListAsync(
@@ -454,7 +596,10 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralHorarioDto>> GetAllSchedulesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAsignacionHorario, idAsignacion, CURDATE() AS Fecha, 'PROGRAMADO' AS Hora, CAST(asiste AS SIGNED) AS asiste
+                @"SELECT idAsignacionHorario, idAsignacion, idFecha, idHora,
+                         CAST(asiste AS SIGNED) AS asiste,
+                         CAST(COALESCE(activo, 1) AS SIGNED) AS activo,
+                         observacion
                   FROM cond_alumnos_horarios
                   WHERE COALESCE(activo, 1) = 1",
                 MapCentralHorario);
@@ -486,6 +631,7 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync() =>
             QueryListAsync(
+                // SIGAFI: cond_alumnos_practicas no incluye observaciones; NULL mantiene paridad con origen.
                 @"SELECT idPractica, idalumno, idvehiculo, idProfesor, idPeriodo, dia, fecha,
                          hora_salida, hora_llegada, tiempo,
                          CAST(ensalida AS SIGNED) AS ensalida, CAST(verificada AS SIGNED) AS verificada,
@@ -557,6 +703,19 @@ namespace backend.Services.Implementations
             return null;
         }
 
+        private static int ReadNumeroVehiculoFlexible(MySqlDataReader reader, string column)
+        {
+            var ord = reader.GetOrdinal(column);
+            if (reader.IsDBNull(ord))
+                return 0;
+            var v = reader.GetValue(ord);
+            if (v is int i)
+                return i;
+            if (v is long l)
+                return (int)l;
+            return int.TryParse(Convert.ToString(v)?.Trim(), out var n) ? n : 0;
+        }
+
         private static CentralStudentDto MapCentralStudent(MySqlDataReader reader) => new()
         {
             idAlumno = ReadString(reader, "idAlumno"),
@@ -604,9 +763,11 @@ namespace backend.Services.Implementations
         {
             idAsignacionHorario = ReadInt(reader, "idAsignacionHorario"),
             idAsignacion = ReadInt(reader, "idAsignacion"),
-            Fecha = ReadDate(reader, "Fecha"),
-            Hora = ReadString(reader, "Hora"),
-            asiste = ReadInt(reader, "asiste")
+            idFecha = ReadNullableInt(reader, "idFecha"),
+            idHora = ReadNullableInt(reader, "idHora"),
+            asiste = ReadInt(reader, "asiste"),
+            activo = ReadInt(reader, "activo"),
+            observacion = ReadNullableString(reader, "observacion")
         };
 
         private static string ReadString(MySqlDataReader reader, string column)

@@ -197,6 +197,7 @@ CREATE TABLE IF NOT EXISTS cond_alumnos_practicas (
     user_asigna VARCHAR(20),
     user_llegada VARCHAR(20),
     cancelado TINYINT DEFAULT 0,
+    -- SIGAFI cond_alumnos_practicas: sin columna observaciones; campo opcional en réplica (notas locales / salidas).
     observaciones TEXT,
     FOREIGN KEY (idalumno) REFERENCES alumnos(idAlumno),
     FOREIGN KEY (idvehiculo) REFERENCES vehiculos(idVehiculo),

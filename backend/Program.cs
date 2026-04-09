@@ -1,4 +1,5 @@
 //Deploy
+using backend.Hosting;
 using backend.Services.Implementations;
 using backend.Services.Interfaces;
 using backend.Data;
@@ -93,7 +94,7 @@ builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
 
 // Arquitectura de datos:
 // - SigafiConnection → BD remota sigafi_es (fuente de verdad; solo lectura vía SqlCentralStudentProvider + login).
-// - DefaultConnection → BD local istpet_vehiculos (espejo operativo; se alimenta con Master Sync desde SIGAFI).
+// - DefaultConnection → BD local istpet_vehiculos (espejo operativo; Master Sync desde SIGAFI, también en segundo plano vía SigafiMirrorSync).
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 var sigafiConnectionString = builder.Configuration.GetConnectionString("SigafiConnection");
@@ -115,6 +116,10 @@ if (connectionString.Contains("tidbcloud.com") && !connectionString.Contains("Ss
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
+
+builder.Services.Configure<SigafiMirrorSyncOptions>(
+    builder.Configuration.GetSection(SigafiMirrorSyncOptions.SectionName));
+builder.Services.AddHostedService<SigafiMirrorBackgroundService>();
 
 // 🛡️ CONFIGURACION DE PUERTO PARA RENDER (Solo si existe la variable PORT)
 var port = Environment.GetEnvironmentVariable("PORT");

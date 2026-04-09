@@ -156,6 +156,7 @@ namespace backend.Data
             modelBuilder.Entity<HorarioAlumno>(entity => {
                 entity.ToTable("cond_alumnos_horarios");
                 entity.HasKey(e => e.idAsignacionHorario);
+                entity.Property(e => e.observacion).HasColumnType("text");
             });
 
             modelBuilder.Entity<CategoriaExamenConduccion>(entity => {
