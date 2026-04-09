@@ -21,32 +21,66 @@ CREATE TABLE IF NOT EXISTS tipo_licencia (
 
 CREATE TABLE IF NOT EXISTS profesores (
     idProfesor VARCHAR(15) PRIMARY KEY,
+    tipodocumento VARCHAR(1) DEFAULT 'C',
     primerNombre VARCHAR(80),
     segundoNombre VARCHAR(80),
     primerApellido VARCHAR(80),
     segundoApellido VARCHAR(80),
     nombres VARCHAR(160), -- Concatenación local
     apellidos VARCHAR(160), -- Concatenación local
+    estadoCivil INT DEFAULT 1,
+    direccion VARCHAR(100),
+    telefono VARCHAR(30),
     celular VARCHAR(50),
     email VARCHAR(100),
+    fecha_nacimiento DATE,
+    sexo VARCHAR(1),
+    clave VARCHAR(20) DEFAULT '321',
+    practicas INT DEFAULT 0,
+    tipo VARCHAR(1) DEFAULT 'P',
+    titulo VARCHAR(200),
+    abreviatura VARCHAR(5),
+    emailInstitucional VARCHAR(255),
+    tipoSangre VARCHAR(5),
+    foto VARCHAR(255),
+    nacionalidad VARCHAR(50),
     activo BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS alumnos (
     idAlumno VARCHAR(15) PRIMARY KEY,
+    tipoDocumento VARCHAR(1) DEFAULT 'C',
     primerNombre VARCHAR(80),
     segundoNombre VARCHAR(80),
     apellidoPaterno VARCHAR(80),
     apellidoMaterno VARCHAR(80),
+    fecha_Nacimiento DATE,
+    direccion VARCHAR(60),
+    telefono VARCHAR(20),
     celular VARCHAR(50),
     email VARCHAR(100),
+    sexo VARCHAR(1),
+    nacionalidad VARCHAR(50),
+    idNivel INT,
+    idPeriodo VARCHAR(7),
+    idSeccion INT,
+    idModalidad INT,
+    idInstitucion INT,
+    tituloColegio VARCHAR(200),
+    fecha_Inscripcion DATE,
+    nombre_padre VARCHAR(150),
+    ciudad_residencia VARCHAR(100),
+    tipo_sangre VARCHAR(6),
+    user_alumno VARCHAR(20),
+    password VARCHAR(20),
+    email_institucional VARCHAR(100),
     activo BOOLEAN DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS cursos (
     idNivel INT PRIMARY KEY,
     idCarrera INT,
-    Nivel VARCHAR(100),
+    Nivel VARCHAR(160),
     activo BOOLEAN DEFAULT TRUE
 );
 
@@ -63,12 +97,12 @@ CREATE TABLE IF NOT EXISTS usuarios_web (
 
 CREATE TABLE IF NOT EXISTS categoria_vehiculos (
     idCategoria INT PRIMARY KEY,
-    categoria VARCHAR(100) NOT NULL
+    categoria VARCHAR(160) NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (
     IdCategoria INT PRIMARY KEY,
-    categoria VARCHAR(100) NOT NULL,
+    categoria VARCHAR(160) NOT NULL,
     tieneNota BOOLEAN DEFAULT TRUE,
     activa BOOLEAN DEFAULT TRUE
 );
@@ -90,14 +124,14 @@ CREATE TABLE IF NOT EXISTS vehiculos (
     idSubcategoria INT,
     numero_vehiculo VARCHAR(10) UNIQUE,
     placa VARCHAR(15) UNIQUE NOT NULL,
-    marca VARCHAR(100),
+    marca VARCHAR(160),
     anio INT,
     idCategoria INT,
     activo BOOLEAN DEFAULT TRUE,
     observacion TEXT,
-    chasis VARCHAR(100),
-    motor VARCHAR(100),
-    modelo VARCHAR(100),
+    chasis VARCHAR(160),
+    motor VARCHAR(160),
+    modelo VARCHAR(160),
     -- Logistics / Operational Fields
     id_tipo_licencia INT,
     id_instructor_fijo VARCHAR(15),
@@ -111,9 +145,10 @@ CREATE TABLE IF NOT EXISTS matriculas (
     idAlumno VARCHAR(15) NOT NULL,
     idNivel INT NOT NULL,
     idSeccion INT DEFAULT 1,
+    idModalidad INT DEFAULT 1,
     idPeriodo VARCHAR(10),
     paralelo VARCHAR(5) DEFAULT 'A',
-    fecha_matricula DATE,
+    fechaMatricula DATE,
     horas_completadas DECIMAL(10,2) DEFAULT 0.00,
     estado VARCHAR(20) DEFAULT 'ACTIVO',
     valida TINYINT DEFAULT 1,
@@ -202,5 +237,9 @@ VALUES
 ('C', 'CONDUCCIÓN NO PROFESIONAL TIPO C'),
 ('D', 'CONDUCCIÓN PROFESIONAL TIPO D'),
 ('E', 'CONDUCCIÓN PROFESIONAL TIPO E');
+
+-- Usuario administrador bootstrap para primer acceso local.
+INSERT IGNORE INTO usuarios_web (usuario, password, salida, ingreso, activo, asistencia, esRrhh)
+VALUES ('admin', 'admin123', 1, 1, 1, 0, 1);
 
 SELECT 'ESQUEMA ISTPET_VEHICULOS Y METADATOS CREADOS' AS Status;

@@ -65,6 +65,104 @@ namespace backend.Services.Interfaces
         public int asiste { get; set; }
     }
 
+    public class CentralVehiculoDto
+    {
+        public int idVehiculo { get; set; }
+        public int? idSubcategoria { get; set; }
+        public string? numero_vehiculo { get; set; }
+        public string? placa { get; set; }
+        public string? marca { get; set; }
+        public int? anio { get; set; }
+        public int? idCategoria { get; set; }
+        public int activo { get; set; }
+        public string? observacion { get; set; }
+        public string? chasis { get; set; }
+        public string? motor { get; set; }
+        public string? modelo { get; set; }
+    }
+
+    public class CentralCursoDto
+    {
+        public int idNivel { get; set; }
+        public int idCarrera { get; set; }
+        public string? Nivel { get; set; }
+    }
+
+    public class CentralTipoLicenciaDto
+    {
+        public int id_tipo { get; set; }
+        public string codigo { get; set; } = string.Empty;
+        public string descripcion { get; set; } = string.Empty;
+        public int activo { get; set; }
+    }
+
+    public class CentralCategoriaVehiculoDto
+    {
+        public int idCategoria { get; set; }
+        public string categoria { get; set; } = string.Empty;
+    }
+
+    public class CentralCategoriaExamenDto
+    {
+        public int IdCategoria { get; set; }
+        public string categoria { get; set; } = string.Empty;
+        public int tieneNota { get; set; }
+        public int activa { get; set; }
+    }
+
+    public class CentralMatriculaDto
+    {
+        public int idMatricula { get; set; }
+        public string idAlumno { get; set; } = string.Empty;
+        public int idNivel { get; set; }
+        public int idSeccion { get; set; }
+        public int idModalidad { get; set; }
+        public string idPeriodo { get; set; } = string.Empty;
+        public DateTime? fechaMatricula { get; set; }
+        public string? paralelo { get; set; }
+        public int valida { get; set; }
+    }
+
+    public class CentralAsignacionInstructorVehiculoDto
+    {
+        public int idAsignacion { get; set; }
+        public int idVehiculo { get; set; }
+        public string idProfesor { get; set; } = string.Empty;
+        public DateTime? fecha_asignacion { get; set; }
+        public DateTime? fecha_salida { get; set; }
+        public int activo { get; set; }
+        public string? usuario_asigna { get; set; }
+        public string? usuario_desactiva { get; set; }
+        public string? observacion { get; set; }
+    }
+
+    public class CentralAsignacionAlumnoVehiculoDto
+    {
+        public int idAsignacion { get; set; }
+        public string idAlumno { get; set; } = string.Empty;
+        public int idVehiculo { get; set; }
+        public string idProfesor { get; set; } = string.Empty;
+        public string? idPeriodo { get; set; }
+        public int activa { get; set; }
+    }
+
+    public class CentralPracticaHorarioDto
+    {
+        public int idPractica { get; set; }
+        public int idAsignacionHorario { get; set; }
+    }
+
+    public class CentralAlumnoLiteDto
+    {
+        public string idAlumno { get; set; } = string.Empty;
+        public string? primerNombre { get; set; }
+        public string? segundoNombre { get; set; }
+        public string? apellidoPaterno { get; set; }
+        public string? apellidoMaterno { get; set; }
+        public string? celular { get; set; }
+        public string? email { get; set; }
+    }
+
     public interface ICentralStudentProvider
     {
         Task<CentralStudentDto?> GetFromCentralAsync(string idAlumno);
@@ -75,5 +173,16 @@ namespace backend.Services.Interfaces
         Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
         Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();
+        Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync();
+        Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync();
+        Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync();
+        Task<IEnumerable<CentralCategoriaVehiculoDto>> GetAllVehicleCategoriesFromCentralAsync();
+        Task<IEnumerable<CentralCategoriaExamenDto>> GetAllExamCategoriesFromCentralAsync();
+        Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync();
+        Task<IEnumerable<CentralMatriculaDto>> GetActiveEnrollmentsFromCentralAsync();
+        Task<IEnumerable<CentralAsignacionInstructorVehiculoDto>> GetInstructorVehicleAssignmentsFromCentralAsync();
+        Task<IEnumerable<CentralAsignacionAlumnoVehiculoDto>> GetStudentVehicleAssignmentsFromCentralAsync();
+        Task<IEnumerable<CentralHorarioDto>> GetAllSchedulesFromCentralAsync();
+        Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync();
     }
 }

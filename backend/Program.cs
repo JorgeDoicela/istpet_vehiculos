@@ -93,10 +93,15 @@ builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
 // Configurar DbContext con MySQL / TiDB Cloud (Prioridad: Nube > Local)
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
+var sigafiConnectionString = builder.Configuration.GetConnectionString("SigafiConnection");
 
 if (string.IsNullOrEmpty(connectionString))
 {
     throw new InvalidOperationException("❌ Error: No se encontró la cadena de conexión (DATABASE_URL).");
+}
+if (string.IsNullOrWhiteSpace(sigafiConnectionString))
+{
+    throw new InvalidOperationException("❌ Error: No se encontró ConnectionStrings:SigafiConnection para el puente de lectura SIGAFI.");
 }
 
 // 🛡️ ADAPTADOR PARA TiDB CLOUD (SSL es obligatorio)

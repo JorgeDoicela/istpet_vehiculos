@@ -60,5 +60,19 @@ namespace backend.Controllers
                 return StatusCode(500, ApiResponse<SyncLog>.Fail($"Error en sincronización manual: {ex.Message}"));
             }
         }
+
+        [HttpPost("master")]
+        public async Task<ActionResult<ApiResponse<SyncLog>>> MasterSync()
+        {
+            try
+            {
+                var syncLog = await _syncService.MasterSyncAsync();
+                return Ok(ApiResponse<SyncLog>.Ok(syncLog, "Master Sync SIGAFI ejecutado correctamente."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<SyncLog>.Fail($"Error en Master Sync: {ex.Message}"));
+            }
+        }
     }
 }

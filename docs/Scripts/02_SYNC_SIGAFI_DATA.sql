@@ -2,6 +2,7 @@
 -- 02_SYNC_SIGAFI_DATA.sql
 -- Propósito: Extraer datos de sigafi_es (Solo Lectura) e 
 --            insertar en istpet_vehiculos (DB Local).
+-- Nota 2026: ejecución automática deshabilitada; reemplazado por Master Sync C#.
 -- ============================================================
 
 USE istpet_vehiculos;

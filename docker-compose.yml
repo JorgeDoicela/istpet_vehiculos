@@ -9,7 +9,7 @@ services:
     ports:
       - "3307:3306"
     volumes:
-      - ./docs/Scripts:/docker-entrypoint-initdb.d
+      - ./docs/Scripts/01_ISTPET_LOGISTICS_SCHEMA.sql:/docker-entrypoint-initdb.d/01_ISTPET_LOGISTICS_SCHEMA.sql:ro
       - db_data:/var/lib/mysql
 
   backend:
@@ -23,7 +23,7 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_HTTP_PORTS=8080
-      - "ConnectionStrings__DefaultConnection=Server=${DATABASE_SERVER};Port=${DATABASE_PORT};Database=${DATABASE_NAME};Uid=${DATABASE_USER};Pwd=${DATABASE_PASS};"
+      - "ConnectionStrings__DefaultConnection=Server=${DATABASE_SERVER};Port=3306;Database=${DATABASE_NAME};Uid=${DATABASE_USER};Pwd=${DATABASE_PASS};"
       - "ConnectionStrings__SigafiConnection=Server=${REMOTE_SIGAFI_SERVER};Port=${REMOTE_SIGAFI_PORT};Database=${REMOTE_SIGAFI_DB};Uid=${REMOTE_SIGAFI_USER};Pwd=${REMOTE_SIGAFI_PASS};"
       - "CentralDbName=${REMOTE_SIGAFI_DB}"
     ports:
