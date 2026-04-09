@@ -142,27 +142,27 @@ namespace backend.Data
             });
 
             modelBuilder.Entity<AsignacionInstructorVehiculo>(entity => {
-                entity.ToTable("asignacion_instructores_vehiculos", "sigafi_es");
+                entity.ToTable("asignacion_instructores_vehiculos");
                 entity.HasKey(e => e.idAsignacion);
             });
 
             modelBuilder.Entity<CategoriaVehiculo>(entity => {
-                entity.ToTable("categoria_vehiculos", "sigafi_es");
+                entity.ToTable("categoria_vehiculos");
                 entity.HasKey(e => e.idCategoria);
             });
 
             modelBuilder.Entity<HorarioAlumno>(entity => {
-                entity.ToTable("cond_alumnos_horarios", "sigafi_es");
+                entity.ToTable("cond_alumnos_horarios");
                 entity.HasKey(e => e.idAsignacionHorario);
             });
 
             modelBuilder.Entity<CategoriaExamenConduccion>(entity => {
-                entity.ToTable("categorias_examenes_conduccion", "sigafi_es");
+                entity.ToTable("categorias_examenes_conduccion");
                 entity.HasKey(e => e.IdCategoria);
             });
 
             modelBuilder.Entity<PracticaHorarioAlumno>(entity => {
-                entity.ToTable("cond_practicas_horarios_alumnos", "sigafi_es");
+                entity.ToTable("cond_practicas_horarios_alumnos");
                 entity.HasKey(e => new { e.idPractica, e.idAsignacionHorario });
             });
 

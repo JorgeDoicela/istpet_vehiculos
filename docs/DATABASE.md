@@ -4,6 +4,17 @@ Base de datos: `istpet_vehiculos` | Motor: MySQL / MariaDB | Cotejamiento: `utf8
 
 ---
 
+## 🛡️ Integración SIGAFI (Política de Solo Lectura)
+
+Para garantizar la integridad de la base de datos institucional (`sigafi_es`), el sistema de Logística implementa una arquitectura de **blindaje bidireccional**:
+
+1.  **Consumo Pasivo de Datos**: El sistema extrae información de alumnos, cursos, profesores y horarios mediante consultas `SELECT` únicamente.
+2.  **Espejo Local (Mirroring)**: Todas las tablas críticas de SIGAFI tienen un espejo en la base de datos local `istpet_vehiculos`. La sincronización masiva se realiza vía scripts SQL que depositan la "Verdad Central" en tablas locales para su operación.
+3.  **Aislamiento del Backend (ORM)**: El `AppDbContext` está configurado para que todas las entidades operativas (incluso las vinculadas a agendas y categorías) apunten **exclusivamente** al esquema local. No existen mapeos de escritura hacia `sigafi_es`.
+4.  **Operatividad Independiente**: Los registros de salida, llegada y asistencia se graban en tablas locales. El sistema central no sufre alteraciones por el uso diario de la plataforma logística.
+
+---
+
 ## Diagrama Entidad-Relación (ERD)
 
 ```mermaid

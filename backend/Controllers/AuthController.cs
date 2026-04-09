@@ -48,7 +48,8 @@ namespace backend.Controllers
                 isValid = string.Equals(user.password, req.password ?? req.Password);
                 if (!isValid)
                 {
-                    string calculatedHash = ComputeSha256Hash(req.password ?? req.Password);
+                    string passwordToHash = req.password ?? req.Password ?? string.Empty;
+                    string calculatedHash = ComputeSha256Hash(passwordToHash);
                     isValid = string.Equals(user.password, calculatedHash, StringComparison.OrdinalIgnoreCase);
                 }
                 if (isValid) needsRehash = true;

@@ -4,6 +4,7 @@
 -- Propósito: Definición del esquema principal del sistema de Logística.
 -- ============================================================
 
+DROP DATABASE IF EXISTS istpet_vehiculos;
 CREATE DATABASE IF NOT EXISTS istpet_vehiculos;
 USE istpet_vehiculos;
 
@@ -81,14 +82,6 @@ CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (
     activo BOOLEAN DEFAULT TRUE,
     observacion TEXT,
     INDEX idx_asig_horario (idAsignacion)
-);
-
-CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (
-    idPractica INT NOT NULL,
-    idAsignacionHorario INT NOT NULL,
-    PRIMARY KEY (idPractica, idAsignacionHorario),
-    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica),
-    FOREIGN KEY (idAsignacionHorario) REFERENCES cond_alumnos_horarios(idAsignacionHorario)
 );
 
 -- 3. Tablas Operativas del Sistema
@@ -176,9 +169,17 @@ CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (
     FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
 );
 
+CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (
+    idPractica INT NOT NULL,
+    idAsignacionHorario INT NOT NULL,
+    PRIMARY KEY (idPractica, idAsignacionHorario),
+    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica),
+    FOREIGN KEY (idAsignacionHorario) REFERENCES cond_alumnos_horarios(idAsignacionHorario)
+);
+
 -- 4. Vistas Operativas
 CREATE OR REPLACE VIEW v_clases_activas AS
-SELECT 
+SELECT
     p.idPractica AS id_registro,
     p.idalumno AS idAlumno,
     e.primerNombre AS primer_nombre,
@@ -196,8 +197,8 @@ JOIN profesores i ON p.idProfesor = i.idProfesor
 WHERE p.ensalida = 1 AND p.cancelado = 0;
 
 -- 5. Carga de Metadatos del Sistema (Requeridos)
-INSERT IGNORE INTO tipo_licencia (codigo, descripcion) 
-VALUES 
+INSERT IGNORE INTO tipo_licencia (codigo, descripcion)
+VALUES
 ('C', 'CONDUCCIÓN NO PROFESIONAL TIPO C'),
 ('D', 'CONDUCCIÓN PROFESIONAL TIPO D'),
 ('E', 'CONDUCCIÓN PROFESIONAL TIPO E');

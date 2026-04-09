@@ -18,14 +18,14 @@ CREATE TABLE profesores (idProfesor VARCHAR(15) PRIMARY KEY, primerNombre VARCHA
 CREATE TABLE vehiculos (idVehiculo INT PRIMARY KEY, idSubcategoria INT, numero_vehiculo VARCHAR(10), placa VARCHAR(15), marca VARCHAR(100), anio INT, idCategoria INT, activo INT DEFAULT 1, observacion TEXT, chasis VARCHAR(100), motor VARCHAR(100), modelo VARCHAR(100));
 CREATE TABLE usuarios_web (usuario VARCHAR(50) PRIMARY KEY, password VARCHAR(255), salida INT DEFAULT 0, ingreso INT DEFAULT 0, activo INT DEFAULT 1, asistencia INT DEFAULT 0, esRrhh INT DEFAULT 0);
 CREATE TABLE matriculas (idMatricula INT PRIMARY KEY, idAlumno VARCHAR(15), idNivel INT, idPeriodo VARCHAR(10), paralelo VARCHAR(5), valida INT DEFAULT 1);
-CREATE TABLE niveles (idNivel INT PRIMARY KEY, idCarrera INT, Nivel VARCHAR(100));
+CREATE TABLE cursos (idNivel INT PRIMARY KEY, idCarrera INT, Nivel VARCHAR(100));
 CREATE TABLE categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR(100));
 CREATE TABLE cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT, idFecha INT, idHora INT, asiste INT DEFAULT 0, activo INT DEFAULT 1);
 CREATE TABLE cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY, idAlumno VARCHAR(15), idVehiculo INT, idProfesor VARCHAR(15), activa INT DEFAULT 1);
 CREATE TABLE cond_alumnos_practicas (idPractica INT PRIMARY KEY AUTO_INCREMENT, idalumno VARCHAR(15), idvehiculo INT, idProfesor VARCHAR(15), fecha DATE, hora_salida TIME, hora_llegada TIME, cancelado INT DEFAULT 0, user_asigna VARCHAR(20));
 
 -- Data Mock Inicial
-INSERT INTO niveles VALUES (1, 1, 'PRIMERO - CONDUCCIÓN PROFESIONAL C');
+INSERT INTO cursos VALUES (1, 1, 'PRIMERO - CONDUCCIÓN PROFESIONAL C');
 INSERT INTO usuarios_web VALUES ('admin', 'admin123', 1, 1, 1, 1, 0);
 INSERT INTO alumnos (idAlumno, primerNombre, apellidoPaterno) VALUES ('1725555377', 'JORGE', 'DOICELA');
 INSERT INTO profesores (idProfesor, primerNombre, primerApellido) VALUES ('1712345678', 'RICHARD', 'TRUJILLO');
@@ -57,7 +57,7 @@ VALUES
 ('D', 'CONDUCCIÓN PROFESIONAL TIPO D'),
 ('E', 'CONDUCCIÓN PROFESIONAL TIPO E');
 
-INSERT IGNORE INTO istpet_vehiculos.cursos (idNivel, idCarrera, Nivel) SELECT idNivel, idCarrera, Nivel FROM sigafi_es.niveles;
+INSERT IGNORE INTO istpet_vehiculos.cursos (idNivel, idCarrera, Nivel) SELECT idNivel, idCarrera, Nivel FROM sigafi_es.cursos;
 INSERT IGNORE INTO istpet_vehiculos.profesores (idProfesor, primerNombre, primerApellido) SELECT idProfesor, primerNombre, primerApellido FROM sigafi_es.profesores;
 INSERT IGNORE INTO istpet_vehiculos.alumnos (idAlumno, primerNombre, apellidoPaterno) SELECT idAlumno, primerNombre, apellidoPaterno FROM sigafi_es.alumnos;
 INSERT IGNORE INTO istpet_vehiculos.usuarios_web (usuario, password, salida, ingreso, activo, asistencia, esRrhh) SELECT usuario, password, salida, ingreso, activo, asistencia, esRrhh FROM sigafi_es.usuarios_web;

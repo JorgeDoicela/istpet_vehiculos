@@ -6,6 +6,11 @@
 
 USE istpet_vehiculos;
 
+-- Desactivar modo seguro para actualizaciones masivas de limpieza
+SET SQL_SAFE_UPDATES = 0;
+-- Desactivar llaves foráneas para permitir ingesta masiva sin errores de orden
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- 1. Sincronización de Seguridad (Mirror de usuarios_web)
 INSERT IGNORE INTO usuarios_web (usuario, password, salida, ingreso, activo, asistencia, esRrhh)
 SELECT 
@@ -19,8 +24,9 @@ SELECT
 FROM sigafi_es.usuarios_web;
 
 -- 2. Sincronización de Cursos
+INSERT IGNORE INTO cursos (idNivel, idCarrera, Nivel)
 SELECT idNivel, idCarrera, Nivel
-FROM sigafi_es.niveles;
+FROM sigafi_es.cursos;
 
 -- 2.1 Sincronización de Categorías de Vehículos
 INSERT IGNORE INTO categoria_vehiculos (idCategoria, categoria)
@@ -139,3 +145,7 @@ JOIN sigafi_es.cond_alumnos_practicas p ON p.idPractica = l.idPractica
 WHERE p.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR);
 
 SELECT 'DATOS DE SIGAFI SINCRONIZADOS EXITOSAMENTE' AS Status;
+
+-- Restaurar configuraciones de seguridad
+SET FOREIGN_KEY_CHECKS = 1;
+SET SQL_SAFE_UPDATES = 1;
