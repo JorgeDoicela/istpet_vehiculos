@@ -85,6 +85,14 @@ namespace backend.Controllers
                     localStudent.idPracticaCentral = scheduled?.idvehiculo;
                     localStudent.practicaVehiculo = scheduled?.VehiculoDetalle;
                     localStudent.practicaHora = scheduled?.hora_salida?.ToString(@"hh\:mm");
+
+                    // 🚀 Agenda Granular SIGAFI
+                    var nextSched = await _centralProvider.GetNextScheduleAsync(localStudent.idAlumno);
+                    if (nextSched != null)
+                    {
+                        localStudent.horarioProximo = nextSched.Hora;
+                        localStudent.asistenciaHoy = nextSched.asiste == 1;
+                    }
                 }
 
                 localStudent.isBusy = await _context.Practicas
@@ -129,22 +137,26 @@ namespace backend.Controllers
                 _context.Matriculas.Add(nuevaMatricula);
                 await _context.SaveChangesAsync();
 
-                var scheduledResult = await _centralProvider.GetScheduledPracticeAsync(eBase.idAlumno);
-                return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
-                {
-                    idAlumno = eBase.idAlumno,
-                    nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
-                    nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
-                    paralelo = nuevaMatricula.paralelo,
-                    jornada = "MATUTINA",
-                    idPeriodo = nuevaMatricula.idPeriodo,
-                    idMatricula = nuevaMatricula.idMatricula,
-                    fotoBase64 = centralData.FotoBase64,
-                    idPracticaCentral = scheduledResult?.idvehiculo,
-                    practicaVehiculo = scheduledResult?.VehiculoDetalle,
-                    practicaHora = scheduledResult?.hora_salida?.ToString(@"hh\:mm"),
-                    isBusy = false
-                }, "Sincronizado desde SIGAFI."));
+                    var scheduledResult = await _centralProvider.GetScheduledPracticeAsync(eBase.idAlumno);
+                    var schedNext = await _centralProvider.GetNextScheduleAsync(eBase.idAlumno);
+
+                    return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(new EstudianteLogisticaResponse
+                    {
+                        idAlumno = eBase.idAlumno,
+                        nombreCompleto = centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}".ToUpper(),
+                        nivel = (nivelLocal.Nivel ?? "S/N").ToUpper(),
+                        paralelo = nuevaMatricula.paralelo,
+                        jornada = "MATUTINA",
+                        idPeriodo = nuevaMatricula.idPeriodo,
+                        idMatricula = nuevaMatricula.idMatricula,
+                        fotoBase64 = centralData.FotoBase64,
+                        idPracticaCentral = scheduledResult?.idvehiculo,
+                        practicaVehiculo = scheduledResult?.VehiculoDetalle,
+                        practicaHora = scheduledResult?.hora_salida?.ToString(@"hh\:mm"),
+                        horarioProximo = schedNext?.Hora,
+                        asistenciaHoy = schedNext?.asiste == 1,
+                        isBusy = false
+                    }, "Sincronizado desde SIGAFI."));
             }
             catch (System.Exception ex) { return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error Sync: {ex.Message}")); }
         }
@@ -211,7 +223,7 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<string>>> RegistrarSalida([FromBody] SalidaRequest req)
         {
             // Note: Service expects integer IDs for local tracking, conversion handled inside service
-            var result = await _logisticaService.RegistrarSalidaAsync(req.idMatricula, req.idVehiculo, req.idInstructor, req.observaciones ?? "Ninguna", req.registradoPor);
+            var result = await _logisticaService.RegistrarSalidaAsync(req.idMatricula, req.idVehiculo, req.idInstructor, req.observaciones ?? "Ninguna", req.registradoPor, req.idAsignacionHorario);
             if (result == "EXITO") return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
             return BadRequest(ApiResponse<string>.Fail($"Error: {result}"));
         }

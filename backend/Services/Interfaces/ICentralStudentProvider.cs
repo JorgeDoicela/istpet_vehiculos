@@ -56,6 +56,15 @@ namespace backend.Services.Interfaces
         public string ProfesorNombre { get; set; } = string.Empty;
     }
 
+    public class CentralHorarioDto
+    {
+        public int idAsignacionHorario { get; set; }
+        public int idAsignacion { get; set; }
+        public DateTime Fecha { get; set; }
+        public string Hora { get; set; } = string.Empty;
+        public int asiste { get; set; }
+    }
+
     public interface ICentralStudentProvider
     {
         Task<CentralStudentDto?> GetFromCentralAsync(string idAlumno);
@@ -63,6 +72,7 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralInstructorDto>> GetAllInstructorsFromCentralAsync();
         Task<CentralInstructorDto?> GetAssignedTutorAsync(string idAlumno);
         Task<ScheduledPracticeDto?> GetScheduledPracticeAsync(string idAlumno);
+        Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
         Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();
     }

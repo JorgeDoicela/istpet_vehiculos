@@ -21,6 +21,8 @@ namespace backend.DTOs
         public string? practicaVehiculo { get; set; }
         public string? practicaInstructor { get; set; }
         public string? practicaHora { get; set; }
+        public string? horarioProximo { get; set; } // Ej: "14:00 - 15:00"
+        public bool asistenciaHoy { get; set; }
         public bool tienePracticaHoy => idPracticaCentral.HasValue;
         public string? fotoBase64 { get; set; }
         public bool isBusy { get; set; }
@@ -31,7 +33,7 @@ namespace backend.DTOs
         public int idVehiculo { get; set; }
         public int numeroVehiculo { get; set; }
         public string vehiculoStr { get; set; } = string.Empty;
-        public int idInstructorFijo { get; set; }
+        public string? idInstructorFijo { get; set; }
         public string instructorNombre { get; set; } = string.Empty;
         public int idTipoLicencia { get; set; }
     }
@@ -49,6 +51,7 @@ namespace backend.DTOs
         public string idInstructor { get; set; } = string.Empty;
         public string? observaciones { get; set; }
         public int registradoPor { get; set; } = 1;
+        public int? idAsignacionHorario { get; set; } // Opcional: Para vincular con agenda SIGAFI
     }
 
     public class LlegadaRequest

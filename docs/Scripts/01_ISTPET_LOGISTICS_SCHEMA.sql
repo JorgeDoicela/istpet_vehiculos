@@ -60,20 +60,55 @@ CREATE TABLE IF NOT EXISTS usuarios_web (
     creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS categoria_vehiculos (
+    idCategoria INT PRIMARY KEY,
+    categoria VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (
+    IdCategoria INT PRIMARY KEY,
+    categoria VARCHAR(100) NOT NULL,
+    tieneNota BOOLEAN DEFAULT TRUE,
+    activa BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (
+    idAsignacionHorario INT PRIMARY KEY,
+    idAsignacion INT NOT NULL,
+    idFecha INT,
+    idHora INT,
+    asiste TINYINT DEFAULT 0,
+    activo BOOLEAN DEFAULT TRUE,
+    observacion TEXT,
+    INDEX idx_asig_horario (idAsignacion)
+);
+
+CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (
+    idPractica INT NOT NULL,
+    idAsignacionHorario INT NOT NULL,
+    PRIMARY KEY (idPractica, idAsignacionHorario),
+    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica),
+    FOREIGN KEY (idAsignacionHorario) REFERENCES cond_alumnos_horarios(idAsignacionHorario)
+);
+
 -- 3. Tablas Operativas del Sistema
 CREATE TABLE IF NOT EXISTS vehiculos (
     idVehiculo INT PRIMARY KEY,
+    idSubcategoria INT,
     numero_vehiculo VARCHAR(10) UNIQUE,
     placa VARCHAR(15) UNIQUE NOT NULL,
     marca VARCHAR(100),
-    modelo VARCHAR(100),
     anio INT,
+    idCategoria INT,
+    activo BOOLEAN DEFAULT TRUE,
+    observacion TEXT,
     chasis VARCHAR(100),
     motor VARCHAR(100),
+    modelo VARCHAR(100),
+    -- Logistics / Operational Fields
     id_tipo_licencia INT,
     id_instructor_fijo VARCHAR(15),
     estado_mecanico VARCHAR(30) DEFAULT 'OPERATIVO',
-    activo BOOLEAN DEFAULT TRUE,
     FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia(id_tipo),
     FOREIGN KEY (id_instructor_fijo) REFERENCES profesores(idProfesor)
 );
@@ -123,6 +158,20 @@ CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
     idPeriodo VARCHAR(10),
     activa TINYINT DEFAULT 1,
     FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
+    FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
+);
+
+CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (
+    idAsignacion INT PRIMARY KEY,
+    idVehiculo INT NOT NULL,
+    idProfesor VARCHAR(15) NOT NULL,
+    fecha_asignacion DATETIME,
+    fecha_salida DATETIME,
+    activo BOOLEAN DEFAULT TRUE,
+    usuario_asigna VARCHAR(20),
+    usuario_desactiva VARCHAR(20),
+    observacion TEXT,
     FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
     FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
 );

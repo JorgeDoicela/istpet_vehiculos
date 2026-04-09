@@ -19,9 +19,18 @@ SELECT
 FROM sigafi_es.usuarios_web;
 
 -- 2. Sincronización de Cursos
-INSERT IGNORE INTO cursos (idNivel, idCarrera, Nivel)
 SELECT idNivel, idCarrera, Nivel
 FROM sigafi_es.niveles;
+
+-- 2.1 Sincronización de Categorías de Vehículos
+INSERT IGNORE INTO categoria_vehiculos (idCategoria, categoria)
+SELECT idCategoria, categoria
+FROM sigafi_es.categoria_vehiculos;
+
+-- 2.2 Sincronización de Categorías de Exámenes
+INSERT IGNORE INTO categorias_examenes_conduccion (IdCategoria, categoria, tieneNota, activa)
+SELECT IdCategoria, categoria, tieneNota, activa
+FROM sigafi_es.categorias_examenes_conduccion;
 
 -- 3. Sincronización de Profesores (Instructores)
 INSERT IGNORE INTO profesores (idProfesor, primerNombre, segundoNombre, primerApellido, segundoApellido, activo)
@@ -49,17 +58,35 @@ SELECT
     1
 FROM sigafi_es.alumnos;
 
--- 5. Sincronización de Vehículos
-INSERT IGNORE INTO vehiculos (idVehiculo, numero_vehiculo, placa, marca, modelo, id_tipo_licencia, estado_mecanico)
+-- 5. Sincronización de Vehículos y Asignaciones
+-- Primero traemos las asignaciones de instructores (Fuente de verdad)
+INSERT IGNORE INTO asignacion_instructores_vehiculos (idAsignacion, idVehiculo, idProfesor, fecha_asignacion, activo, observacion)
+SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, activo, observacion
+FROM sigafi_es.asignacion_instructores_vehiculos;
+
+-- Luego sincronizamos vehículos vinculando el instructor sugerido por SIGAFI
+INSERT INTO vehiculos (idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria, activo, observacion, chasis, motor, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
 SELECT 
     v.idVehiculo, 
+    v.idSubcategoria,
     v.numero_vehiculo, 
     v.placa, 
-    v.Marca, 
-    v.Modelo, 
+    v.marca, 
+    v.anio,
+    v.idCategoria,
+    v.activo,
+    v.observacion,
+    v.chasis,
+    v.motor,
+    v.modelo,
     1, -- Default Mapping
+    (SELECT a.idProfesor FROM sigafi_es.asignacion_instructores_vehiculos a WHERE a.idVehiculo = v.idVehiculo AND a.activo = 1 LIMIT 1),
     'OPERATIVO'
-FROM sigafi_es.vehiculos v;
+FROM sigafi_es.vehiculos v
+ON DUPLICATE KEY UPDATE
+    id_instructor_fijo = VALUES(id_instructor_fijo),
+    idSubcategoria = VALUES(idSubcategoria),
+    idCategoria = VALUES(idCategoria);
 
 -- 6. Sincronización de Matrículas
 INSERT IGNORE INTO matriculas (idMatricula, idAlumno, idNivel, idPeriodo, paralelo)
@@ -87,5 +114,28 @@ SELECT
     CASE WHEN hora_llegada IS NULL THEN 1 ELSE 0 END
 FROM sigafi_es.cond_alumnos_practicas
 WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 2 YEAR);
+
+-- 8. Sincronización de Horarios (Agenda Granular)
+INSERT IGNORE INTO cond_alumnos_horarios (idAsignacionHorario, idAsignacion, idFecha, idHora, asiste, activo, observacion)
+SELECT 
+    h.idAsignacionHorario, 
+    h.idAsignacion, 
+    h.idFecha, 
+    h.idHora, 
+    h.asiste, 
+    h.activo, 
+    h.observacion
+FROM sigafi_es.cond_alumnos_horarios h
+JOIN sigafi_es.cond_alumnos_vehiculos v ON v.idAsignacion = h.idAsignacion
+WHERE h.activo = 1;
+
+-- 9. Sincronización de Vínculos Práctica-Horario (The Bridge)
+INSERT IGNORE INTO cond_practicas_horarios_alumnos (idPractica, idAsignacionHorario)
+SELECT 
+    l.idPractica, 
+    l.idAsignacionHorario
+FROM sigafi_es.cond_practicas_horarios_alumnos l
+JOIN sigafi_es.cond_alumnos_practicas p ON p.idPractica = l.idPractica
+WHERE p.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR);
 
 SELECT 'DATOS DE SIGAFI SINCRONIZADOS EXITOSAMENTE' AS Status;

@@ -221,5 +221,29 @@ namespace backend.Services.Implementations
             }
             catch (Exception) { return new List<CentralUserDto>(); }
         }
+
+        public async Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno)
+        {
+            try
+            {
+                // Buscamos el horario activo más cercano en el calendario de planificación
+                string sql = $@"
+                    SELECT 
+                        h.idAsignacionHorario,
+                        h.idAsignacion,
+                        CURDATE() as Fecha, -- Placeholder si no tenemos tabla de fechas externa
+                        'PROGRAMADO' as Hora,
+                        CAST(h.asiste AS SIGNED) as asiste
+                    FROM {TABLE_PREFIX}cond_alumnos_horarios h
+                    JOIN {TABLE_PREFIX}cond_alumnos_vehiculos a ON a.idAsignacion = h.idAsignacion
+                    WHERE a.idAlumno = @p0 
+                    AND h.activo = 1
+                    ORDER BY h.idAsignacionHorario DESC
+                    LIMIT 1";
+
+                return await _context.Database.SqlQueryRaw<CentralHorarioDto>(sql, idAlumno).FirstOrDefaultAsync();
+            }
+            catch (Exception) { return null; }
+        }
     }
 }

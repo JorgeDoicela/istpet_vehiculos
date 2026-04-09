@@ -18,7 +18,7 @@ namespace backend.Services.Implementations
             _context = context;
         }
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor, int? idAsignacionHorario = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -57,11 +57,25 @@ namespace backend.Services.Implementations
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
-                    cancelado = 0
+                    cancelado = 0,
+                    observaciones = observaciones
                 };
 
                 _context.Practicas.Add(practica);
                 await _context.SaveChangesAsync();
+
+                // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo)
+                if (idAsignacionHorario.HasValue && idAsignacionHorario.Value > 0)
+                {
+                    var vinculacion = new PracticaHorarioAlumno
+                    {
+                        idPractica = practica.idPractica,
+                        idAsignacionHorario = idAsignacionHorario.Value
+                    };
+                    _context.PracticasHorarios.Add(vinculacion);
+                    await _context.SaveChangesAsync();
+                }
+
                 await transaction.CommitAsync();
 
                 return "EXITO";

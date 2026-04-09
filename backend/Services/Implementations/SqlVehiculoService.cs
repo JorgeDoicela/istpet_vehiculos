@@ -16,12 +16,18 @@ namespace backend.Services.Implementations
 
         public async Task<IEnumerable<Vehiculo>> GetVehiculosAsync()
         {
-            return await _context.Vehiculos.ToListAsync();
+            return await _context.Vehiculos
+                .Include(v => v.TipoLicencia)
+                .Include(v => v.InstructorFijo)
+                .ToListAsync();
         }
 
         public async Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa)
         {
-            return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == placa);
+            return await _context.Vehiculos
+                .Include(v => v.TipoLicencia)
+                .Include(v => v.InstructorFijo)
+                .FirstOrDefaultAsync(v => v.placa == placa);
         }
     }
 }

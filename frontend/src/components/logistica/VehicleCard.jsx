@@ -49,6 +49,11 @@ const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
                 <p className={`text-[5px] lg:text-[7px] font-black uppercase tracking-[0.15em] leading-none transition-colors ${isSelected ? 'text-[var(--istpet-gold)] opacity-70' : 'text-[var(--apple-text-sub)]'}`}>
                     {placa}
                 </p>
+                {vehiculo.instructorNombre && (
+                    <p className={`mt-2 text-[5px] font-bold uppercase tracking-wider transition-colors ${isSelected ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)]/60'}`}>
+                        {vehiculo.instructorNombre}
+                    </p>
+                )}
             </div>
 
             {/* Check de Selección */}

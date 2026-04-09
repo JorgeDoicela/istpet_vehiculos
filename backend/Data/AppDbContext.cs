@@ -17,6 +17,11 @@ namespace backend.Data
         public DbSet<Matricula> Matriculas { get; set; }
         public DbSet<Practica> Practicas { get; set; }
         public DbSet<Asignacion> Asignaciones { get; set; }
+        public DbSet<AsignacionInstructorVehiculo> AsignacionesInstructores { get; set; }
+        public DbSet<CategoriaVehiculo> CategoriasVehiculos { get; set; }
+        public DbSet<HorarioAlumno> HorariosAlumnos { get; set; }
+        public DbSet<CategoriaExamenConduccion> CategoriasExamenes { get; set; }
+        public DbSet<PracticaHorarioAlumno> PracticasHorarios { get; set; }
 
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
         public DbSet<AlertaMantenimiento> AlertasMantenimiento { get; set; }
@@ -134,6 +139,31 @@ namespace backend.Data
             modelBuilder.Entity<Seccion>(entity => {
                 entity.ToTable("secciones");
                 entity.HasKey(e => e.idSeccion);
+            });
+
+            modelBuilder.Entity<AsignacionInstructorVehiculo>(entity => {
+                entity.ToTable("asignacion_instructores_vehiculos", "sigafi_es");
+                entity.HasKey(e => e.idAsignacion);
+            });
+
+            modelBuilder.Entity<CategoriaVehiculo>(entity => {
+                entity.ToTable("categoria_vehiculos", "sigafi_es");
+                entity.HasKey(e => e.idCategoria);
+            });
+
+            modelBuilder.Entity<HorarioAlumno>(entity => {
+                entity.ToTable("cond_alumnos_horarios", "sigafi_es");
+                entity.HasKey(e => e.idAsignacionHorario);
+            });
+
+            modelBuilder.Entity<CategoriaExamenConduccion>(entity => {
+                entity.ToTable("categorias_examenes_conduccion", "sigafi_es");
+                entity.HasKey(e => e.IdCategoria);
+            });
+
+            modelBuilder.Entity<PracticaHorarioAlumno>(entity => {
+                entity.ToTable("cond_practicas_horarios_alumnos", "sigafi_es");
+                entity.HasKey(e => new { e.idPractica, e.idAsignacionHorario });
             });
 
             // VIEWS
