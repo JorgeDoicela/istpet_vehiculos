@@ -1,12 +1,14 @@
 using backend.Data;
 using backend.DTOs;
+using backend.Models;
+using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
 
 namespace backend.Controllers
 {
@@ -16,11 +18,19 @@ namespace backend.Controllers
     {
         private readonly AppDbContext _context;
         private readonly IConfiguration _config;
+        private readonly ICentralStudentProvider _central;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(AppDbContext context, IConfiguration config)
+        public AuthController(
+            AppDbContext context,
+            IConfiguration config,
+            ICentralStudentProvider central,
+            ILogger<AuthController> logger)
         {
             _context = context;
             _config = config;
+            _central = central;
+            _logger = logger;
         }
 
         [HttpPost("login")]
@@ -36,68 +46,55 @@ namespace backend.Controllers
                 return BadRequest(ApiResponse<LoginResponse>.Fail("El usuario es requerido."));
             }
 
-            // Matching usuario with req
-            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
-
-            if (user == null)
+            CentralUserDto? sigafiUser = null;
+            try
             {
-                await Task.Delay(500); 
-                return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
+                sigafiUser = await _central.GetWebUserFromSigafiAsync(req.usuario);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "SIGAFI usuarios_web no accesible; se usará copia local si existe.");
             }
 
-            bool isValid = false;
-            bool needsRehash = false;
-
-            if (user.password.StartsWith("$2a$") || user.password.StartsWith("$2b$"))
+            Usuario user;
+            if (sigafiUser != null)
             {
-                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? string.Empty, user.password); }
-                catch { isValid = false; }
+                if (sigafiUser.activo == 0)
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Usuario inactivo en SIGAFI."));
+
+                if (!TryValidatePassword(sigafiUser.password, req.password, out var needsRehash))
+                {
+                    await Task.Delay(400);
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
+                }
+
+                user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password, needsRehash);
             }
             else
             {
-                isValid = string.Equals(user.password, req.password ?? string.Empty);
-                if (!isValid)
+                user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
+                if (user == null)
                 {
-                    string passwordToHash = req.password ?? string.Empty;
-                    string calculatedHash = ComputeSha256Hash(passwordToHash);
-                    isValid = string.Equals(user.password, calculatedHash, StringComparison.OrdinalIgnoreCase);
+                    await Task.Delay(500);
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
                 }
-                if (isValid) needsRehash = true;
+
+                var storedPassword = user.password ?? string.Empty;
+                if (!TryValidatePassword(storedPassword, req.password, out var needsRehash))
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
+
+                if (needsRehash)
+                {
+                    user.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? string.Empty);
+                    await _context.SaveChangesAsync();
+                }
             }
 
-            if (!isValid) return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
-
-            if (needsRehash)
-            {
-                user.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? string.Empty);
-                await _context.SaveChangesAsync();
-            }
-
-            // --- PROFESSIONAL DATA HYDRATION ---
-            
-            // 1. Dynamic Role Derivation
-            user.rol = "guardia"; // Default
+            user.rol = "guardia";
             if (user.salida && user.ingreso) user.rol = "admin";
             else if (user.salida) user.rol = "logistica";
 
-            // 2. Name Hydration from Mirror Tables
-            string fullName = "Usuario ISTPET";
-            var profesor = await _context.Instructores.FirstOrDefaultAsync(p => p.idProfesor == user.usuario);
-            if (profesor != null)
-            {
-                fullName = profesor.apellidos + " " + profesor.nombres;
-                if (string.IsNullOrWhiteSpace(fullName.Trim())) 
-                    fullName = $"{profesor.primerApellido} {profesor.primerNombre}";
-            }
-            else
-            {
-                var alumno = await _context.Estudiantes.FirstOrDefaultAsync(a => a.idAlumno == user.usuario);
-                if (alumno != null)
-                {
-                    fullName = $"{alumno.apellidoPaterno} {alumno.apellidoMaterno} {alumno.primerNombre}";
-                }
-            }
-            user.nombre_completo = fullName;
+            user.nombre_completo = await ResolveDisplayNameAsync(user.usuario);
 
             var token = CreateToken(user);
 
@@ -105,12 +102,131 @@ namespace backend.Controllers
             {
                 token = token,
                 usuario = user.usuario,
-                nombre = user.nombre_completo,
+                nombre = user.nombre_completo ?? "Usuario ISTPET",
                 rol = user.rol
-            }, "Ingreso exitoso."));
+            }, sigafiUser != null ? "Ingreso exitoso (validado en SIGAFI)." : "Ingreso exitoso (copia local; SIGAFI no respondió)."));
         }
 
-        private string CreateToken(backend.Models.Usuario user)
+        private async Task<Usuario> UpsertLocalUsuarioFromSigafiAsync(CentralUserDto src, string? plainPassword, bool rehashToBcrypt)
+        {
+            var local = await _context.Usuarios.FindAsync(src.usuario);
+            var passwordToStore = rehashToBcrypt && !string.IsNullOrEmpty(plainPassword)
+                ? BCrypt.Net.BCrypt.HashPassword(plainPassword)
+                : (src.password ?? string.Empty);
+
+            if (local == null)
+            {
+                local = new Usuario
+                {
+                    usuario = src.usuario,
+                    password = passwordToStore,
+                    salida = src.salida != 0,
+                    ingreso = src.ingreso != 0,
+                    activo = src.activo != 0,
+                    asistencia = src.asistencia != 0,
+                    esRrhh = src.esRrhh != 0
+                };
+                _context.Usuarios.Add(local);
+            }
+            else
+            {
+                local.password = passwordToStore;
+                local.salida = src.salida != 0;
+                local.ingreso = src.ingreso != 0;
+                local.activo = src.activo != 0;
+                local.asistencia = src.asistencia != 0;
+                local.esRrhh = src.esRrhh != 0;
+            }
+
+            await _context.SaveChangesAsync();
+            return local;
+        }
+
+        /// <summary>Nombre para mostrar: primero SIGAFI (profesor / alumno), si no hay datos, tablas locales.</summary>
+        private async Task<string> ResolveDisplayNameAsync(string usuario)
+        {
+            try
+            {
+                var ins = await _central.GetInstructorFromCentralAsync(usuario);
+                if (ins != null)
+                {
+                    var n = $"{ins.apellidos} {ins.nombres}".Trim();
+                    if (string.IsNullOrWhiteSpace(n))
+                        n = $"{ins.primerApellido} {ins.primerNombre}".Trim();
+                    if (!string.IsNullOrWhiteSpace(n))
+                        return n;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Nombre instructor SIGAFI no disponible para {usuario}", usuario);
+            }
+
+            try
+            {
+                var alumnoCentral = await _central.GetFromCentralAsync(usuario);
+                var nombreAlumno = alumnoCentral?.NombreCompleto;
+                if (!string.IsNullOrWhiteSpace(nombreAlumno))
+                    return nombreAlumno.Trim();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Nombre alumno SIGAFI no disponible para {usuario}", usuario);
+            }
+
+            var profesor = await _context.Instructores.FirstOrDefaultAsync(p => p.idProfesor == usuario);
+            if (profesor != null)
+            {
+                var fullName = $"{profesor.apellidos} {profesor.nombres}".Trim();
+                if (string.IsNullOrWhiteSpace(fullName))
+                    fullName = $"{profesor.primerApellido} {profesor.primerNombre}".Trim();
+                if (!string.IsNullOrWhiteSpace(fullName))
+                    return fullName;
+            }
+
+            var alumno = await _context.Estudiantes.FirstOrDefaultAsync(a => a.idAlumno == usuario);
+            if (alumno != null)
+            {
+                return $"{alumno.apellidoPaterno} {alumno.apellidoMaterno} {alumno.primerNombre}".Trim();
+            }
+
+            return "Usuario ISTPET";
+        }
+
+        private static bool TryValidatePassword(string stored, string? provided, out bool needsRehash)
+        {
+            needsRehash = false;
+            stored ??= string.Empty;
+
+            if (stored.StartsWith("$2a$", StringComparison.Ordinal) || stored.StartsWith("$2b$", StringComparison.Ordinal))
+            {
+                try
+                {
+                    return BCrypt.Net.BCrypt.Verify(provided ?? string.Empty, stored);
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            if (string.Equals(stored, provided ?? string.Empty, StringComparison.Ordinal))
+            {
+                needsRehash = true;
+                return true;
+            }
+
+            var calculatedHash = ComputeSha256Hash(provided ?? string.Empty);
+            if (string.Equals(stored, calculatedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                needsRehash = true;
+                return true;
+            }
+
+            return false;
+        }
+
+        private string CreateToken(Usuario user)
         {
             var jwtSettings = _config.GetSection("JwtSettings");
             var key = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "SUPER_SECRET_KEY_PROD_2026_DEFAULT"));
@@ -139,13 +255,11 @@ namespace backend.Controllers
 
         private static string ComputeSha256Hash(string rawData)
         {
-            using (SHA256 sha256Hash = SHA256.Create())
-            {
-                byte[] bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
-                StringBuilder builder = new StringBuilder();
-                foreach (byte b in bytes) builder.Append(b.ToString("x2"));
-                return builder.ToString();
-            }
+            using var sha256Hash = SHA256.Create();
+            var bytes = sha256Hash.ComputeHash(Encoding.UTF8.GetBytes(rawData));
+            var builder = new StringBuilder();
+            foreach (var b in bytes) builder.Append(b.ToString("x2"));
+            return builder.ToString();
         }
     }
 }

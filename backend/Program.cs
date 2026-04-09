@@ -84,13 +84,16 @@ builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
 builder.Services.AddScoped<IDataSyncService, DataSyncService>();
 builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
+builder.Services.AddScoped<SigafiExtractionProbe>();
 builder.Services.AddScoped<backend.Services.Interfaces.ISigafiReportService, backend.Services.Implementations.SigafiReportService>();
 
 
 // AUTOMATIZACIÓN: Registrar AutoMapper
 builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
 
-// Configurar DbContext con MySQL / TiDB Cloud (Prioridad: Nube > Local)
+// Arquitectura de datos:
+// - SigafiConnection → BD remota sigafi_es (fuente de verdad; solo lectura vía SqlCentralStudentProvider + login).
+// - DefaultConnection → BD local istpet_vehiculos (espejo operativo; se alimenta con Master Sync desde SIGAFI).
 var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
                     ?? builder.Configuration.GetConnectionString("DefaultConnection");
 var sigafiConnectionString = builder.Configuration.GetConnectionString("SigafiConnection");

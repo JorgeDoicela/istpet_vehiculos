@@ -9,12 +9,16 @@ namespace backend.DTOs
         public bool Success { get; set; }
         public string Message { get; set; } = string.Empty;
         public T? Data { get; set; }
+
+        /// <summary>Solo en desarrollo: detalle técnico del fallo (p. ej. excepción).</summary>
+        public string? Detail { get; set; }
+
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
         public static ApiResponse<T> Ok(T data, string message = "Operación exitosa")
             => new ApiResponse<T> { Success = true, Data = data, Message = message };
 
-        public static ApiResponse<T> Fail(string message)
-            => new ApiResponse<T> { Success = false, Message = message };
+        public static ApiResponse<T> Fail(string message, string? detail = null)
+            => new ApiResponse<T> { Success = false, Message = message, Detail = detail };
     }
 }

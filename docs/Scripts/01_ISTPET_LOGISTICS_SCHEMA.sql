@@ -1,7 +1,8 @@
 -- ============================================================
 -- 01_ISTPET_LOGISTICS_SCHEMA.sql
 -- Version: 2026.1 (Professional Architecture)
--- Propósito: Definición del esquema principal del sistema de Logística.
+-- Propósito: Esquema de la BD LOCAL istpet_vehiculos (espejo operativo).
+-- Los datos de negocio se originan en SIGAFI (sigafi_es remoto) y se rellenan vía Master Sync API.
 -- ============================================================
 
 DROP DATABASE IF EXISTS istpet_vehiculos;
@@ -13,7 +14,8 @@ CREATE TABLE IF NOT EXISTS tipo_licencia (
     id_tipo INT PRIMARY KEY AUTO_INCREMENT,
     codigo VARCHAR(10) UNIQUE NOT NULL,
     descripcion VARCHAR(200),
-    activo BOOLEAN DEFAULT TRUE
+    activo BOOLEAN DEFAULT TRUE,
+    id_categoria_sigafi INT NULL UNIQUE COMMENT 'FK lógica a SIGAFI categoria_vehiculos.idCategoria'
 );
 
 -- 2. Espejos de SIGAFI (Solo se crean en istpet_vehiculos)
@@ -163,6 +165,20 @@ CREATE TABLE IF NOT EXISTS matriculas (
     valida TINYINT DEFAULT 1,
     FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
     FOREIGN KEY (idNivel) REFERENCES cursos(idNivel)
+);
+
+CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
+    idMatricula INT NOT NULL,
+    idCategoria INT NOT NULL,
+    nota DECIMAL(6,2) NULL,
+    observacion TEXT NULL,
+    usuario VARCHAR(50) NULL,
+    fechaExamen DATE NULL,
+    fechaIngreso DATETIME NULL,
+    instructor VARCHAR(80) NULL,
+    PRIMARY KEY (idMatricula, idCategoria),
+    FOREIGN KEY (idMatricula) REFERENCES matriculas(idMatricula),
+    FOREIGN KEY (idCategoria) REFERENCES categorias_examenes_conduccion(IdCategoria)
 );
 
 CREATE TABLE IF NOT EXISTS cond_alumnos_practicas (

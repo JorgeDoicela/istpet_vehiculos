@@ -21,6 +21,7 @@ namespace backend.Data
         public DbSet<CategoriaVehiculo> CategoriasVehiculos { get; set; }
         public DbSet<HorarioAlumno> HorariosAlumnos { get; set; }
         public DbSet<CategoriaExamenConduccion> CategoriasExamenes { get; set; }
+        public DbSet<MatriculaExamenConduccion> MatriculasExamenesConduccion { get; set; }
         public DbSet<PracticaHorarioAlumno> PracticasHorarios { get; set; }
 
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
@@ -40,6 +41,7 @@ namespace backend.Data
             modelBuilder.Entity<TipoLicencia>(entity => {
                 entity.ToTable("tipo_licencia");
                 entity.HasKey(e => e.id_tipo);
+                entity.HasIndex(e => e.id_categoria_sigafi).IsUnique();
             });
 
             // 3. INSTRUCTORES (Mirroring 'profesores' schema)
@@ -159,6 +161,13 @@ namespace backend.Data
             modelBuilder.Entity<CategoriaExamenConduccion>(entity => {
                 entity.ToTable("categorias_examenes_conduccion");
                 entity.HasKey(e => e.IdCategoria);
+            });
+
+            modelBuilder.Entity<MatriculaExamenConduccion>(entity => {
+                entity.ToTable("matriculas_examen_conduccion");
+                entity.HasKey(e => new { e.idMatricula, e.IdCategoria });
+                entity.HasOne<Matricula>().WithMany().HasForeignKey(e => e.idMatricula);
+                entity.HasOne<CategoriaExamenConduccion>().WithMany().HasForeignKey(e => e.IdCategoria);
             });
 
             modelBuilder.Entity<PracticaHorarioAlumno>(entity => {

@@ -11,8 +11,9 @@ using Microsoft.Extensions.Logging;
 namespace backend.Services.Implementations
 {
     /**
-     * Bridge towards SIGAFI Remote Database (192.168.7.50).
-     * Total Alignment 2026: Parity 1:1 with specific column naming.
+     * Puente de lectura hacia la BD remota SIGAFI (sigafi_es) vía SigafiConnection.
+     * Aquí vive la extracción primaria; DataSyncService y otros consumidores copian hacia la BD local.
+     * Paridad de nombres de columnas con SIGAFI 2026.
      */
     public class SqlCentralStudentProvider : ICentralStudentProvider
     {
@@ -245,6 +246,22 @@ namespace backend.Services.Implementations
             }
         }
 
+        public Task<CentralUserDto?> GetWebUserFromSigafiAsync(string usuario) =>
+            QuerySingleAsync(
+                @"SELECT usuario, password, salida, ingreso, activo, asistencia, esRrhh
+                  FROM usuarios_web WHERE usuario = @p0 LIMIT 1",
+                usuario,
+                reader => new CentralUserDto
+                {
+                    usuario = ReadString(reader, "usuario"),
+                    password = ReadString(reader, "password"),
+                    salida = ReadInt(reader, "salida"),
+                    ingreso = ReadInt(reader, "ingreso"),
+                    activo = ReadInt(reader, "activo"),
+                    asistencia = ReadInt(reader, "asistencia"),
+                    esRrhh = ReadInt(reader, "esRrhh")
+                });
+
         public async Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno)
         {
             try
@@ -304,15 +321,41 @@ namespace backend.Services.Implementations
                     aliasCurso = ReadNullableString(reader, "aliasCurso")
                 });
 
+        /// <summary>
+        /// SIGAFI no expone tipo_licencia; se deriva de categoria_vehiculos para poblar tipo_licencia local.
+        /// Para categorías "LICENCIA TIPO X" se normaliza el código como X (C/D/E...).
+        /// </summary>
         public Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT id_tipo, codigo, descripcion, CAST(activo AS SIGNED) AS activo FROM tipo_licencia",
-                reader => new CentralTipoLicenciaDto
+                @"SELECT idCategoria, categoria FROM categoria_vehiculos",
+                reader =>
                 {
-                    id_tipo = ReadInt(reader, "id_tipo"),
-                    codigo = ReadString(reader, "codigo"),
-                    descripcion = ReadString(reader, "descripcion"),
-                    activo = ReadInt(reader, "activo")
+                    var idCat = ReadInt(reader, "idCategoria");
+                    var descripcion = ReadString(reader, "categoria").Trim();
+                    var upper = descripcion.ToUpperInvariant();
+
+                    var codigo = $"V{idCat}";
+                    var marker = "TIPO ";
+                    var markerIndex = upper.LastIndexOf(marker, StringComparison.Ordinal);
+                    if (markerIndex >= 0)
+                    {
+                        var letterStart = markerIndex + marker.Length;
+                        if (letterStart < upper.Length)
+                        {
+                            var letter = upper[letterStart];
+                            if (char.IsLetter(letter))
+                                codigo = letter.ToString();
+                        }
+                    }
+
+                    return new CentralTipoLicenciaDto
+                    {
+                        id_categoria_sigafi = idCat,
+                        id_tipo = 0,
+                        codigo = codigo,
+                        descripcion = descripcion,
+                        activo = 1
+                    };
                 });
 
         public Task<IEnumerable<CentralCategoriaVehiculoDto>> GetAllVehicleCategoriesFromCentralAsync() =>
@@ -326,7 +369,7 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralCategoriaExamenDto>> GetAllExamCategoriesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT IdCategoria, categoria, CAST(tieneNota AS SIGNED) AS tieneNota, CAST(activa AS SIGNED) AS activa FROM categorias_examenes_conduccion",
+                @"SELECT idCategoria AS IdCategoria, categoria, CAST(tieneNota AS SIGNED) AS tieneNota, CAST(activa AS SIGNED) AS activa FROM categorias_examenes_conduccion",
                 reader => new CentralCategoriaExamenDto
                 {
                     IdCategoria = ReadInt(reader, "IdCategoria"),
@@ -423,6 +466,50 @@ namespace backend.Services.Implementations
                 {
                     idPractica = ReadInt(reader, "idPractica"),
                     idAsignacionHorario = ReadInt(reader, "idAsignacionHorario")
+                });
+
+        public Task<IEnumerable<CentralMatriculaExamenDto>> GetMatriculaExamLinksFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idMatricula, idCategoria, nota, observacion, usuario, fechaExamen, fechaIngreso, instructor
+                  FROM matriculas_examen_conduccion",
+                reader => new CentralMatriculaExamenDto
+                {
+                    idMatricula = ReadInt(reader, "idMatricula"),
+                    IdCategoria = ReadInt(reader, "idCategoria"),
+                    nota = ReadNullableDecimal(reader, "nota"),
+                    observacion = ReadNullableString(reader, "observacion"),
+                    usuario = ReadNullableString(reader, "usuario"),
+                    fechaExamen = ReadNullableDate(reader, "fechaExamen"),
+                    fechaIngreso = ReadNullableDate(reader, "fechaIngreso"),
+                    instructor = ReadNullableString(reader, "instructor")
+                });
+
+        public Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idPractica, idalumno, idvehiculo, idProfesor, idPeriodo, dia, fecha,
+                         hora_salida, hora_llegada, tiempo,
+                         CAST(ensalida AS SIGNED) AS ensalida, CAST(verificada AS SIGNED) AS verificada,
+                         user_asigna, user_llegada, CAST(cancelado AS SIGNED) AS cancelado,
+                         NULL AS observaciones
+                  FROM cond_alumnos_practicas",
+                reader => new CentralPracticaSyncDto
+                {
+                    idPractica = ReadInt(reader, "idPractica"),
+                    idalumno = ReadString(reader, "idalumno"),
+                    idvehiculo = ReadInt(reader, "idvehiculo"),
+                    idProfesor = ReadString(reader, "idProfesor"),
+                    idPeriodo = ReadNullableString(reader, "idPeriodo"),
+                    dia = ReadNullableString(reader, "dia"),
+                    fecha = ReadDate(reader, "fecha"),
+                    hora_salida = ReadNullableTime(reader, "hora_salida"),
+                    hora_llegada = ReadNullableTime(reader, "hora_llegada"),
+                    tiempo = ReadNullableTime(reader, "tiempo"),
+                    ensalida = ReadInt(reader, "ensalida"),
+                    verificada = ReadInt(reader, "verificada"),
+                    user_asigna = ReadNullableString(reader, "user_asigna"),
+                    user_llegada = ReadNullableString(reader, "user_llegada"),
+                    cancelado = ReadInt(reader, "cancelado"),
+                    observaciones = ReadNullableString(reader, "observaciones")
                 });
 
         public async Task<bool> PingSigafiAsync()

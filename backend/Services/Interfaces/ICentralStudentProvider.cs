@@ -94,10 +94,25 @@ namespace backend.Services.Interfaces
 
     public class CentralTipoLicenciaDto
     {
+        /// <summary>Origen SIGAFI categoria_vehiculos.idCategoria cuando aplica.</summary>
+        public int? id_categoria_sigafi { get; set; }
+
         public int id_tipo { get; set; }
         public string codigo { get; set; } = string.Empty;
         public string descripcion { get; set; } = string.Empty;
         public int activo { get; set; }
+    }
+
+    public class CentralMatriculaExamenDto
+    {
+        public int idMatricula { get; set; }
+        public int IdCategoria { get; set; }
+        public decimal? nota { get; set; }
+        public string? observacion { get; set; }
+        public string? usuario { get; set; }
+        public DateTime? fechaExamen { get; set; }
+        public DateTime? fechaIngreso { get; set; }
+        public string? instructor { get; set; }
     }
 
     public class CentralCategoriaVehiculoDto
@@ -165,6 +180,26 @@ namespace backend.Services.Interfaces
         public int idAsignacionHorario { get; set; }
     }
 
+    public class CentralPracticaSyncDto
+    {
+        public int idPractica { get; set; }
+        public string idalumno { get; set; } = string.Empty;
+        public int idvehiculo { get; set; }
+        public string idProfesor { get; set; } = string.Empty;
+        public string? idPeriodo { get; set; }
+        public string? dia { get; set; }
+        public DateTime fecha { get; set; }
+        public TimeSpan? hora_salida { get; set; }
+        public TimeSpan? hora_llegada { get; set; }
+        public TimeSpan? tiempo { get; set; }
+        public int ensalida { get; set; }
+        public int verificada { get; set; }
+        public string? user_asigna { get; set; }
+        public string? user_llegada { get; set; }
+        public int cancelado { get; set; }
+        public string? observaciones { get; set; }
+    }
+
     public class CentralAlumnoLiteDto
     {
         public string idAlumno { get; set; } = string.Empty;
@@ -186,6 +221,8 @@ namespace backend.Services.Interfaces
         Task<CentralHorarioDto?> GetNextScheduleAsync(string idAlumno);
         Task<IEnumerable<ScheduledPracticeDto>> GetSchedulesForTodayAsync();
         Task<IEnumerable<CentralUserDto>> GetAllWebUsersAsync();
+        /// <summary>Lectura directa de un usuario en SIGAFI (usuarios_web).</summary>
+        Task<CentralUserDto?> GetWebUserFromSigafiAsync(string usuario);
         Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync();
         Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync();
         Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync();
@@ -197,6 +234,8 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralAsignacionAlumnoVehiculoDto>> GetStudentVehicleAssignmentsFromCentralAsync();
         Task<IEnumerable<CentralHorarioDto>> GetAllSchedulesFromCentralAsync();
         Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync();
+        Task<IEnumerable<CentralMatriculaExamenDto>> GetMatriculaExamLinksFromCentralAsync();
+        Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync();
         Task<bool> PingSigafiAsync();
     }
 }

@@ -20,6 +20,10 @@ namespace backend.Services.Implementations
 {
     using backend.Services.Interfaces;
 
+    /**
+     * Sincronización masiva: SIEMPRE lee desde SIGAFI (ICentralStudentProvider / SigafiConnection)
+     * y escribe en la BD local (DefaultConnection). SIGAFI es la fuente; istpet_vehiculos es copia de trabajo.
+     */
     public class DataSyncService : IDataSyncService
     {
         private readonly AppDbContext _context;
@@ -130,7 +134,9 @@ namespace backend.Services.Implementations
             log.RegistrosProcesados += await ExecuteSyncStepAsync("usuarios_web", SyncWebUsersInternalAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("alumnos", SyncStudentsFromSigafiAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("matriculas", SyncEnrollmentsAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("matriculas_examen_conduccion", SyncMatriculaExamLinksAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("vehiculos", SyncVehiclesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_practicas", SyncPracticesFromSigafiAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("asignacion_instructores_vehiculos", SyncInstructorVehicleAssignmentsAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_vehiculos", SyncStudentVehicleAssignmentsAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_horarios", SyncSchedulesAsync, warnings, log);
@@ -305,25 +311,40 @@ namespace backend.Services.Implementations
             var processed = 0;
             foreach (var item in rows)
             {
-                var existing = await _context.TipoLicencias.FirstOrDefaultAsync(x => x.id_tipo == item.id_tipo);
+                if (!item.id_categoria_sigafi.HasValue)
+                    continue;
+
+                var catId = item.id_categoria_sigafi.Value;
+                var codigo = string.IsNullOrWhiteSpace(item.codigo) ? $"V{catId}" : item.codigo.Trim().ToUpperInvariant();
+                if (codigo.Length > 10)
+                    codigo = codigo[..10];
+                var descripcion = string.IsNullOrWhiteSpace(item.descripcion) ? codigo : item.descripcion.Trim();
+                if (descripcion.Length > 200)
+                    descripcion = descripcion[..200];
+                var existing = await _context.TipoLicencias.FirstOrDefaultAsync(x => x.id_categoria_sigafi == catId)
+                    ?? await _context.TipoLicencias.FirstOrDefaultAsync(x => x.codigo == codigo);
+
                 if (existing == null)
                 {
                     _context.TipoLicencias.Add(new TipoLicencia
                     {
-                        id_tipo = item.id_tipo,
-                        codigo = item.codigo,
-                        descripcion = item.descripcion,
+                        id_categoria_sigafi = catId,
+                        codigo = codigo,
+                        descripcion = descripcion,
                         activo = item.activo == 1
                     });
                 }
                 else
                 {
-                    existing.codigo = item.codigo;
-                    existing.descripcion = item.descripcion;
+                    existing.id_categoria_sigafi = catId;
+                    existing.codigo = codigo;
+                    existing.descripcion = descripcion;
                     existing.activo = item.activo == 1;
                 }
+
                 processed++;
             }
+
             await _context.SaveChangesAsync();
             return processed;
         }
@@ -582,8 +603,129 @@ namespace backend.Services.Implementations
             return processed;
         }
 
+        private async Task<int> SyncMatriculaExamLinksAsync()
+        {
+            var rows = await _centralProvider.GetMatriculaExamLinksFromCentralAsync();
+            var matSet = (await _context.Matriculas.Select(m => m.idMatricula).ToListAsync()).ToHashSet();
+            var catSet = (await _context.CategoriasExamenes.Select(c => c.IdCategoria).ToListAsync()).ToHashSet();
+
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                if (!matSet.Contains(item.idMatricula) || !catSet.Contains(item.IdCategoria))
+                    continue;
+
+                var existing = await _context.MatriculasExamenesConduccion
+                    .FirstOrDefaultAsync(x => x.idMatricula == item.idMatricula && x.IdCategoria == item.IdCategoria);
+                var usuario = item.usuario?.Length > 50 ? item.usuario[..50] : item.usuario;
+                var instructor = item.instructor?.Length > 80 ? item.instructor[..80] : item.instructor;
+
+                if (existing == null)
+                {
+                    _context.MatriculasExamenesConduccion.Add(new MatriculaExamenConduccion
+                    {
+                        idMatricula = item.idMatricula,
+                        IdCategoria = item.IdCategoria,
+                        nota = item.nota,
+                        observacion = item.observacion,
+                        usuario = usuario,
+                        fechaExamen = item.fechaExamen,
+                        fechaIngreso = item.fechaIngreso,
+                        instructor = instructor
+                    });
+                }
+                else
+                {
+                    existing.nota = item.nota;
+                    existing.observacion = item.observacion;
+                    existing.usuario = usuario;
+                    existing.fechaExamen = item.fechaExamen;
+                    existing.fechaIngreso = item.fechaIngreso;
+                    existing.instructor = instructor;
+                }
+
+                processed++;
+            }
+
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncPracticesFromSigafiAsync()
+        {
+            var rows = await _centralProvider.GetAllPracticesFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existsAlumno = await _context.Estudiantes.AnyAsync(a => a.idAlumno == item.idalumno);
+                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idvehiculo);
+                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
+                if (!existsAlumno || !existsVehiculo || !existsProfesor)
+                    continue;
+
+                var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
+                if (idPeriodo.Length > 10)
+                    idPeriodo = idPeriodo[..10];
+
+                var userAsigna = item.user_asigna?.Length > 20 ? item.user_asigna[..20] : item.user_asigna;
+                var userLlegada = item.user_llegada?.Length > 20 ? item.user_llegada[..20] : item.user_llegada;
+                var dia = item.dia?.Length > 15 ? item.dia[..15] : item.dia;
+
+                var existing = await _context.Practicas.FindAsync(item.idPractica);
+                if (existing == null)
+                {
+                    _context.Practicas.Add(new Practica
+                    {
+                        idPractica = item.idPractica,
+                        idalumno = item.idalumno,
+                        idvehiculo = item.idvehiculo,
+                        idProfesor = item.idProfesor,
+                        idPeriodo = idPeriodo,
+                        dia = dia,
+                        fecha = item.fecha,
+                        hora_salida = item.hora_salida,
+                        hora_llegada = item.hora_llegada,
+                        tiempo = item.tiempo,
+                        ensalida = (byte?)(item.ensalida != 0 ? 1 : 0),
+                        verificada = (byte?)(item.verificada != 0 ? 1 : 0),
+                        user_asigna = userAsigna,
+                        user_llegada = userLlegada,
+                        cancelado = (byte?)(item.cancelado != 0 ? 1 : 0),
+                        observaciones = item.observaciones
+                    });
+                }
+                else
+                {
+                    existing.idalumno = item.idalumno;
+                    existing.idvehiculo = item.idvehiculo;
+                    existing.idProfesor = item.idProfesor;
+                    existing.idPeriodo = idPeriodo;
+                    existing.dia = dia;
+                    existing.fecha = item.fecha;
+                    existing.hora_salida = item.hora_salida;
+                    existing.hora_llegada = item.hora_llegada;
+                    existing.tiempo = item.tiempo;
+                    existing.ensalida = (byte?)(item.ensalida != 0 ? 1 : 0);
+                    existing.verificada = (byte?)(item.verificada != 0 ? 1 : 0);
+                    existing.user_asigna = userAsigna;
+                    existing.user_llegada = userLlegada;
+                    existing.cancelado = (byte?)(item.cancelado != 0 ? 1 : 0);
+                    existing.observaciones = item.observaciones;
+                }
+
+                processed++;
+            }
+
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
         private async Task<int> SyncVehiclesAsync()
         {
+            var catToTipo = await _context.TipoLicencias
+                .Where(t => t.id_categoria_sigafi != null)
+                .ToDictionaryAsync(t => t.id_categoria_sigafi!.Value, t => t.id_tipo);
+
             var rows = await _centralProvider.GetAllVehiclesFromCentralAsync();
             var normalizedRows = rows
                 .GroupBy(r => !string.IsNullOrWhiteSpace(r.numero_vehiculo)
@@ -596,6 +738,10 @@ namespace backend.Services.Implementations
             var processed = 0;
             foreach (var item in normalizedRows)
             {
+                int? tipoLicenciaId = null;
+                if (item.idCategoria.HasValue && catToTipo.TryGetValue(item.idCategoria.Value, out var mappedTipo))
+                    tipoLicenciaId = mappedTipo;
+
                 var existing = await _context.Vehiculos.FirstOrDefaultAsync(x =>
                     x.idVehiculo == item.idVehiculo
                     || (!string.IsNullOrEmpty(item.numero_vehiculo) && x.numero_vehiculo == item.numero_vehiculo)
@@ -615,7 +761,8 @@ namespace backend.Services.Implementations
                         observacion = item.observacion?.Length > 200 ? item.observacion[..200] : item.observacion,
                         chasis = item.chasis?.Length > 100 ? item.chasis[..100] : item.chasis,
                         motor = item.motor?.Length > 100 ? item.motor[..100] : item.motor,
-                        modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo
+                        modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo,
+                        id_tipo_licencia = tipoLicenciaId ?? 1
                     });
                 }
                 else
@@ -631,6 +778,8 @@ namespace backend.Services.Implementations
                     existing.chasis = item.chasis?.Length > 100 ? item.chasis[..100] : item.chasis;
                     existing.motor = item.motor?.Length > 100 ? item.motor[..100] : item.motor;
                     existing.modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo;
+                    if (tipoLicenciaId.HasValue)
+                        existing.id_tipo_licencia = tipoLicenciaId.Value;
                 }
                 processed++;
             }

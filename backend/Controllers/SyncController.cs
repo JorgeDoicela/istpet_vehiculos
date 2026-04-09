@@ -1,5 +1,6 @@
 using backend.DTOs;
 using backend.Models;
+using backend.Services.Implementations;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
@@ -13,10 +14,12 @@ namespace backend.Controllers
     public class SyncController : ControllerBase
     {
         private readonly IDataSyncService _syncService;
+        private readonly SigafiExtractionProbe _sigafiProbe;
 
-        public SyncController(IDataSyncService syncService)
+        public SyncController(IDataSyncService syncService, SigafiExtractionProbe sigafiProbe)
         {
             _syncService = syncService;
+            _sigafiProbe = sigafiProbe;
         }
 
         [HttpPost("students")]
@@ -90,6 +93,31 @@ namespace backend.Controllers
                 source = "SIGAFI",
                 checkedAtUtc = DateTime.UtcNow
             }, "Conexión SIGAFI OK."));
+        }
+
+        /// <summary>
+        /// Comprueba que cada SELECT contra SIGAFI (los mismos que usa MasterSync) ejecute sin error y devuelve conteos.
+        /// </summary>
+        [HttpGet("sigafi-probe")]
+        public async Task<ActionResult<ApiResponse<SigafiProbeResponse>>> SigafiProbe(CancellationToken cancellationToken)
+        {
+            var report = await _sigafiProbe.RunAsync(cancellationToken);
+            var allOk = report.Connected && report.Modules.All(m => m.Ok);
+            var msg = allOk
+                ? "Todas las extracciones SIGAFI respondieron correctamente."
+                : "Hay módulos con error; revisa RowCount/Error por tabla.";
+
+            var payload = new ApiResponse<SigafiProbeResponse>
+            {
+                Success = allOk,
+                Message = msg,
+                Data = report
+            };
+
+            if (!report.Connected)
+                return StatusCode(503, payload);
+
+            return Ok(payload);
         }
     }
 }

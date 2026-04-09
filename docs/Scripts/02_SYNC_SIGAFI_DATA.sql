@@ -1,8 +1,9 @@
 -- ============================================================
 -- 02_SYNC_SIGAFI_DATA.sql
--- Propósito: Extraer datos de sigafi_es (Solo Lectura) e 
---            insertar en istpet_vehiculos (DB Local).
--- Nota 2026: ejecución automática deshabilitada; reemplazado por Master Sync C#.
+-- Modelo: SIGAFI (servidor remoto, sigafi_es) = fuente de verdad con todos los datos.
+--         istpet_vehiculos (local) = espejo alimentado desde SIGAFI.
+-- Propósito de este script: INSERT…SELECT desde sigafi_es hacia local (solo referencia / manual).
+-- Nota 2026: la ingesta operativa vive en el API → POST /api/sync/master (Master Sync C#).
 -- ============================================================
 
 USE istpet_vehiculos;
