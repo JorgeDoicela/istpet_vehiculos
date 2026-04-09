@@ -13,7 +13,7 @@ namespace backend.Models
         public int idMatricula { get; set; }
 
         [Required]
-        [MaxLength(14)]
+        [MaxLength(15)]
         public string idAlumno { get; set; } = string.Empty;
 
         [ForeignKey("idAlumno")]
@@ -29,7 +29,7 @@ namespace backend.Models
         public int idModalidad { get; set; }
 
         [Required]
-        [MaxLength(7)]
+        [MaxLength(10)]
         public string idPeriodo { get; set; } = string.Empty;
 
         public DateTime? fechaMatricula { get; set; }
@@ -51,7 +51,8 @@ namespace backend.Models
         public bool esOyente { get; set; } = false;
 
         // --- Logistics Operational Status ---
-        public int horas_completadas { get; set; } = 0;
+        [Column(TypeName = "decimal(10,2)")]
+        public decimal horas_completadas { get; set; } = 0;
         
         [MaxLength(20)]
         public string estado { get; set; } = "ACTIVO";

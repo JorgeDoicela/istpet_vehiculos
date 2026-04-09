@@ -9,24 +9,24 @@ namespace backend.Models
     public class Estudiante
     {
         [Key]
-        [MaxLength(14)]
+        [MaxLength(15)]
         public string idAlumno { get; set; } = string.Empty;
 
         [MaxLength(1)]
         public string? tipoDocumento { get; set; } = "C";
 
         [Required]
-        [MaxLength(30)]
+        [MaxLength(80)]
         public string apellidoPaterno { get; set; } = string.Empty;
 
-        [MaxLength(30)]
+        [MaxLength(80)]
         public string? apellidoMaterno { get; set; }
 
         [Required]
-        [MaxLength(30)]
+        [MaxLength(80)]
         public string primerNombre { get; set; } = string.Empty;
 
-        [MaxLength(30)]
+        [MaxLength(80)]
         public string? segundoNombre { get; set; }
 
         public DateTime? fecha_Nacimiento { get; set; }
@@ -37,10 +37,10 @@ namespace backend.Models
         [MaxLength(20)]
         public string? telefono { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string? celular { get; set; }
 
-        [MaxLength(40)]
+        [MaxLength(100)]
         public string? email { get; set; }
 
         [MaxLength(1)]

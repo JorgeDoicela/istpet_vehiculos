@@ -9,7 +9,7 @@ namespace backend.Models
     public class Instructor
     {
         [Key]
-        [MaxLength(14)]
+        [MaxLength(15)]
         public string idProfesor { get; set; } = string.Empty;
 
         [MaxLength(1)]
@@ -30,10 +30,10 @@ namespace backend.Models
         public string? segundoNombre { get; set; }
 
         // Combined fields (Legacy / Search compatibility)
-        [MaxLength(60)]
+        [MaxLength(160)]
         public string nombres { get; set; } = string.Empty;
 
-        [MaxLength(60)]
+        [MaxLength(160)]
         public string apellidos { get; set; } = string.Empty;
 
         public int estadoCivil { get; set; } = 1;
@@ -44,7 +44,7 @@ namespace backend.Models
         [MaxLength(30)]
         public string? telefono { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(50)]
         public string? celular { get; set; }
 
         [MaxLength(100)]

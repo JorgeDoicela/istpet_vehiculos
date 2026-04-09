@@ -14,10 +14,10 @@ namespace backend.Models
 
         public int? idSubcategoria { get; set; }
 
-        [MaxLength(3)]
+        [MaxLength(10)]
         public string? numero_vehiculo { get; set; }
 
-        [MaxLength(10)]
+        [MaxLength(15)]
         public string? placa { get; set; }
 
         [MaxLength(100)]
@@ -30,10 +30,10 @@ namespace backend.Models
         [MaxLength(200)]
         public string? observacion { get; set; }
 
-        [MaxLength(50)]
+        [MaxLength(100)]
         public string? chasis { get; set; }
 
-        [MaxLength(50)]
+        [MaxLength(100)]
         public string? motor { get; set; }
 
         [MaxLength(100)]

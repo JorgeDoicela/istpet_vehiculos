@@ -7,10 +7,6 @@ namespace backend.DTOs
     {
         public string? usuario { get; set; }
         public string? password { get; set; }
-
-        // Backwards compatibility for legacy code
-        public string? Usuario => usuario;
-        public string? Password => password;
     }
 
     public class LoginResponse

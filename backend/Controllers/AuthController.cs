@@ -26,8 +26,18 @@ namespace backend.Controllers
         [HttpPost("login")]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> Login([FromBody] LoginRequest req)
         {
-            // Matching usuario with req.usuario (if updated) or legacy req.Usuario
-            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == (req.usuario ?? req.Usuario) && u.activo);
+            if (req == null)
+            {
+                return BadRequest(ApiResponse<LoginResponse>.Fail("Datos de acceso no proporcionados."));
+            }
+
+            if (string.IsNullOrEmpty(req.usuario))
+            {
+                return BadRequest(ApiResponse<LoginResponse>.Fail("El usuario es requerido."));
+            }
+
+            // Matching usuario with req
+            var user = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
 
             if (user == null)
             {
@@ -40,15 +50,15 @@ namespace backend.Controllers
 
             if (user.password.StartsWith("$2a$") || user.password.StartsWith("$2b$"))
             {
-                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? req.Password, user.password); }
+                try { isValid = BCrypt.Net.BCrypt.Verify(req.password ?? string.Empty, user.password); }
                 catch { isValid = false; }
             }
             else
             {
-                isValid = string.Equals(user.password, req.password ?? req.Password);
+                isValid = string.Equals(user.password, req.password ?? string.Empty);
                 if (!isValid)
                 {
-                    string passwordToHash = req.password ?? req.Password ?? string.Empty;
+                    string passwordToHash = req.password ?? string.Empty;
                     string calculatedHash = ComputeSha256Hash(passwordToHash);
                     isValid = string.Equals(user.password, calculatedHash, StringComparison.OrdinalIgnoreCase);
                 }
@@ -59,7 +69,7 @@ namespace backend.Controllers
 
             if (needsRehash)
             {
-                user.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? req.Password);
+                user.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? string.Empty);
                 await _context.SaveChangesAsync();
             }
 

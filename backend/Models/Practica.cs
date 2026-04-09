@@ -13,17 +13,17 @@ namespace backend.Models
         public int idPractica { get; set; }
 
         [Required]
-        [MaxLength(14)]
+        [MaxLength(15)]
         public string idalumno { get; set; } = string.Empty;
 
         public int idvehiculo { get; set; }
 
         [Required]
-        [MaxLength(14)]
+        [MaxLength(15)]
         public string idProfesor { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(7)]
+        [MaxLength(10)]
         public string idPeriodo { get; set; } = string.Empty;
 
         [MaxLength(15)]
