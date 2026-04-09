@@ -41,7 +41,11 @@ namespace backend.Controllers
         }
 
         [HttpGet("estudiante/{idAlumno}")]
-        public async Task<ActionResult<ApiResponse<EstudianteLogisticaResponse>>> BuscarEstudiante(string idAlumno)
+        public async Task<ActionResult<ApiResponse<EstudianteLogisticaResponse>>> BuscarEstudiante(
+            string idAlumno,
+            [FromQuery] int? idVehiculoAgenda = null,
+            [FromQuery] string? idProfesorAgenda = null,
+            [FromQuery] int? idPracticaAgenda = null)
         {
             idAlumno = idAlumno.Trim();
 
@@ -53,6 +57,7 @@ namespace backend.Controllers
                 {
                     var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
                     await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
+                    await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
                     fromCentral.isBusy = await _context.Practicas
                         .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
                     return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
@@ -82,6 +87,7 @@ namespace backend.Controllers
             if (localStudent != null)
             {
                 await EnrichEstudianteLogisticaDesdeSigafiAsync(localStudent);
+                await AplicarContextoFilaAgendaAsync(localStudent, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
                 localStudent.isBusy = await _context.Practicas
                     .AnyAsync(p => p.idalumno == localStudent.idAlumno && p.ensalida == 1 && p.cancelado == 0);
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(localStudent,
@@ -89,6 +95,42 @@ namespace backend.Controllers
             }
 
             return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no registrado en SIGAFI."));
+        }
+
+        private async Task AplicarContextoFilaAgendaAsync(
+            EstudianteLogisticaResponse student,
+            int? idVehiculoAgenda,
+            string? idProfesorAgenda,
+            int? idPracticaAgenda)
+        {
+            if (idVehiculoAgenda is > 0)
+            {
+                student.idPracticaCentral = idVehiculoAgenda;
+                var v = await _context.Vehiculos.AsNoTracking()
+                    .FirstOrDefaultAsync(x => x.idVehiculo == idVehiculoAgenda.Value);
+                if (v != null)
+                    student.practicaVehiculo = $"#{v.numero_vehiculo} ({v.placa})";
+            }
+
+            var profAg = idProfesorAgenda?.Trim();
+            if (!string.IsNullOrEmpty(profAg))
+            {
+                student.idPracticaInstructor = profAg;
+                var ins = await _context.Instructores.AsNoTracking()
+                    .FirstOrDefaultAsync(i => i.idProfesor == profAg);
+                if (ins != null)
+                    student.practicaInstructor = $"{ins.apellidos} {ins.nombres}".Trim();
+            }
+
+            if (idPracticaAgenda is > 0)
+            {
+                var link = await _context.PracticasHorarios.AsNoTracking()
+                    .Where(x => x.idPractica == idPracticaAgenda.Value)
+                    .Select(x => (int?)x.idAsignacionHorario)
+                    .FirstOrDefaultAsync();
+                if (link.HasValue)
+                    student.idAsignacionHorario = link;
+            }
         }
 
         private async Task<EstudianteLogisticaResponse> BuildLogisticaFromSigafiAndPersistAsync(CentralStudentDto centralData)
@@ -219,6 +261,7 @@ namespace backend.Controllers
             student.practicaInstructor = localProf != null
                 ? $"{localProf.apellidos} {localProf.nombres}"
                 : (scheduled?.ProfesorNombre ?? $"{tutor?.apellidos} {tutor?.nombres}");
+            student.idPracticaInstructor = profCedula;
             student.idPracticaCentral = scheduled?.idvehiculo;
             student.practicaVehiculo = scheduled?.VehiculoDetalle;
             student.practicaHora = scheduled?.hora_salida?.ToString(@"hh\:mm");
@@ -392,13 +435,61 @@ namespace backend.Controllers
         }
 
         [HttpGet("agendados-hoy")]
-        public async Task<ActionResult<ApiResponse<IEnumerable<ScheduledPracticeDto>>>> GetAgendadosHoy()
+        public async Task<ActionResult<ApiResponse<AgendaLogisticaResponseDto>>> GetAgendadosHoy()
         {
             const int limit = 100;
+            var fromSigafi = true;
             var list = (await _centralProvider.GetRecentSchedulesAsync(limit)).ToList();
             if (list.Count == 0)
+            {
                 list = await GetRecentSchedulesFromLocalMirrorAsync(limit);
-            return Ok(ApiResponse<IEnumerable<ScheduledPracticeDto>>.Ok(list));
+                fromSigafi = false;
+            }
+
+            await EnrichAgendaEstadoOperativoAsync(list);
+
+            var payload = new AgendaLogisticaResponseDto
+            {
+                Practicas = list,
+                FuenteDatos = fromSigafi ? "sigafi" : "local",
+                ObtenidoEn = DateTime.UtcNow
+            };
+            return Ok(ApiResponse<AgendaLogisticaResponseDto>.Ok(payload));
+        }
+
+        private static string ResolverEstadoOperativoPractica(byte? cancelado, byte? ensalida, TimeSpan? horaLlegada)
+        {
+            if ((cancelado ?? 0) != 0)
+                return "cancelada";
+            if (horaLlegada != null)
+                return "completada";
+            if (ensalida == 1)
+                return "en_pista";
+            return "pendiente";
+        }
+
+        private async Task EnrichAgendaEstadoOperativoAsync(List<ScheduledPracticeDto> list)
+        {
+            if (list.Count == 0)
+                return;
+
+            var ids = list.Select(x => x.idPractica).Distinct().ToList();
+            var states = await _context.Practicas.AsNoTracking()
+                .Where(p => ids.Contains(p.idPractica))
+                .Select(p => new { p.idPractica, p.cancelado, p.ensalida, p.hora_llegada })
+                .ToListAsync();
+
+            var byId = states.ToDictionary(x => x.idPractica, x => x);
+            foreach (var row in list)
+            {
+                if (!byId.TryGetValue(row.idPractica, out var st))
+                {
+                    row.EstadoOperativo = "sin_sincronizar";
+                    continue;
+                }
+
+                row.EstadoOperativo = ResolverEstadoOperativoPractica(st.cancelado, st.ensalida, st.hora_llegada);
+            }
         }
 
         private async Task<List<ScheduledPracticeDto>> GetRecentSchedulesFromLocalMirrorAsync(int limit)

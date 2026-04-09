@@ -23,8 +23,19 @@ function unwrapList(response) {
  * Usa `api` (JWT). Desempaqueta `data` del envelope para no romper `.filter` / `.map` en la UI.
  */
 export const logisticaService = {
-  buscarEstudiante: async (idAlumno) => {
-    const response = await api.get(`/logistica/estudiante/${idAlumno}`);
+  buscarEstudiante: async (idAlumno, agendaCtx = null) => {
+    const p = new URLSearchParams();
+    if (agendaCtx?.idVehiculo != null && agendaCtx.idVehiculo !== '') {
+      p.set('idVehiculoAgenda', String(agendaCtx.idVehiculo));
+    }
+    if (agendaCtx?.idProfesor != null && String(agendaCtx.idProfesor).trim() !== '') {
+      p.set('idProfesorAgenda', String(agendaCtx.idProfesor).trim());
+    }
+    if (agendaCtx?.idPractica != null && agendaCtx.idPractica !== '') {
+      p.set('idPracticaAgenda', String(agendaCtx.idPractica));
+    }
+    const qs = p.toString();
+    const response = await api.get(`/logistica/estudiante/${encodeURIComponent(idAlumno)}${qs ? `?${qs}` : ''}`);
     return unwrap(response);
   },
   getVehiculosDisponibles: async () => {
@@ -53,6 +64,18 @@ export const logisticaService = {
   },
   getAgendadosHoy: async () => {
     const response = await api.get('/logistica/agendados-hoy');
-    return unwrapList(response);
+    const data = unwrap(response);
+    if (data && typeof data === 'object' && Array.isArray(data.practicas)) {
+      return {
+        practicas: data.practicas,
+        fuenteDatos: data.fuenteDatos || 'sigafi',
+        obtenidoEn: data.obtenidoEn ?? null
+      };
+    }
+    return {
+      practicas: Array.isArray(data) ? data : [],
+      fuenteDatos: 'sigafi',
+      obtenidoEn: null
+    };
   }
 };

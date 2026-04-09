@@ -1,5 +1,7 @@
 using backend.DTOs;
 using backend.Models;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace backend.Services.Interfaces
@@ -55,6 +57,15 @@ namespace backend.Services.Interfaces
         public string AlumnoNombre { get; set; } = string.Empty;
         public string VehiculoDetalle { get; set; } = string.Empty;
         public string ProfesorNombre { get; set; } = string.Empty;
+
+        public string EstadoOperativo { get; set; } = "sin_sincronizar";
+    }
+
+    public class AgendaLogisticaResponseDto
+    {
+        public List<ScheduledPracticeDto> Practicas { get; set; } = new();
+        public string FuenteDatos { get; set; } = "sigafi";
+        public DateTime ObtenidoEn { get; set; }
     }
 
     /// <summary>Filas de sigafi_es.cond_alumnos_horarios (sin columnas inventadas).</summary>

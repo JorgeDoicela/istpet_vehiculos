@@ -17,11 +17,12 @@ namespace backend.DTOs
         public int idMatricula { get; set; }
 
         public int? idPracticaCentral { get; set; }
-        public int? idPracticaInstructor { get; set; }
+        public string? idPracticaInstructor { get; set; }
         public string? practicaVehiculo { get; set; }
         public string? practicaInstructor { get; set; }
         public string? practicaHora { get; set; }
         public string? horarioProximo { get; set; } // Ej: "14:00 - 15:00"
+        public int? idAsignacionHorario { get; set; }
         public bool asistenciaHoy { get; set; }
         public bool tienePracticaHoy => idPracticaCentral.HasValue;
         public string? fotoBase64 { get; set; }

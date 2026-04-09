@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '../components/common/ThemeContext';
 import Layout from '../components/layout/Layout';
@@ -45,6 +45,9 @@ const ControlOperativo = () => {
     const [horaRetorno, setHoraRetorno] = useState('');
     const [fechaHoy, setFechaHoy] = useState('');
     const [agendadosHoy, setAgendadosHoy] = useState([]);
+    const [agendaFuente, setAgendaFuente] = useState('sigafi');
+    const [agendaObtenidoEn, setAgendaObtenidoEn] = useState(null);
+    const [filtroAgenda, setFiltroAgenda] = useState('');
     const [agendadosLoading, setAgendadosLoading] = useState(false);
     const [showAgendaDrawer, setShowAgendaDrawer] = useState(false);
     const [showInstructorMenu, setShowInstructorMenu] = useState(false);
@@ -68,6 +71,59 @@ const ControlOperativo = () => {
         if (Number.isNaN(d.getTime())) return '';
         return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
     };
+
+    const agendaYmdFromApi = (fecha) => {
+        if (!fecha) return '';
+        const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);
+        return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+    };
+
+    const ymdLocalHoy = () => {
+        const t = new Date();
+        return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+    };
+
+    const fmtUltimaCargaAgenda = (iso) => {
+        if (!iso) return '';
+        const d = new Date(iso);
+        if (Number.isNaN(d.getTime())) return '';
+        return d.toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const estadoAgendaChip = (estado) => {
+        const e = String(estado || 'sin_sincronizar').toLowerCase();
+        const map = {
+            pendiente: { label: 'Pendiente', cls: 'bg-amber-500/20 text-amber-900' },
+            en_pista: { label: 'En pista', cls: 'bg-rose-500 text-white' },
+            completada: { label: 'Regresó', cls: 'bg-emerald-600 text-white' },
+            cancelada: { label: 'Cancelada', cls: 'bg-[var(--apple-border)] text-[var(--apple-text-sub)]' },
+            sin_sincronizar: { label: 'Sin sync local', cls: 'bg-[var(--apple-primary)]/12 text-[var(--apple-primary)]' }
+        };
+        return map[e] || map.sin_sincronizar;
+    };
+
+    const agendaFiltrada = useMemo(() => {
+        const q = filtroAgenda.trim().toLowerCase().replace(/\s+/g, ' ');
+        if (!q) return agendadosHoy;
+        return agendadosHoy.filter((ag) => {
+            const id = (ag.idalumno || '').toLowerCase();
+            const nom = (ag.AlumnoNombre || '').toLowerCase();
+            const prof = (ag.ProfesorNombre || '').toLowerCase();
+            const veh = (ag.VehiculoDetalle || '').toLowerCase();
+            return id.includes(q) || nom.includes(q) || prof.includes(q) || veh.includes(q);
+        });
+    }, [agendadosHoy, filtroAgenda]);
+
+    const { agendaBloqueHoy, agendaBloqueAnteriores } = useMemo(() => {
+        const todayKey = ymdLocalHoy();
+        const hoy = [];
+        const ant = [];
+        for (const ag of agendaFiltrada) {
+            if (agendaYmdFromApi(ag.fecha) === todayKey) hoy.push(ag);
+            else ant.push(ag);
+        }
+        return { agendaBloqueHoy: hoy, agendaBloqueAnteriores: ant };
+    }, [agendaFiltrada]);
 
     // Reloj para Hora Retorno (Llegada)
     useEffect(() => {
@@ -94,8 +150,10 @@ const ControlOperativo = () => {
     const cargarAgendadosHoy = async () => {
         setAgendadosLoading(true);
         try {
-            const data = await logisticaService.getAgendadosHoy();
-            setAgendadosHoy(data);
+            const pack = await logisticaService.getAgendadosHoy();
+            setAgendadosHoy(pack.practicas || []);
+            setAgendaFuente(pack.fuenteDatos || 'sigafi');
+            setAgendaObtenidoEn(pack.obtenidoEn ?? null);
         } catch (e) {
             console.error(e);
         } finally {
@@ -183,20 +241,38 @@ const ControlOperativo = () => {
         }
     };
 
-    const ejecutarBusquedaEstudiante = async (idAlumnoEnviado = null, source = 'manual') => {
+    const buildAgendaCtx = (ag) => {
+        if (!ag) return null;
+        return {
+            idPractica: ag.idPractica,
+            idVehiculo: ag.idvehiculo,
+            idProfesor: ag.idProfesor
+        };
+    };
+
+    const ejecutarBusquedaEstudiante = async (idAlumnoEnviado = null, source = 'manual', agendaCtx = null) => {
         const idAlumnoABuscar = idAlumnoEnviado || salidaIdAlumno;
         if (!idAlumnoABuscar || idAlumnoABuscar.length < 10) return;
 
         setSalidaLoading(true);
         setEstudianteData(null);
         try {
-            const data = await logisticaService.buscarEstudiante(idAlumnoABuscar);
+            const data = await logisticaService.buscarEstudiante(idAlumnoABuscar, agendaCtx);
             setEstudianteData(data);
             if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
-            
-            if (data.idPracticaInstructor || data.idPracticaCentral) {
+
+            const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
+                ? String(data.idPracticaInstructor).trim()
+                : '';
+            const tieneSugerencia =
+                !!idInstr || data.idPracticaCentral != null;
+            if (tieneSugerencia) {
                 await aplicarSugerenciaManual(data);
-                showNotification(source === 'agenda' ? 'Sugerencia de agenda aplicada' : '¡Agenda aplicada automáticamente!');
+                showNotification(
+                    source === 'agenda'
+                        ? 'Alumno, vehículo e instructor según la fila de agenda'
+                        : 'Sugerencia de práctica aplicada (SIGAFI)'
+                );
             } else {
                 showNotification('Estudiante localizado');
             }
@@ -210,24 +286,46 @@ const ControlOperativo = () => {
     const aplicarSugerenciaManual = async (dataOverride = null) => {
         const data = dataOverride || estudianteData;
         if (!data) return;
-        
+
+        const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
+            ? String(data.idPracticaInstructor).trim()
+            : '';
+
         try {
-            if (data.idPracticaInstructor) {
-                let sInstr = instructores.find(i => i.idInstructor === data.idPracticaInstructor);
+            if (idInstr) {
+                let sInstr = instructores.find((i) => i.idInstructor === idInstr);
                 if (!sInstr) {
                     const fresh = await logisticaService.getInstructores();
                     setInstructores(fresh);
-                    sInstr = fresh.find(i => i.idInstructor === data.idPracticaInstructor);
+                    sInstr = fresh.find((i) => i.idInstructor === idInstr);
+                }
+                if (!sInstr && data.practicaInstructor) {
+                    sInstr = { idInstructor: idInstr, fullName: data.practicaInstructor };
                 }
                 if (sInstr) setInstructorSeleccionado(sInstr);
             }
 
-            if (data.idPracticaCentral) {
-                const sVeh = vehiculos.find(v => v.idVehiculo === data.idPracticaCentral);
+            if (data.idPracticaCentral != null) {
+                const vid = Number(data.idPracticaCentral);
+                let sVeh = vehiculos.find((v) => v.idVehiculo === vid);
+                if (!sVeh) {
+                    const freshV = await logisticaService.getVehiculosDisponibles();
+                    setVehiculos(freshV);
+                    sVeh = freshV.find((v) => v.idVehiculo === vid);
+                }
+                if (!sVeh && data.practicaVehiculo) {
+                    const m = String(data.practicaVehiculo).match(/#(\d+)/);
+                    sVeh = {
+                        idVehiculo: vid,
+                        numeroVehiculo: m ? parseInt(m[1], 10) : 0,
+                        vehiculoStr: data.practicaVehiculo,
+                        instructorNombre: 'DOCENTE ASIGNADO'
+                    };
+                }
                 if (sVeh) setVehiculoSeleccionado(sVeh);
             }
         } catch (err) {
-            console.error("Error aplicando sugerencia:", err);
+            console.error('Error aplicando sugerencia:', err);
         }
     };
 
@@ -652,40 +750,120 @@ const ControlOperativo = () => {
 
                     <div className="hidden lg:block lg:col-span-5 xl:col-span-4 space-y-6 animate-apple-in" style={{ animationDelay: '0.3s' }}>
                         <div className="apple-glass rounded-[2rem] p-5 border border-[var(--apple-border)] relative overflow-hidden group">
-                            <div className="flex items-center justify-between mb-4">
-                                <h4 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI</h4>
-                                <span className="text-[9px] font-black text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendadosHoy.length} recientes</span>
+                            <div className="flex flex-col gap-3 mb-4">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div className="min-w-0">
+                                        <h4 className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em]">Agenda SIGAFI</h4>
+                                        <p className="text-[8px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+                                            <span className={agendaFuente === 'local' ? 'text-amber-700' : ''}>{agendaFuente === 'local' ? 'Origen: espejo local' : 'Origen: SIGAFI'}</span>
+                                            {agendaObtenidoEn ? <span>· Actualizado {fmtUltimaCargaAgenda(agendaObtenidoEn)}</span> : null}
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        title="Actualizar agenda"
+                                        disabled={agendadosLoading}
+                                        onClick={() => cargarAgendadosHoy()}
+                                        className="shrink-0 h-9 w-9 flex items-center justify-center rounded-xl bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] hover:bg-[var(--apple-primary)] hover:text-white transition-colors disabled:opacity-50"
+                                    >
+                                        <svg className={`h-4 w-4 ${agendadosLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <input
+                                    type="search"
+                                    value={filtroAgenda}
+                                    onChange={(e) => setFiltroAgenda(e.target.value)}
+                                    placeholder="Buscar cédula, nombre, instructor o vehículo…"
+                                    className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-xl px-3 py-2 text-[11px] font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/50 outline-none focus:border-[var(--istpet-gold)]"
+                                />
+                                <div className="flex flex-wrap items-center gap-2 text-[8px] font-black uppercase tracking-wider text-[var(--apple-text-sub)]">
+                                    <span className="text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendaFiltrada.length} vista</span>
+                                    <span>{agendadosHoy.length} cargados</span>
+                                    <span>· {agendaBloqueHoy.length} hoy</span>
+                                </div>
                             </div>
 
                             <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                                {agendadosHoy.length > 0 ? (
-                                    agendadosHoy.map(ag => (
-                                        <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm">
-                                            <div className="flex justify-between items-start mb-2 gap-2">
-                                                <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
-                                                    <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
-                                                    {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
-                                                </span>
-                                                <span className="text-[9px] font-black bg-[var(--apple-bg)] text-[var(--apple-text-sub)] px-1.5 py-0.5 rounded tracking-tighter uppercase font-mono shrink-0">{ag.VehiculoDetalle}</span>
-                                            </div>
-                                            <p className="text-[11px] font-bold text-[var(--apple-text-main)] uppercase truncate mb-1">{ag.AlumnoNombre || ag.idalumno}</p>
-                                            <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter truncate opacity-60 italic">{ag.ProfesorNombre}</p>
-                                            <button
-                                                onClick={() => {
-                                                    setSalidaIdAlumno(ag.idalumno);
-                                                    ejecutarBusquedaEstudiante(ag.idalumno, 'agenda');
-                                                }}
-                                                className="w-full mt-3 py-2 bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-[var(--apple-primary)] hover:text-white shadow-sm"
-                                            >
-                                                AUTOPUEBLAR ID
-                                            </button>
-                                        </div>
-                                    ))
-                                ) : (
+                                {agendadosHoy.length === 0 && !agendadosLoading ? (
                                     <div className="py-10 text-center opacity-40">
-                                        <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">VACÍO</p>
+                                        <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">Sin prácticas recientes</p>
                                     </div>
-                                )}
+                                ) : null}
+                                {agendadosHoy.length > 0 && agendaFiltrada.length === 0 ? (
+                                    <div className="py-10 text-center opacity-50">
+                                        <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-widest">Sin coincidencias con el filtro</p>
+                                    </div>
+                                ) : null}
+                                {agendaBloqueHoy.length > 0 ? (
+                                    <>
+                                        <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em]">Hoy</p>
+                                        {agendaBloqueHoy.map((ag) => {
+                                            const chip = estadoAgendaChip(ag.estadoOperativo);
+                                            return (
+                                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm">
+                                                    <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
+                                                        <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
+                                                            <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
+                                                            {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
+                                                        </span>
+                                                        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-tight ${chip.cls}`}>{chip.label}</span>
+                                                            <span className="text-[9px] font-black bg-[var(--apple-bg)] text-[var(--apple-text-sub)] px-1.5 py-0.5 rounded tracking-tighter uppercase font-mono shrink-0">{ag.VehiculoDetalle}</span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[11px] font-bold text-[var(--apple-text-main)] uppercase truncate mb-1">{ag.AlumnoNombre || ag.idalumno}</p>
+                                                    <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter truncate opacity-60 italic">{ag.ProfesorNombre}</p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSalidaIdAlumno(ag.idalumno);
+                                                            ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag));
+                                                        }}
+                                                        className="w-full mt-3 py-2 bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-[var(--apple-primary)] hover:text-white shadow-sm"
+                                                    >
+                                                        Cargar alumno
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : null}
+                                {agendaBloqueAnteriores.length > 0 ? (
+                                    <>
+                                        <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] pt-1">Anteriores</p>
+                                        {agendaBloqueAnteriores.map((ag) => {
+                                            const chip = estadoAgendaChip(ag.estadoOperativo);
+                                            return (
+                                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm opacity-95">
+                                                    <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
+                                                        <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
+                                                            <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
+                                                            {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
+                                                        </span>
+                                                        <div className="flex flex-wrap items-center gap-1.5 justify-end">
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-tight ${chip.cls}`}>{chip.label}</span>
+                                                            <span className="text-[9px] font-black bg-[var(--apple-bg)] text-[var(--apple-text-sub)] px-1.5 py-0.5 rounded tracking-tighter uppercase font-mono shrink-0">{ag.VehiculoDetalle}</span>
+                                                        </div>
+                                                    </div>
+                                                    <p className="text-[11px] font-bold text-[var(--apple-text-main)] uppercase truncate mb-1">{ag.AlumnoNombre || ag.idalumno}</p>
+                                                    <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-tighter truncate opacity-60 italic">{ag.ProfesorNombre}</p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setSalidaIdAlumno(ag.idalumno);
+                                                            ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag));
+                                                        }}
+                                                        className="w-full mt-3 py-2 bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] rounded-xl text-[9px] font-black uppercase tracking-widest opacity-0 group-hover/item:opacity-100 transition-all hover:bg-[var(--apple-primary)] hover:text-white shadow-sm"
+                                                    >
+                                                        Cargar alumno
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </>
+                                ) : null}
                             </div>
                         </div>
                     </div>
@@ -707,31 +885,98 @@ const ControlOperativo = () => {
             {showAgendaDrawer && (
                 <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end animate-apple-in">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowAgendaDrawer(false)} />
-                    <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+                    <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
-                        <div className="flex items-center justify-between px-6 py-5">
-                            <div>
+                        <div className="flex items-center justify-between px-5 py-4 gap-3 border-b border-[var(--apple-border)]/40">
+                            <div className="min-w-0 flex-1">
                                 <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3>
-                                <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-0.5 opacity-70">Más recientes primero</p>
+                                <p className="text-[8px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-0.5 truncate">
+                                    {agendaFuente === 'local' ? 'Espejo local' : 'SIGAFI'}
+                                    {agendaObtenidoEn ? ` · ${fmtUltimaCargaAgenda(agendaObtenidoEn)}` : ''}
+                                </p>
                             </div>
-                            <button onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                            <button
+                                type="button"
+                                title="Actualizar"
+                                disabled={agendadosLoading}
+                                onClick={() => cargarAgendadosHoy()}
+                                className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-[var(--apple-primary)]/10 text-[var(--apple-primary)] disabled:opacity-50"
+                            >
+                                <svg className={`h-4 w-4 ${agendadosLoading ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                                </svg>
+                            </button>
+                            <button type="button" onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
-                        <div className="overflow-y-auto flex-1 custom-scrollbar pb-10">
-                            {agendadosHoy.length > 0 ? agendadosHoy.map((ag, idx) => (
-                                <div key={ag.idPractica} className="px-6 group active:bg-[var(--apple-border)]/20 transition-colors">
-                                    <div className={`flex items-start gap-3 py-5 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40' : ''}`}>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre || ag.idalumno}</p>
-                                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                <span className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase px-2 py-0.5 rounded-md bg-[var(--apple-border)]/30">{fmtFechaAgenda(ag.fecha)}</span>
-                                                <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
-                                                <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[10rem]">{ag.VehiculoDetalle}</span>
+                        <div className="px-5 pt-3 pb-2 space-y-2 shrink-0">
+                            <input
+                                type="search"
+                                value={filtroAgenda}
+                                onChange={(e) => setFiltroAgenda(e.target.value)}
+                                placeholder="Buscar cédula, nombre…"
+                                className="w-full bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--apple-text-main)] outline-none focus:border-[var(--istpet-gold)]"
+                            />
+                            <p className="text-[8px] font-black uppercase text-[var(--apple-text-sub)] tracking-wider">{agendaFiltrada.length} mostrados · {agendaBloqueHoy.length} hoy</p>
+                        </div>
+                        <div className="overflow-y-auto flex-1 custom-scrollbar pb-10 min-h-0">
+                            {agendadosHoy.length === 0 && !agendadosLoading ? (
+                                <div className="py-16 text-center opacity-40 px-6"><p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">Sin prácticas recientes</p></div>
+                            ) : null}
+                            {agendadosHoy.length > 0 && agendaFiltrada.length === 0 ? (
+                                <div className="py-16 text-center opacity-50 px-6"><p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">Sin coincidencias</p></div>
+                            ) : null}
+                            {agendaBloqueHoy.length > 0 ? (
+                                <div className="px-5 pt-2">
+                                    <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-widest mb-2">Hoy</p>
+                                    {agendaBloqueHoy.map((ag, idx) => {
+                                        const chip = estadoAgendaChip(ag.estadoOperativo);
+                                        return (
+                                            <div key={ag.idPractica} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${chip.cls}`}>{chip.label}</span>
+                                                        </div>
+                                                        <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre || ag.idalumno}</p>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                            <span className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase px-2 py-0.5 rounded-md bg-[var(--apple-border)]/30">{fmtFechaAgenda(ag.fecha)}</span>
+                                                            <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
+                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[9rem]">{ag.VehiculoDetalle}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag)); }} className="px-4 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shrink-0">Cargar</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                        <button onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda'); }} className="px-5 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest">Cargar</button>
-                                    </div>
+                                        );
+                                    })}
                                 </div>
-                            )) : <div className="py-20 text-center opacity-40"><p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">Cero agendas</p></div>}
+                            ) : null}
+                            {agendaBloqueAnteriores.length > 0 ? (
+                                <div className="px-5 pt-6">
+                                    <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest mb-2">Anteriores</p>
+                                    {agendaBloqueAnteriores.map((ag, idx) => {
+                                        const chip = estadoAgendaChip(ag.estadoOperativo);
+                                        return (
+                                            <div key={ag.idPractica} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
+                                                <div className="flex items-start gap-3">
+                                                    <div className="flex-1 min-w-0">
+                                                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                                                            <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full ${chip.cls}`}>{chip.label}</span>
+                                                        </div>
+                                                        <p className="text-[12px] font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre || ag.idalumno}</p>
+                                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                            <span className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase px-2 py-0.5 rounded-md bg-[var(--apple-border)]/30">{fmtFechaAgenda(ag.fecha)}</span>
+                                                            <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
+                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[9rem]">{ag.VehiculoDetalle}</span>
+                                                        </div>
+                                                    </div>
+                                                    <button type="button" onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag)); }} className="px-4 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shrink-0">Cargar</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            ) : null}
                         </div>
                     </div>
                 </div>
