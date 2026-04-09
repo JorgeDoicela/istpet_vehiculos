@@ -44,6 +44,14 @@ namespace backend.DTOs
         public string fullName { get; set; } = string.Empty;
     }
 
+    public class AlumnoSugerenciaLogisticaDto
+    {
+        public string idAlumno { get; set; } = string.Empty;
+        public string nombreCompleto { get; set; } = string.Empty;
+        public bool esAgendado { get; set; }
+        public bool isBusy { get; set; }
+    }
+
     public class SalidaRequest
     {
         public int idMatricula { get; set; }

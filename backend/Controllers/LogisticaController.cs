@@ -4,6 +4,8 @@ using backend.Services.Helpers;
 using backend.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -346,6 +348,47 @@ namespace backend.Controllers
             var result = await _logisticaService.RegistrarLlegadaAsync(req.idPractica, req.observaciones ?? "Ninguna", req.registradoPor);
             if (result == "EXITO") return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
             return BadRequest(ApiResponse<string>.Fail($"Alerta: {result}"));
+        }
+
+        [HttpGet("buscar")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>>> BuscarSugerencias([FromQuery] string query)
+        {
+            var q = (query ?? string.Empty).Trim();
+            if (q.Length < 3)
+                return Ok(ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>.Ok(Array.Empty<AlumnoSugerenciaLogisticaDto>()));
+
+            var list = await _context.Estudiantes.AsNoTracking()
+                .Where(e => e.activo && (
+                    e.idAlumno.StartsWith(q)
+                    || (e.primerNombre != null && e.primerNombre.Contains(q))
+                    || (e.segundoNombre != null && e.segundoNombre.Contains(q))
+                    || (e.apellidoPaterno != null && e.apellidoPaterno.Contains(q))
+                    || (e.apellidoMaterno != null && e.apellidoMaterno.Contains(q))))
+                .OrderBy(e => e.idAlumno)
+                .Take(15)
+                .Select(e => new AlumnoSugerenciaLogisticaDto
+                {
+                    idAlumno = e.idAlumno,
+                    nombreCompleto = $"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}".Trim(),
+                    esAgendado = false,
+                    isBusy = false
+                })
+                .ToListAsync();
+
+            if (list.Count > 0)
+            {
+                var ids = list.Select(x => x.idAlumno).ToList();
+                var busyIds = await _context.Practicas.AsNoTracking()
+                    .Where(p => p.ensalida == 1 && (p.cancelado ?? 0) == 0 && ids.Contains(p.idalumno))
+                    .Select(p => p.idalumno)
+                    .Distinct()
+                    .ToListAsync();
+                var busy = busyIds.ToHashSet();
+                foreach (var item in list)
+                    item.isBusy = busy.Contains(item.idAlumno);
+            }
+
+            return Ok(ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>.Ok(list));
         }
 
         [HttpGet("agendados-hoy")]
