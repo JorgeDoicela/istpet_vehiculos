@@ -85,6 +85,7 @@ builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
 builder.Services.AddScoped<IDataSyncService, DataSyncService>();
 builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
+builder.Services.AddScoped<IAgendaPanelService, AgendaPanelService>();
 builder.Services.AddScoped<SigafiExtractionProbe>();
 builder.Services.AddScoped<backend.Services.Interfaces.ISigafiReportService, backend.Services.Implementations.SigafiReportService>();
 

@@ -205,7 +205,10 @@ namespace backend.Services.Implementations
                         p.fecha,
                         p.hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
-                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                        CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                        CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                        p.hora_llegada AS SigafiHoraLlegada
                     FROM cond_alumnos_practicas p
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
@@ -238,7 +241,10 @@ namespace backend.Services.Implementations
                         p.fecha,
                         p.hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
-                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                        CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                        CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                        p.hora_llegada AS SigafiHoraLlegada
                     FROM cond_alumnos_practicas p
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
@@ -747,18 +753,36 @@ WHERE COALESCE(activo, 1) = 0";
             activo = ReadInt(reader, "activo")
         };
 
-        private static ScheduledPracticeDto MapScheduledPractice(MySqlDataReader reader) => new()
+        private static ScheduledPracticeDto MapScheduledPractice(MySqlDataReader reader)
         {
-            idPractica = ReadInt(reader, "idPractica"),
-            idalumno = ReadString(reader, "idalumno"),
-            idvehiculo = ReadInt(reader, "idvehiculo"),
-            idProfesor = ReadString(reader, "idProfesor"),
-            fecha = ReadDate(reader, "fecha"),
-            hora_salida = ReadNullableTime(reader, "hora_salida"),
-            AlumnoNombre = ReadString(reader, "AlumnoNombre"),
-            VehiculoDetalle = ReadString(reader, "VehiculoDetalle"),
-            ProfesorNombre = ReadString(reader, "ProfesorNombre")
-        };
+            var cancelado = ReadInt(reader, "SigafiCancelado");
+            var ensalida = ReadInt(reader, "SigafiEnsalida");
+            var llegada = ReadNullableTime(reader, "SigafiHoraLlegada");
+            return new ScheduledPracticeDto
+            {
+                idPractica = ReadInt(reader, "idPractica"),
+                idalumno = ReadString(reader, "idalumno"),
+                idvehiculo = ReadInt(reader, "idvehiculo"),
+                idProfesor = ReadString(reader, "idProfesor"),
+                fecha = ReadDate(reader, "fecha"),
+                hora_salida = ReadNullableTime(reader, "hora_salida"),
+                AlumnoNombre = ReadString(reader, "AlumnoNombre"),
+                VehiculoDetalle = ReadString(reader, "VehiculoDetalle"),
+                ProfesorNombre = ReadString(reader, "ProfesorNombre"),
+                EstadoOperativo = EstadoOperativoDesdeCamposPractica(cancelado, ensalida, llegada)
+            };
+        }
+
+        private static string EstadoOperativoDesdeCamposPractica(int cancelado, int ensalida, TimeSpan? horaLlegada)
+        {
+            if (cancelado != 0)
+                return "cancelada";
+            if (horaLlegada != null)
+                return "completada";
+            if (ensalida == 1)
+                return "en_pista";
+            return "pendiente";
+        }
 
         private static CentralHorarioDto MapCentralHorario(MySqlDataReader reader) => new()
         {

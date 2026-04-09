@@ -1,0 +1,44 @@
+/** Utilidades compartidas para filas de agenda (SIGAFI / logística). */
+
+export function agendaYmdFromApi(fecha) {
+  if (!fecha) return '';
+  const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : '';
+}
+
+export function ymdLocalHoy() {
+  const t = new Date();
+  return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+}
+
+export function fmtFechaAgenda(fecha) {
+  if (!fecha) return '';
+  const s = String(fecha);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) {
+    const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+    return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
+  }
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
+}
+
+export function fmtUltimaCargaAgenda(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  return d.toLocaleString('es-EC', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+export function estadoAgendaChip(estado) {
+  const e = String(estado || 'sin_sincronizar').toLowerCase();
+  const map = {
+    pendiente: { label: 'Pendiente', cls: 'bg-amber-500/20 text-amber-900' },
+    en_pista: { label: 'En pista', cls: 'bg-rose-500 text-white' },
+    completada: { label: 'Regresó', cls: 'bg-emerald-600 text-white' },
+    cancelada: { label: 'Cancelada', cls: 'bg-[var(--apple-border)] text-[var(--apple-text-sub)]' },
+    sin_sincronizar: { label: 'Sin sync local', cls: 'bg-[var(--apple-primary)]/12 text-[var(--apple-primary)]' }
+  };
+  return map[e] || map.sin_sincronizar;
+}

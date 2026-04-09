@@ -30,7 +30,7 @@ function App() {
                             </ProtectedRoute>
                         } />
                         <Route path="/monitoreo" element={
-                            <ProtectedRoute allowedRoles={['admin', 'logistica']}>
+                            <ProtectedRoute allowedRoles={['admin', 'logistica', 'guardia']}>
                                 <Home />
                             </ProtectedRoute>
                         } />

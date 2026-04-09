@@ -32,12 +32,18 @@ namespace backend.Controllers
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
+        private readonly IAgendaPanelService _agendaPanel;
 
-        public LogisticaController(AppDbContext context, ILogisticaService logisticaService, ICentralStudentProvider centralProvider)
+        public LogisticaController(
+            AppDbContext context,
+            ILogisticaService logisticaService,
+            ICentralStudentProvider centralProvider,
+            IAgendaPanelService agendaPanel)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
+            _agendaPanel = agendaPanel;
         }
 
         [HttpGet("estudiante/{idAlumno}")]
@@ -437,83 +443,8 @@ namespace backend.Controllers
         [HttpGet("agendados-hoy")]
         public async Task<ActionResult<ApiResponse<AgendaLogisticaResponseDto>>> GetAgendadosHoy()
         {
-            const int limit = 100;
-            var fromSigafi = true;
-            var list = (await _centralProvider.GetRecentSchedulesAsync(limit)).ToList();
-            if (list.Count == 0)
-            {
-                list = await GetRecentSchedulesFromLocalMirrorAsync(limit);
-                fromSigafi = false;
-            }
-
-            await EnrichAgendaEstadoOperativoAsync(list);
-
-            var payload = new AgendaLogisticaResponseDto
-            {
-                Practicas = list,
-                FuenteDatos = fromSigafi ? "sigafi" : "local",
-                ObtenidoEn = DateTime.UtcNow
-            };
+            var payload = await _agendaPanel.GetAgendaAsync(100);
             return Ok(ApiResponse<AgendaLogisticaResponseDto>.Ok(payload));
-        }
-
-        private static string ResolverEstadoOperativoPractica(byte? cancelado, byte? ensalida, TimeSpan? horaLlegada)
-        {
-            if ((cancelado ?? 0) != 0)
-                return "cancelada";
-            if (horaLlegada != null)
-                return "completada";
-            if (ensalida == 1)
-                return "en_pista";
-            return "pendiente";
-        }
-
-        private async Task EnrichAgendaEstadoOperativoAsync(List<ScheduledPracticeDto> list)
-        {
-            if (list.Count == 0)
-                return;
-
-            var ids = list.Select(x => x.idPractica).Distinct().ToList();
-            var states = await _context.Practicas.AsNoTracking()
-                .Where(p => ids.Contains(p.idPractica))
-                .Select(p => new { p.idPractica, p.cancelado, p.ensalida, p.hora_llegada })
-                .ToListAsync();
-
-            var byId = states.ToDictionary(x => x.idPractica, x => x);
-            foreach (var row in list)
-            {
-                if (!byId.TryGetValue(row.idPractica, out var st))
-                {
-                    row.EstadoOperativo = "sin_sincronizar";
-                    continue;
-                }
-
-                row.EstadoOperativo = ResolverEstadoOperativoPractica(st.cancelado, st.ensalida, st.hora_llegada);
-            }
-        }
-
-        private async Task<List<ScheduledPracticeDto>> GetRecentSchedulesFromLocalMirrorAsync(int limit)
-        {
-            var take = Math.Clamp(limit, 1, 200);
-            return await (
-                from p in _context.Practicas.AsNoTracking()
-                join e in _context.Estudiantes on p.idalumno equals e.idAlumno
-                join v in _context.Vehiculos on p.idvehiculo equals v.idVehiculo
-                join i in _context.Instructores on p.idProfesor equals i.idProfesor
-                where (p.cancelado ?? 0) == 0
-                orderby p.fecha descending, p.hora_salida descending
-                select new ScheduledPracticeDto
-                {
-                    idPractica = p.idPractica,
-                    idalumno = p.idalumno,
-                    idvehiculo = p.idvehiculo,
-                    idProfesor = p.idProfesor,
-                    fecha = p.fecha,
-                    hora_salida = p.hora_salida,
-                    AlumnoNombre = $"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}".Trim(),
-                    VehiculoDetalle = $"#{(v.numero_vehiculo ?? "?")} ({(v.placa ?? "")})",
-                    ProfesorNombre = $"{i.apellidos} {i.nombres}".Trim()
-                }).Take(take).ToListAsync();
         }
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using backend.Services.Interfaces;
@@ -11,23 +12,26 @@ namespace backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "admin,logistica")]
+    [Authorize(Roles = "admin,logistica,guardia")]
     public class DashboardController : ControllerBase
     {
         private readonly AppDbContext _context;
         private readonly IDataSyncService _syncService;
         private readonly ICentralStudentProvider _central;
+        private readonly IAgendaPanelService _agendaPanel;
         private readonly ILogger<DashboardController> _logger;
 
         public DashboardController(
             AppDbContext context,
             IDataSyncService syncService,
             ICentralStudentProvider central,
+            IAgendaPanelService agendaPanel,
             ILogger<DashboardController> logger)
         {
             _context = context;
             _syncService = syncService;
             _central = central;
+            _agendaPanel = agendaPanel;
             _logger = logger;
         }
 
@@ -88,6 +92,21 @@ namespace backend.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ApiResponse<IEnumerable<AlertaMantenimiento>>.Fail($"Maintenance Error: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("agenda-reciente")]
+        public async Task<ActionResult<ApiResponse<AgendaLogisticaResponseDto>>> GetAgendaReciente([FromQuery] int limit = 100)
+        {
+            try
+            {
+                var take = Math.Clamp(limit, 1, 200);
+                var payload = await _agendaPanel.GetAgendaAsync(take);
+                return Ok(ApiResponse<AgendaLogisticaResponseDto>.Ok(payload));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<AgendaLogisticaResponseDto>.Fail($"Agenda: {ex.Message}"));
             }
         }
     }

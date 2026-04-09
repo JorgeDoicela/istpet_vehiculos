@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
-import LogisticaHeader from '../components/logistica/LogisticaHeader';
 import ActiveClasses from '../components/features/ActiveClasses';
 import SkeletonLoader from '../components/features/SkeletonLoader';
 import dashboardService from '../services/dashboardService';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { fmtFechaAgenda, fmtUltimaCargaAgenda, estadoAgendaChip } from '../utils/agendaUi';
 
 const Home = () => {
     const { isAuthorized } = useAuth();
     const [activeClasses, setActiveClasses] = useState([]);
+    const [agendaPack, setAgendaPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
     const [notification, setNotification] = useState(null);
@@ -23,6 +25,13 @@ const Home = () => {
         try {
             const cData = await dashboardService.getClasesActivas();
             setActiveClasses(cData);
+            try {
+                const aPack = await dashboardService.getAgendaReciente(10);
+                setAgendaPack(aPack);
+            } catch (agErr) {
+                console.warn('[AGENDA]', agErr?.message || agErr);
+                setAgendaPack({ practicas: [], fuenteDatos: '', obtenidoEn: null });
+            }
         } catch (err) {
             console.error('[DASHBOARD ERROR]', err.message);
         } finally {
@@ -137,6 +146,45 @@ const Home = () => {
                             </div>
                         </div>
                     </div>
+
+                    {!loading && agendaPack.practicas.length > 0 && (
+                        <div className="apple-card p-6 lg:p-8 bg-[var(--apple-card)] border border-[var(--apple-border)] animate-apple-in">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                                <div>
+                                    <h2 className="text-lg font-black uppercase tracking-tight text-[var(--apple-text-main)]">Agenda reciente</h2>
+                                    <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-1">
+                                        {agendaPack.fuenteDatos === 'local' ? 'Espejo local' : 'SIGAFI'}
+                                        {agendaPack.obtenidoEn ? ` · ${fmtUltimaCargaAgenda(agendaPack.obtenidoEn)}` : ''}
+                                    </p>
+                                </div>
+                                <Link
+                                    to="/control-operativo?tab=salida"
+                                    className="text-center sm:text-right text-[10px] font-black uppercase tracking-widest text-[var(--apple-primary)] hover:underline"
+                                >
+                                    Abrir control operativo →
+                                </Link>
+                            </div>
+                            <ul className="space-y-3">
+                                {agendaPack.practicas.map((ag) => {
+                                    const chip = estadoAgendaChip(ag.estadoOperativo);
+                                    return (
+                                        <li
+                                            key={ag.idPractica}
+                                            className="flex flex-wrap items-center gap-3 justify-between rounded-2xl border border-[var(--apple-border)]/60 bg-[var(--apple-bg)]/50 px-4 py-3"
+                                        >
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre || ag.idalumno}</p>
+                                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] mt-1">
+                                                    {fmtFechaAgenda(ag.fecha)} · {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'} · {ag.VehiculoDetalle}
+                                                </p>
+                                            </div>
+                                            <span className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full shrink-0 ${chip.cls}`}>{chip.label}</span>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
 
                     <div className="animate-apple-in">
                         {loading ? (
