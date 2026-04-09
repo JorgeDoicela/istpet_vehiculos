@@ -178,7 +178,7 @@ SELECT
     p.idProfesor        AS CedulaProfesor,
     p.hora_salida       AS HoraSalida,
     CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
-    CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido, 
+    CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido,
               pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
 FROM sigafi_es.cond_alumnos_practicas p
 JOIN sigafi_es.alumnos a     ON a.idAlumno = p.idalumno

@@ -30,7 +30,7 @@ Abrir MySQL Workbench o el cliente de línea de comandos y ejecutar:
 mysql -u root -p < docs/Scripts/SQL_SCHEMA.sql
 ```
 
-Esto crea la base de datos `istpet_vehiculos` con sus 11 tablas, 2 vistas, el usuario administrador inicial y un curso de prueba.
+Esto crea la base de datos `istpet_vehiculos` con sus tablas core sincronizadas con SIGAFI (alumnos, profesores, matriculas, cond_alumnos_practicas), el usuario administrador inicial y los catálogos base.
 
 **Credenciales iniciales:**
 | Campo | Valor |
@@ -145,8 +145,8 @@ La interfaz estará disponible en `http://localhost:5173`.
 - Comprobar usuario y contraseña en `appsettings.json`.
 - Asegurarse de que la base de datos `istpet_vehiculos` fue creada ejecutando el script SQL.
 
-### Error: "Table 'sync_logs' doesn't exist"
-La tabla `sync_logs` se crea en el script SQL. Verificar que el script se ejecutó completamente. También puede ser causado por ejecutar el proyecto antes de correr el script.
+### Error: "Table 'alumnos' doesn't exist"
+Asegúrese de haber ejecutado `SQL_SCHEMA.sql`. En la versión 2026, la tabla de estudiantes se llama `alumnos` para mantener la paridad absoluta con el sistema central.
 
 ### Error CORS en el navegador
 Verificar que el backend está corriendo antes de acceder al frontend. La configuración CORS en `Program.cs` permite todos los orígenes en desarrollo.

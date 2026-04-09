@@ -105,7 +105,7 @@ sequenceDiagram
     participant SDB as sigafi_es (central)
 
     G->>API: GET /api/logistica/estudiante/{cedula}
-    API->>DB: Buscar en tablas locales (matriculas + estudiantes)
+    API->>DB: Buscar en tablas locales (matriculas + alumnos)
     alt Encontrado localmente
         DB-->>API: Datos del estudiante
         API->>C: GetScheduledPracticeAsync(cedula)
@@ -117,14 +117,14 @@ sequenceDiagram
         C->>SDB: Query cross-database a sigafi_es.alumnos + matriculas
         SDB-->>C: Datos crudos SIGAFI
         C-->>API: CentralStudentDto
-        API->>DB: Auto-registra Estudiante + Matrícula local
+        API->>DB: Auto-registra Alumno + Matrícula local
         API-->>G: EstudianteLogisticaResponse (origen: SIGAFI Bridge)
     end
 
     G->>API: POST /api/logistica/salida
     API->>S: RegistrarSalidaAsync(idMatricula, idVehiculo, idInstructor)
     S->>DB: Valida: vehículo operativo, no en uso, instructor libre, estudiante no en pista
-    S->>DB: INSERT registros_salida (dentro de transacción)
+    S->>DB: INSERT cond_alumnos_practicas (dentro de transacción)
     DB-->>S: OK
     S-->>API: "EXITO"
     API-->>G: ApiResponse<string> {success: true}
@@ -159,8 +159,8 @@ En caso de error:
 
 ## Estándares de Código
 
-- **Backend (C#)**: Nomenclatura `PascalCase` para clases, métodos y propiedades.
+- **Backend (C#)**: Nomenclatura `PascalCase` para clases y propiedades internas.
 - **Frontend (JavaScript)**: Nomenclatura `camelCase` para variables y funciones.
-- **Base de Datos (MySQL)**: Nomenclatura `snake_case` para tablas y columnas.
-- **Mapeo de nombres**: Fluent API de EF Core resuelve la discrepancia entre `snake_case` (SQL) y `PascalCase` (C#).
+- **Base de Datos (MySQL)**: Nomenclatura **SIGAFI Mirroring** (Híbrida: `snake_case` y `camelCase` según la tabla externa).
+- **Mapeo de nombres**: Atributos `[Column]` y Fluent API de EF Core resuelven la paridad 1:1 con el servidor remoto.
 - **Iconografía**: SVG inline (Heroicons) en el frontend. Sin dependencias de icon fonts.

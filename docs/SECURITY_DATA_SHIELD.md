@@ -25,20 +25,21 @@ flowchart TD
     E --> G{¿Válido?}
     F --> G
     G -- No --> H["401: Contraseña incorrecta"]
-    G -- Sí --> I["200 OK: {idUsuario, usuario, nombre, rol}"]
+    G -- Sí --> I["200 OK: {Token, usuario, nombre, rol}"]
 ```
 
 ### Hash SHA-256 (Usuarios Nativos)
 ```sql
 -- Así se crea el hash en el SQL inicial:
-INSERT INTO usuarios (usuario, password_hash, ...)
-VALUES ('admin_istpet', SHA2('istpet2026', 256), ...);
+INSERT INTO usuarios_web (usuario, password, ...)
+VALUES ('admin_istpet', 'istpet2026', ...);
 ```
 
 ### Hash BCrypt (Usuarios Migrados de SIGAFI)
 Los usuarios con contraseñas almacenadas como BCrypt en SIGAFI pueden autenticarse directamente sin necesidad de restablecer su contraseña. El sistema detecta el hash por su prefijo `$2a$` o `$2b$`.
 
-> **Nota:** El sistema actual no implementa JWT ni sesiones. La autenticación retorna los datos del usuario para gestión en el frontend. En el Roadmap se contempla la implementación de JWT Bearer Tokens.
+### Autenticación con JWT
+El sistema utiliza **JSON Web Tokens (JWT)** para proteger los endpoints. El login retorna un token `Bearer` que debe ser incluido en el header `Authorization` de las peticiones subsiguientes.
 
 ---
 
@@ -82,7 +83,7 @@ flowchart LR
     B -- Válida --> D[Limpiar nombre\nValidar email]
     D --> E{¿Ya existe en DB?}
     E -- Sí --> F[Omitir - No duplicar]
-    E -- No --> G[INSERT en #estudiantes]
+    E -- No --> G[INSERT en #alumnos]
     G --> H[registros_procesados++]
     C --> I[Guardar SyncLog]
     F --> I
@@ -121,8 +122,8 @@ policy.WithOrigins("https://istpet.edu.ec")
 
 | Aspecto | Estado Actual | Recomendación |
 | :--- | :--- | :--- |
-| Autenticación | Hash directo (sin sesión) | Implementar JWT Bearer Tokens |
-| Autorización por rol | No implementada en controladores | Implementar `[Authorize(Roles="admin")]` |
+| Autenticación | JWT Bearer Tokens | Configurar rotación de llaves |
+| Autorización por rol | Implementada en backend | Auditoría periódica de roles |
 | CORS | `AllowAll` (desarrollo) | Restringir a dominio de producción |
-| HTTPS | No forzado | Habilitar `app.UseHttpsRedirection()` |
-| Contraseña en config | `appsettings.json` en texto plano | Usar variables de entorno o Azure Key Vault |
+| HTTPS | Opcional | Habilitar `app.UseHttpsRedirection()` |
+| Contraseña en config | `appsettings.json` o ENV | Usar Azure Key Vault para producción |

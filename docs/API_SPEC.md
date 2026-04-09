@@ -30,7 +30,6 @@ Autentica a un usuario del sistema. Soporta dos tipos de hash: **BCrypt** (usuar
   "success": true,
   "message": "Ingreso exitoso mediante el Puente de Seguridad Híbrida.",
   "data": {
-    "idUsuario": 1,
     "usuario": "admin_istpet",
     "nombre": "Administrador General ISTPET",
     "rol": "admin"
@@ -74,10 +73,10 @@ Busca un estudiante por número de cédula. Implementa la lógica del **Puente H
   "success": true,
   "message": "Alumno localizado (Local).",
   "data": {
-    "cedula": "1725555377",
+    "idAlumno": "1725555377",
     "estudianteNombre": "DOICELA MOLINA JORGE ISMAEL",
-    "cursoDetalle": "DESARROLLO DE SOFTWARE CUARTO",
-    "periodo": "1",
+    "nivel": "DESARROLLO DE SOFTWARE CUARTO",
+    "idPeriodo": "1",
     "paralelo": "A",
     "jornada": "MATUTINA",
     "tipoLicencia": "C",
@@ -160,7 +159,7 @@ Búsqueda predictiva de estudiantes (autocomplete). Requiere mínimo 3 caractere
   "success": true,
   "data": [
     {
-      "cedula": "1725555377",
+      "idAlumno": "1725555377",
       "nombreCompleto": "DOICELA MOLINA JORGE",
       "carrera": "CURSO PROFESIONAL TIPO C"
     }

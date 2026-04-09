@@ -95,7 +95,7 @@ Es el componente más complejo del sistema (627 líneas). Gestiona dos pestañas
 ```javascript
 // --- Pestaña Salida ---
 activeTab           // 'salida' | 'llegada'
-salidaCedula        // Texto del campo de búsqueda
+idAlumno            // Texto del campo de búsqueda (Cédula)
 sugerencias         // Lista de autocompletado (máx. 5)
 estudianteData      // Datos del estudiante localizado
 vehiculos           // Lista de unidades disponibles
@@ -152,7 +152,7 @@ export default api;
 
 | Método | HTTP | Endpoint | Descripción |
 | :--- | :--- | :--- | :--- |
-| `buscarEstudiante(cedula)` | GET | `/logistica/estudiante/{cedula}` | Busca estudiante (local + SIGAFI) |
+| `buscarEstudiante(idAlumno)` | GET | `/logistica/estudiante/{idAlumno}` | Busca estudiante (local + SIGAFI) |
 | `buscarSugerencias(query)` | GET | `/logistica/buscar?query=...` | Autocompletado (min 3 chars) |
 | `getVehiculosDisponibles()` | GET | `/logistica/vehiculos-disponibles` | Flota disponible |
 | `getInstructores()` | GET | `/logistica/instructores` | Lista de instructores activos |

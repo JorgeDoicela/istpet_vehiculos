@@ -16,20 +16,16 @@ CREATE DATABASE istpet_vehiculos CHARACTER SET utf8mb4 COLLATE utf8mb4_spanish_c
 
 ---
 
-## Bloque 1: Seguridad y Acceso — `usuarios`
-
-```sql
-CREATE TABLE usuarios (
-    id_usuario      INT            NOT NULL AUTO_INCREMENT,
-    usuario         VARCHAR(50)    NOT NULL UNIQUE,
-    password_hash   VARCHAR(255)   NOT NULL,
-    rol             ENUM('admin', 'guardia', 'estacionable') NOT NULL DEFAULT 'guardia',
-    nombre_completo VARCHAR(100),
+CREATE TABLE usuarios_web (
+    usuario         VARCHAR(20)    NOT NULL,
+    password        VARCHAR(255)   NOT NULL,
+    rol             VARCHAR(50),
+    salida          TINYINT(1)     NOT NULL DEFAULT 0,
+    ingreso         TINYINT(1)     NOT NULL DEFAULT 0,
     activo          TINYINT(1)     NOT NULL DEFAULT 1,
     creado_en       DATETIME       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id_usuario)
+    PRIMARY KEY (usuario)
 );
-```
 
 **Decisiones:**
 - `password_hash VARCHAR(255)`: Size suficiente para BCrypt (60 chars) y SHA-256 (64 chars hex).
@@ -59,10 +55,13 @@ CREATE TABLE tipo_licencia (
 ## Bloque 3: Recursos Humanos
 
 ```sql
-CREATE TABLE instructores (
-    cedula   VARCHAR(15) NOT NULL UNIQUE,
-    ...
-    PRIMARY KEY (id_instructor)
+CREATE TABLE profesores (
+    idProfesor   VARCHAR(15)  NOT NULL,
+    primerNombre VARCHAR(50),
+    primerApellido VARCHAR(50),
+    nombres      VARCHAR(150),
+    apellidos    VARCHAR(150),
+    PRIMARY KEY (idProfesor)
 );
 
 CREATE TABLE instructor_licencias (
@@ -109,9 +108,9 @@ CREATE TABLE mantenimientos (
 ## Bloque 5: Módulo Académico
 
 ```sql
-CREATE TABLE estudiantes (
-    cedula VARCHAR(15) NOT NULL,
-    PRIMARY KEY (cedula)  -- Sin AUTO_INCREMENT
+CREATE TABLE alumnos (
+    idAlumno VARCHAR(15) NOT NULL,
+    PRIMARY KEY (idAlumno)
 );
 ```
 
@@ -131,16 +130,12 @@ CREATE TABLE matriculas (
 ## Bloque 6: Control Logístico
 
 ```sql
-CREATE TABLE registros_salida (
-    id_matricula INT NOT NULL,  -- FK -> matriculas
-    id_vehiculo  INT NOT NULL,  -- FK -> vehiculos
-    id_instructor INT NOT NULL, -- FK -> instructores
-    ...
-);
-
-CREATE TABLE registros_llegada (
-    id_registro INT NOT NULL UNIQUE,  -- Relación 1:1 con registros_salida
-    ...
+CREATE TABLE cond_alumnos_practicas (
+    idPractica    INT NOT NULL AUTO_INCREMENT,
+    idMatricula   INT NOT NULL,
+    idvehiculo    INT NOT NULL,
+    idProfesor    VARCHAR(15) NOT NULL,
+    PRIMARY KEY (idPractica)
 );
 ```
 
@@ -184,15 +179,13 @@ INSERT INTO tipo_licencia (codigo, descripcion) VALUES
 ('D', 'Profesional (Buses de pasajeros)'),
 ('E', 'Profesional (Camiones y carga pesada)');
 
--- Usuario administrador (password: istpet2026 en SHA-256)
-INSERT INTO usuarios (usuario, password_hash, rol, nombre_completo)
-VALUES ('admin_istpet', SHA2('istpet2026', 256), 'admin', 'Administrador General ISTPET');
+-- Usuario administrador (password: istpet2026)
+INSERT INTO usuarios_web (usuario, password, rol, nombre_completo, activo)
+VALUES ('admin_istpet', 'istpet2026', 'admin', 'Administrador General ISTPET', 1);
 
 -- Curso contenedor para el Puente Híbrido (auto-registro de SIGAFI)
-INSERT INTO cursos (id_curso, id_tipo_licencia, nombre, nivel, paralelo, jornada, periodo,
-                    fecha_inicio, fecha_fin, cupo_maximo, cupos_disponibles, horas_practica_total, estado)
-VALUES (1, 1, 'CURSO PROFESIONAL TIPO C', 'INICIAL', 'A', 'MATUTINA', '2026-I',
-        '2026-01-01', '2026-12-31', 500, 500, 15, 'ACTIVO');
+INSERT INTO cursos (idNivel, idCarrera, Nivel)
+VALUES (1, 1, 'CURSO PROFESIONAL TIPO C');
 ```
 
 El **curso con `id_curso = 1`** es el contenedor genérico al que se asignan automáticamente los estudiantes traídos desde SIGAFI si no existe un curso local más específico. Tiene cupo de 500 intencionalmente para funcionar como "curso abierto".
