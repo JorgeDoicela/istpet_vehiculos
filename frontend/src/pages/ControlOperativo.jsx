@@ -11,7 +11,8 @@ import {
     ymdLocalHoy,
     fmtFechaAgenda,
     fmtUltimaCargaAgenda,
-    estadoAgendaChip
+    estadoAgendaChip,
+    agendaPracticaVigenteParaSugerencia
 } from '../utils/agendaUi';
 
 /**
@@ -148,39 +149,52 @@ const ControlOperativo = () => {
                 };
                 const busy = (id) => clasesActivas.some((ca) => idKey(ca.idAlumno) === idKey(id));
 
+                const filaSugerenciaDesdeAgenda = (ag, nombrePreferido) => {
+                    const sid = idKey(ag.idalumno);
+                    const vigente = agendaPracticaVigenteParaSugerencia(ag);
+                    return {
+                        idAlumno: sid,
+                        nombreCompleto: (nombrePreferido || ag.AlumnoNombre || '').trim() || sid,
+                        esAgendado: vigente,
+                        isBusy: busy(ag.idalumno),
+                        hora: vigente ? horaDesdeAgenda(ag) : '',
+                        vehiculo: vigente ? ag.VehiculoDetalle : '',
+                        instructor: vigente ? ag.ProfesorNombre : ''
+                    };
+                };
+
                 const localeMatch = agendadosHoy
                     .filter(
                         (ag) =>
                             idKey(ag.idalumno).startsWith(salidaIdAlumno) ||
                             (ag.AlumnoNombre || '').toLowerCase().includes(q)
                     )
-                    .map((ag) => ({
-                        idAlumno: idKey(ag.idalumno),
-                        nombreCompleto: (ag.AlumnoNombre || '').trim() || idKey(ag.idalumno),
-                        esAgendado: true,
-                        isBusy: busy(ag.idalumno),
-                        hora: horaDesdeAgenda(ag),
-                        vehiculo: ag.VehiculoDetalle,
-                        instructor: ag.ProfesorNombre
-                    }));
+                    .map((ag) => filaSugerenciaDesdeAgenda(ag, null));
+
+                const dedupePreferVigente = (items) => {
+                    const m = new Map();
+                    for (const s of items) {
+                        const k = idKey(s.idAlumno);
+                        const prev = m.get(k);
+                        if (!prev) m.set(k, s);
+                        else if (s.esAgendado && !prev.esAgendado) m.set(k, s);
+                    }
+                    return Array.from(m.values());
+                };
 
                 try {
                     const serverMatch = await logisticaService.buscarSugerencias(salidaIdAlumno);
-                    const combined = [...localeMatch];
+                    let combined = dedupePreferVigente([...localeMatch]);
                     serverMatch.forEach((sm) => {
                         const sid = idKey(sm.idAlumno);
                         if (combined.some((c) => idKey(c.idAlumno) === sid)) return;
-                        const ag = agendadosHoy.find((a) => idKey(a.idalumno) === sid);
-                        if (ag) {
-                            combined.push({
-                                idAlumno: sid,
-                                nombreCompleto: (sm.nombreCompleto || ag.AlumnoNombre || '').trim() || sid,
-                                esAgendado: true,
-                                isBusy: sm.isBusy || busy(sid),
-                                hora: horaDesdeAgenda(ag),
-                                vehiculo: ag.VehiculoDetalle,
-                                instructor: ag.ProfesorNombre
-                            });
+                        const rows = agendadosHoy.filter((a) => idKey(a.idalumno) === sid);
+                        const agV =
+                            rows.find((a) => agendaPracticaVigenteParaSugerencia(a)) ?? rows[0];
+                        if (agV) {
+                            combined.push(
+                                filaSugerenciaDesdeAgenda(agV, sm.nombreCompleto)
+                            );
                         } else {
                             combined.push({
                                 ...sm,
@@ -189,6 +203,7 @@ const ControlOperativo = () => {
                             });
                         }
                     });
+                    combined = dedupePreferVigente(combined);
 
                     setSugerencias(combined.slice(0, 5));
                     setMostrarSugerencias(combined.length > 0);

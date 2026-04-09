@@ -14,6 +14,20 @@ export function normalizeAgendaPractica(ag) {
   };
 }
 
+/**
+ * Práctica que aún aplica para “tiene algo agendado” en sugerencias de salida:
+ * fecha hoy o futura y no cerrada en el espejo local (completada/cancelada).
+ * Quien no tiene cita, ya cerró o solo figura en el pasado → false (UI “REGULAR”).
+ */
+export function agendaPracticaVigenteParaSugerencia(ag) {
+  if (!ag || typeof ag !== 'object') return false;
+  const op = String(ag.estadoOperativo ?? ag.EstadoOperativo ?? '').toLowerCase();
+  if (op === 'completada' || op === 'cancelada') return false;
+  const ymd = agendaYmdFromApi(ag.fecha);
+  if (!ymd) return false;
+  return ymd >= ymdLocalHoy();
+}
+
 export function agendaYmdFromApi(fecha) {
   if (!fecha) return '';
   const m = String(fecha).match(/^(\d{4})-(\d{2})-(\d{2})/);

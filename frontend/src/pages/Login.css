@@ -188,7 +188,7 @@
     padding: 1.1rem 1.5rem;
     border-radius: 50px;
     background: transparent;
-    border: 1px solid var(--apple-border);
+    border: 2px solid var(--apple-border);
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--apple-text-main);
@@ -199,14 +199,12 @@
     outline: none;
     background: transparent;
     border-color: var(--istpet-gold);
-    border-width: 2px;
     box-shadow: none;
 }
 
 /* Ajustes Específicos para Modo Oscuro en Focus */
 .dark .apple-field-container input:focus {
     background: transparent !important;
-    border-width: 2px;
     box-shadow: none;
 }
 
