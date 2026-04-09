@@ -12,6 +12,7 @@ namespace backend.Services.Interfaces
         Task<SyncLog> SyncInstructorsAsync();
         Task<SyncLog> SyncWebUsersAsync();
         Task<SyncLog> MasterSyncAsync();
+        Task<bool> PingSigafiAsync();
     }
 }
 
@@ -119,37 +120,56 @@ namespace backend.Services.Implementations
                 RegistrosFallidos = 0
             };
 
-            try
-            {
-                var licenseCount = await SyncLicenseTypesAsync();
-                var courseCount = await SyncCoursesAsync();
-                var vehCategoriesCount = await SyncVehicleCategoriesAsync();
-                var examCategoriesCount = await SyncExamCategoriesAsync();
-                var instructorsCount = await SyncInstructorsInternalAsync();
-                var usersCount = await SyncWebUsersInternalAsync();
-                var studentsCount = await SyncStudentsFromSigafiAsync();
-                var enrollmentCount = await SyncEnrollmentsAsync();
-                var vehiclesCount = await SyncVehiclesAsync();
-                var assignInstructorCount = await SyncInstructorVehicleAssignmentsAsync();
-                var assignStudentCount = await SyncStudentVehicleAssignmentsAsync();
-                var schedulesCount = await SyncSchedulesAsync();
-                var practiceLinksCount = await SyncPracticeScheduleLinksAsync();
+            var warnings = new List<string>();
 
-                log.RegistrosProcesados = licenseCount + courseCount + vehCategoriesCount + examCategoriesCount
-                    + instructorsCount + usersCount + studentsCount + enrollmentCount + vehiclesCount
-                    + assignInstructorCount + assignStudentCount + schedulesCount + practiceLinksCount;
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("tipo_licencia", SyncLicenseTypesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("cursos", SyncCoursesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("categoria_vehiculos", SyncVehicleCategoriesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("categorias_examenes_conduccion", SyncExamCategoriesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("profesores", SyncInstructorsInternalAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("usuarios_web", SyncWebUsersInternalAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("alumnos", SyncStudentsFromSigafiAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("matriculas", SyncEnrollmentsAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("vehiculos", SyncVehiclesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("asignacion_instructores_vehiculos", SyncInstructorVehicleAssignmentsAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_vehiculos", SyncStudentVehicleAssignmentsAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_horarios", SyncSchedulesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_practicas_horarios_alumnos", SyncPracticeScheduleLinksAsync, warnings, log);
+
+            if (warnings.Count == 0)
+            {
                 log.Estado = "OK";
                 log.Mensaje = "Master Sync SIGAFI completado correctamente.";
             }
-            catch (Exception ex)
+            else
             {
-                log.Estado = "ERROR";
-                log.RegistrosFallidos++;
-                log.Mensaje = $"Error crítico en Master Sync: {ex.Message}";
-                _logger.LogError(ex, "Master Sync SIGAFI falló.");
+                log.Estado = "ADVERTENCIA";
+                log.Mensaje = $"Master Sync parcial. Módulos omitidos: {string.Join("; ", warnings)}";
             }
 
             return log;
+        }
+
+        public Task<bool> PingSigafiAsync()
+        {
+            return _centralProvider.PingSigafiAsync();
+        }
+
+        private async Task<int> ExecuteSyncStepAsync(string moduleName, Func<Task<int>> syncAction, List<string> warnings, SyncLog log)
+        {
+            try
+            {
+                var count = await syncAction();
+                _logger.LogInformation("MasterSync módulo {module} OK: {count} registros", moduleName, count);
+                return count;
+            }
+            catch (Exception ex)
+            {
+                log.RegistrosFallidos++;
+                warnings.Add($"{moduleName}: {ex.Message}");
+                _logger.LogWarning(ex, "MasterSync omitió módulo {module} por error.", moduleName);
+                return 0;
+            }
         }
 
         public async Task<SyncLog> SyncExternalStudentsAsync(List<JsonElement> externalData)
@@ -321,13 +341,21 @@ namespace backend.Services.Implementations
                     {
                         idNivel = item.idNivel,
                         idCarrera = item.idCarrera,
-                        Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel
+                        Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel,
+                        jerarquia = item.jerarquia,
+                        orden = item.orden,
+                        esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null,
+                        aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso
                     });
                 }
                 else
                 {
                     existing.idCarrera = item.idCarrera;
                     existing.Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel;
+                    existing.jerarquia = item.jerarquia;
+                    existing.orden = item.orden;
+                    existing.esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null;
+                    existing.aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso;
                 }
                 processed++;
             }
@@ -523,6 +551,11 @@ namespace backend.Services.Implementations
                         idPeriodo = item.idPeriodo,
                         fechaMatricula = item.fechaMatricula,
                         paralelo = item.paralelo,
+                        arrastres = item.arrastres == 1,
+                        folio = item.folio,
+                        beca_matricula = item.beca_matricula,
+                        retirado = item.retirado == 1,
+                        esOyente = item.esOyente == 1,
                         valida = item.valida,
                         estado = "ACTIVO"
                     });
@@ -536,6 +569,11 @@ namespace backend.Services.Implementations
                     existing.idPeriodo = item.idPeriodo;
                     existing.fechaMatricula = item.fechaMatricula;
                     existing.paralelo = item.paralelo;
+                    existing.arrastres = item.arrastres == 1;
+                    existing.folio = item.folio;
+                    existing.beca_matricula = item.beca_matricula;
+                    existing.retirado = item.retirado == 1;
+                    existing.esOyente = item.esOyente == 1;
                     existing.valida = item.valida;
                 }
                 processed++;
@@ -547,10 +585,21 @@ namespace backend.Services.Implementations
         private async Task<int> SyncVehiclesAsync()
         {
             var rows = await _centralProvider.GetAllVehiclesFromCentralAsync();
+            var normalizedRows = rows
+                .GroupBy(r => !string.IsNullOrWhiteSpace(r.numero_vehiculo)
+                    ? $"NUM:{r.numero_vehiculo}"
+                    : !string.IsNullOrWhiteSpace(r.placa)
+                        ? $"PLA:{r.placa}"
+                        : $"ID:{r.idVehiculo}")
+                .Select(g => g.First());
+
             var processed = 0;
-            foreach (var item in rows)
+            foreach (var item in normalizedRows)
             {
-                var existing = await _context.Vehiculos.FirstOrDefaultAsync(x => x.idVehiculo == item.idVehiculo);
+                var existing = await _context.Vehiculos.FirstOrDefaultAsync(x =>
+                    x.idVehiculo == item.idVehiculo
+                    || (!string.IsNullOrEmpty(item.numero_vehiculo) && x.numero_vehiculo == item.numero_vehiculo)
+                    || (!string.IsNullOrEmpty(item.placa) && x.placa == item.placa));
                 if (existing == null)
                 {
                     _context.Vehiculos.Add(new Vehiculo
@@ -596,6 +645,12 @@ namespace backend.Services.Implementations
             foreach (var item in rows)
             {
                 var existing = await _context.AsignacionesInstructores.FirstOrDefaultAsync(x => x.idAsignacion == item.idAsignacion);
+                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idVehiculo);
+                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
+                if (!existsVehiculo || !existsProfesor)
+                {
+                    continue;
+                }
                 if (existing == null)
                 {
                     _context.AsignacionesInstructores.Add(new AsignacionInstructorVehiculo
@@ -635,6 +690,13 @@ namespace backend.Services.Implementations
             foreach (var item in rows)
             {
                 var existing = await _context.Asignaciones.FirstOrDefaultAsync(x => x.idAsignacion == item.idAsignacion);
+                var existsAlumno = await _context.Estudiantes.AnyAsync(a => a.idAlumno == item.idAlumno);
+                var existsVehiculo = await _context.Vehiculos.AnyAsync(v => v.idVehiculo == item.idVehiculo);
+                var existsProfesor = await _context.Instructores.AnyAsync(i => i.idProfesor == item.idProfesor);
+                if (!existsAlumno || !existsVehiculo || !existsProfesor)
+                {
+                    continue;
+                }
                 if (existing == null)
                 {
                     _context.Asignaciones.Add(new Asignacion
@@ -644,6 +706,9 @@ namespace backend.Services.Implementations
                         idVehiculo = item.idVehiculo,
                         idProfesor = item.idProfesor,
                         idPeriodo = item.idPeriodo ?? "",
+                        fechaAsignacion = item.fechaAsignacion ?? DateTime.Now,
+                        fechaInicio = item.fechaInicio,
+                        fechaFin = item.fechaFin,
                         activa = (byte)(item.activa == 1 ? 1 : 0)
                     });
                 }
@@ -653,7 +718,11 @@ namespace backend.Services.Implementations
                     existing.idVehiculo = item.idVehiculo;
                     existing.idProfesor = item.idProfesor;
                     existing.idPeriodo = item.idPeriodo ?? existing.idPeriodo;
+                    existing.fechaAsignacion = item.fechaAsignacion ?? existing.fechaAsignacion;
+                    existing.fechaInicio = item.fechaInicio;
+                    existing.fechaFin = item.fechaFin;
                     existing.activa = (byte)(item.activa == 1 ? 1 : 0);
+                    existing.observacion = item.observacion;
                 }
                 processed++;
             }
@@ -664,20 +733,28 @@ namespace backend.Services.Implementations
         private async Task<int> SyncSchedulesAsync()
         {
             var rows = await _centralProvider.GetAllSchedulesFromCentralAsync();
+            var normalizedRows = rows
+                .GroupBy(r => r.idAsignacionHorario)
+                .Select(g => g.First());
             var processed = 0;
-            foreach (var item in rows)
+            var existingById = await _context.HorariosAlumnos
+                .ToDictionaryAsync(x => x.idAsignacionHorario);
+
+            foreach (var item in normalizedRows)
             {
-                var existing = await _context.HorariosAlumnos.FirstOrDefaultAsync(x => x.idAsignacionHorario == item.idAsignacionHorario);
+                existingById.TryGetValue(item.idAsignacionHorario, out var existing);
                 if (existing == null)
                 {
-                    _context.HorariosAlumnos.Add(new HorarioAlumno
+                    var newRow = new HorarioAlumno
                     {
                         idAsignacionHorario = item.idAsignacionHorario,
                         idAsignacion = item.idAsignacion,
                         asiste = (sbyte)item.asiste,
                         activo = true,
                         observacion = item.Hora
-                    });
+                    };
+                    _context.HorariosAlumnos.Add(newRow);
+                    existingById[item.idAsignacionHorario] = newRow;
                 }
                 else
                 {
@@ -696,17 +773,24 @@ namespace backend.Services.Implementations
         {
             var rows = await _centralProvider.GetPracticeScheduleLinksFromCentralAsync();
             var processed = 0;
+            var existingKeys = await _context.PracticasHorarios
+                .Select(x => new { x.idPractica, x.idAsignacionHorario })
+                .ToListAsync();
+            var keySet = new HashSet<string>(existingKeys.Select(k => $"{k.idPractica}:{k.idAsignacionHorario}"));
+            var validPracticas = (await _context.Practicas.Select(p => p.idPractica).ToListAsync()).ToHashSet();
+            var validHorarios = (await _context.HorariosAlumnos.Select(h => h.idAsignacionHorario).ToListAsync()).ToHashSet();
+
             foreach (var item in rows)
             {
-                var existing = await _context.PracticasHorarios.FirstOrDefaultAsync(x =>
-                    x.idPractica == item.idPractica && x.idAsignacionHorario == item.idAsignacionHorario);
-                if (existing == null)
+                var key = $"{item.idPractica}:{item.idAsignacionHorario}";
+                if (!keySet.Contains(key) && validPracticas.Contains(item.idPractica) && validHorarios.Contains(item.idAsignacionHorario))
                 {
                     _context.PracticasHorarios.Add(new PracticaHorarioAlumno
                     {
                         idPractica = item.idPractica,
                         idAsignacionHorario = item.idAsignacionHorario
                     });
+                    keySet.Add(key);
                     processed++;
                 }
             }

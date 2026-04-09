@@ -292,12 +292,16 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idNivel, idCarrera, Nivel FROM cursos",
+                @"SELECT idNivel, idCarrera, Nivel, jerarquia, orden, CAST(esRecuperacion AS SIGNED) AS esRecuperacion, aliasCurso FROM cursos",
                 reader => new CentralCursoDto
                 {
                     idNivel = ReadInt(reader, "idNivel"),
                     idCarrera = ReadInt(reader, "idCarrera"),
-                    Nivel = ReadNullableString(reader, "Nivel")
+                    Nivel = ReadNullableString(reader, "Nivel"),
+                    jerarquia = ReadNullableInt(reader, "jerarquia"),
+                    orden = ReadNullableInt(reader, "orden"),
+                    esRecuperacion = ReadNullableInt(reader, "esRecuperacion"),
+                    aliasCurso = ReadNullableString(reader, "aliasCurso")
                 });
 
         public Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync() =>
@@ -347,7 +351,9 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralMatriculaDto>> GetActiveEnrollmentsFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idMatricula, idAlumno, idNivel, COALESCE(idSeccion, 1) AS idSeccion, COALESCE(idModalidad, 1) AS idModalidad, idPeriodo, fechaMatricula, paralelo, COALESCE(valida, 1) AS valida
+                @"SELECT idMatricula, idAlumno, idNivel, COALESCE(idSeccion, 1) AS idSeccion, COALESCE(idModalidad, 1) AS idModalidad, idPeriodo, fechaMatricula, paralelo,
+                         CAST(arrastres AS SIGNED) AS arrastres, folio, beca_matricula, CAST(retirado AS SIGNED) AS retirado, CAST(esOyente AS SIGNED) AS esOyente,
+                         COALESCE(valida, 1) AS valida
                   FROM matriculas
                   WHERE COALESCE(valida, 1) = 1",
                 reader => new CentralMatriculaDto
@@ -360,12 +366,17 @@ namespace backend.Services.Implementations
                     idPeriodo = ReadString(reader, "idPeriodo"),
                     fechaMatricula = ReadNullableDate(reader, "fechaMatricula"),
                     paralelo = ReadNullableString(reader, "paralelo"),
+                    arrastres = ReadNullableInt(reader, "arrastres"),
+                    folio = ReadNullableInt(reader, "folio"),
+                    beca_matricula = ReadNullableDecimal(reader, "beca_matricula"),
+                    retirado = ReadNullableInt(reader, "retirado"),
+                    esOyente = ReadNullableInt(reader, "esOyente"),
                     valida = ReadInt(reader, "valida")
                 });
 
         public Task<IEnumerable<CentralAsignacionInstructorVehiculoDto>> GetInstructorVehicleAssignmentsFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, fecha_salida, CAST(activo AS SIGNED) AS activo, usuario_asigna, usuario_desactiva, observacion
+                @"SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, fecha_salidad AS fecha_salida, CAST(activo AS SIGNED) AS activo, usuario_asigna, usuario_desactiva, observacion
                   FROM asignacion_instructores_vehiculos",
                 reader => new CentralAsignacionInstructorVehiculoDto
                 {
@@ -382,7 +393,7 @@ namespace backend.Services.Implementations
 
         public Task<IEnumerable<CentralAsignacionAlumnoVehiculoDto>> GetStudentVehicleAssignmentsFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAsignacion, idAlumno, idVehiculo, idProfesor, idPeriodo, CAST(activa AS SIGNED) AS activa
+                @"SELECT idAsignacion, idAlumno, idVehiculo, idProfesor, idPeriodo, fechaAsignacion, fechaInicio, fechaFin, observacion, CAST(activa AS SIGNED) AS activa
                   FROM cond_alumnos_vehiculos",
                 reader => new CentralAsignacionAlumnoVehiculoDto
                 {
@@ -391,6 +402,10 @@ namespace backend.Services.Implementations
                     idVehiculo = ReadInt(reader, "idVehiculo"),
                     idProfesor = ReadString(reader, "idProfesor"),
                     idPeriodo = ReadNullableString(reader, "idPeriodo"),
+                    fechaAsignacion = ReadNullableDate(reader, "fechaAsignacion"),
+                    fechaInicio = ReadNullableDate(reader, "fechaInicio"),
+                    fechaFin = ReadNullableDate(reader, "fechaFin"),
+                    observacion = ReadNullableString(reader, "observacion"),
                     activa = ReadInt(reader, "activa")
                 });
 
@@ -409,6 +424,23 @@ namespace backend.Services.Implementations
                     idPractica = ReadInt(reader, "idPractica"),
                     idAsignacionHorario = ReadInt(reader, "idAsignacionHorario")
                 });
+
+        public async Task<bool> PingSigafiAsync()
+        {
+            try
+            {
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand("SELECT 1", conn);
+                var result = await cmd.ExecuteScalarAsync();
+                return Convert.ToInt32(result) == 1;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "No se pudo conectar a SIGAFI con la conexión dedicada.");
+                return false;
+            }
+        }
 
         private async Task<IEnumerable<T>> QueryListAsync<T>(string sql, Func<MySqlDataReader, T> mapper)
         {
@@ -512,6 +544,12 @@ namespace backend.Services.Implementations
         {
             var ord = reader.GetOrdinal(column);
             return reader.IsDBNull(ord) ? null : Convert.ToInt32(reader.GetValue(ord));
+        }
+
+        private static decimal? ReadNullableDecimal(MySqlDataReader reader, string column)
+        {
+            var ord = reader.GetOrdinal(column);
+            return reader.IsDBNull(ord) ? null : Convert.ToDecimal(reader.GetValue(ord));
         }
 
         private static DateTime ReadDate(MySqlDataReader reader, string column)

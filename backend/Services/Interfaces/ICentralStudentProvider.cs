@@ -86,6 +86,10 @@ namespace backend.Services.Interfaces
         public int idNivel { get; set; }
         public int idCarrera { get; set; }
         public string? Nivel { get; set; }
+        public int? jerarquia { get; set; }
+        public int? orden { get; set; }
+        public int? esRecuperacion { get; set; }
+        public string? aliasCurso { get; set; }
     }
 
     public class CentralTipoLicenciaDto
@@ -120,6 +124,11 @@ namespace backend.Services.Interfaces
         public string idPeriodo { get; set; } = string.Empty;
         public DateTime? fechaMatricula { get; set; }
         public string? paralelo { get; set; }
+        public int? arrastres { get; set; }
+        public int? folio { get; set; }
+        public decimal? beca_matricula { get; set; }
+        public int? retirado { get; set; }
+        public int? esOyente { get; set; }
         public int valida { get; set; }
     }
 
@@ -143,7 +152,11 @@ namespace backend.Services.Interfaces
         public int idVehiculo { get; set; }
         public string idProfesor { get; set; } = string.Empty;
         public string? idPeriodo { get; set; }
+        public DateTime? fechaAsignacion { get; set; }
+        public DateTime? fechaInicio { get; set; }
+        public DateTime? fechaFin { get; set; }
         public int activa { get; set; }
+        public string? observacion { get; set; }
     }
 
     public class CentralPracticaHorarioDto
@@ -184,5 +197,6 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralAsignacionAlumnoVehiculoDto>> GetStudentVehicleAssignmentsFromCentralAsync();
         Task<IEnumerable<CentralHorarioDto>> GetAllSchedulesFromCentralAsync();
         Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync();
+        Task<bool> PingSigafiAsync();
     }
 }

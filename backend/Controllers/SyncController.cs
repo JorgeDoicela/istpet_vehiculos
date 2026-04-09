@@ -74,5 +74,22 @@ namespace backend.Controllers
                 return StatusCode(500, ApiResponse<SyncLog>.Fail($"Error en Master Sync: {ex.Message}"));
             }
         }
+
+        [HttpGet("ping-sigafi")]
+        public async Task<ActionResult<ApiResponse<object>>> PingSigafi()
+        {
+            var ok = await _syncService.PingSigafiAsync();
+            if (!ok)
+            {
+                return StatusCode(503, ApiResponse<object>.Fail("No hay conexión con SIGAFI remoto (192.168.7.50)."));
+            }
+
+            return Ok(ApiResponse<object>.Ok(new
+            {
+                connected = true,
+                source = "SIGAFI",
+                checkedAtUtc = DateTime.UtcNow
+            }, "Conexión SIGAFI OK."));
+        }
     }
 }

@@ -19,6 +19,13 @@ namespace backend.Controllers
     [Authorize(Roles = "admin,logistica,guardia")]
     public class LogisticaController : ControllerBase
     {
+        private sealed class VehiculoLite
+        {
+            public int idVehiculo { get; set; }
+            public string? numero_vehiculo { get; set; }
+            public string? placa { get; set; }
+        }
+
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
@@ -164,14 +171,63 @@ namespace backend.Controllers
         [HttpGet("vehiculos-disponibles")]
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoLogisticaResponse>>>> GetVehiculosDisponibles()
         {
-            var rawList = await (from v in _context.Vehiculos
-                               where v.activo && v.estado_mecanico == "OPERATIVO"
-                               && !_context.Practicas.Any(p => p.idvehiculo == v.idVehiculo && p.ensalida == 1 && p.cancelado == 0)
-                               select new {
-                                   v.idVehiculo,
-                                   v.numero_vehiculo,
-                                   v.placa
-                               }).ToListAsync();
+            var rawList = await GetVehiculosOperativosLocalesAsync();
+
+            // Comportamiento esperado por operación: al buscar, intentar refrescar desde SIGAFI si no hay datos locales.
+            if (rawList.Count == 0)
+            {
+                var centralVehicles = await _centralProvider.GetAllVehiclesFromCentralAsync();
+                var normalizedVehicles = centralVehicles
+                    .GroupBy(r => !string.IsNullOrWhiteSpace(r.numero_vehiculo)
+                        ? $"NUM:{r.numero_vehiculo}"
+                        : !string.IsNullOrWhiteSpace(r.placa)
+                            ? $"PLA:{r.placa}"
+                            : $"ID:{r.idVehiculo}")
+                    .Select(g => g.First());
+
+                foreach (var cv in normalizedVehicles)
+                {
+                    var existing = await _context.Vehiculos.FirstOrDefaultAsync(v =>
+                        v.idVehiculo == cv.idVehiculo
+                        || (!string.IsNullOrEmpty(cv.numero_vehiculo) && v.numero_vehiculo == cv.numero_vehiculo)
+                        || (!string.IsNullOrEmpty(cv.placa) && v.placa == cv.placa));
+                    if (existing == null)
+                    {
+                        _context.Vehiculos.Add(new Vehiculo
+                        {
+                            idVehiculo = cv.idVehiculo,
+                            idSubcategoria = cv.idSubcategoria,
+                            numero_vehiculo = cv.numero_vehiculo,
+                            placa = cv.placa,
+                            marca = cv.marca,
+                            anio = cv.anio,
+                            idCategoria = cv.idCategoria,
+                            activo = cv.activo == 1,
+                            observacion = cv.observacion,
+                            chasis = cv.chasis,
+                            motor = cv.motor,
+                            modelo = cv.modelo
+                        });
+                    }
+                    else
+                    {
+                        existing.idSubcategoria = cv.idSubcategoria;
+                        existing.numero_vehiculo = cv.numero_vehiculo;
+                        existing.placa = cv.placa;
+                        existing.marca = cv.marca;
+                        existing.anio = cv.anio;
+                        existing.idCategoria = cv.idCategoria;
+                        existing.activo = cv.activo == 1;
+                        existing.observacion = cv.observacion;
+                        existing.chasis = cv.chasis;
+                        existing.motor = cv.motor;
+                        existing.modelo = cv.modelo;
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+                rawList = await GetVehiculosOperativosLocalesAsync();
+            }
 
             var query = rawList.Select(v => new VehiculoLogisticaResponse {
                 idVehiculo = v.idVehiculo,
@@ -181,6 +237,19 @@ namespace backend.Controllers
             });
 
             return Ok(ApiResponse<IEnumerable<VehiculoLogisticaResponse>>.Ok(query));
+        }
+
+        private async Task<List<VehiculoLite>> GetVehiculosOperativosLocalesAsync()
+        {
+            return await (from v in _context.Vehiculos
+                          where v.activo && v.estado_mecanico == "OPERATIVO"
+                          && !_context.Practicas.Any(p => p.idvehiculo == v.idVehiculo && p.ensalida == 1 && p.cancelado == 0)
+                          select new VehiculoLite
+                          {
+                              idVehiculo = v.idVehiculo,
+                              numero_vehiculo = v.numero_vehiculo,
+                              placa = v.placa
+                          }).ToListAsync();
         }
 
         [HttpGet("instructor/{idProfesor}")]

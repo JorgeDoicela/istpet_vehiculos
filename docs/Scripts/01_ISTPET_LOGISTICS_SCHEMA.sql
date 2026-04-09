@@ -81,6 +81,10 @@ CREATE TABLE IF NOT EXISTS cursos (
     idNivel INT PRIMARY KEY,
     idCarrera INT,
     Nivel VARCHAR(160),
+    jerarquia INT,
+    orden INT,
+    esRecuperacion TINYINT,
+    aliasCurso VARCHAR(10),
     activo BOOLEAN DEFAULT TRUE
 );
 
@@ -147,8 +151,13 @@ CREATE TABLE IF NOT EXISTS matriculas (
     idSeccion INT DEFAULT 1,
     idModalidad INT DEFAULT 1,
     idPeriodo VARCHAR(10),
-    paralelo VARCHAR(5) DEFAULT 'A',
+    paralelo VARCHAR(10) DEFAULT 'A',
     fechaMatricula DATE,
+    arrastres TINYINT,
+    folio INT,
+    beca_matricula DECIMAL(5,2),
+    retirado TINYINT,
+    esOyente TINYINT DEFAULT 0,
     horas_completadas DECIMAL(10,2) DEFAULT 0.00,
     estado VARCHAR(20) DEFAULT 'ACTIVO',
     valida TINYINT DEFAULT 1,
@@ -184,7 +193,11 @@ CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
     idVehiculo INT NOT NULL,
     idProfesor VARCHAR(15) NOT NULL,
     idPeriodo VARCHAR(10),
+    fechaAsignacion DATETIME,
+    fechaInicio DATETIME,
+    fechaFin DATETIME,
     activa TINYINT DEFAULT 1,
+    observacion VARCHAR(200),
     FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
     FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
     FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
