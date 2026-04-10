@@ -103,7 +103,6 @@ namespace backend.Services.Implementations
                                 idDiscapacidad = ci.idDiscapacidad,
                                 porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
                                 numeroConadis = ci.numeroConadis,
-                                foto = ci.foto,
                                 esReal = ci.esReal ?? 1
                             });
                             log.RegistrosProcesados++;
@@ -148,7 +147,6 @@ namespace backend.Services.Implementations
                             existing.idDiscapacidad = ci.idDiscapacidad;
                             existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
                             existing.numeroConadis = ci.numeroConadis;
-                            existing.foto = ci.foto;
                             existing.esReal = ci.esReal ?? existing.esReal;
                             log.RegistrosProcesados++;
                         }
@@ -569,7 +567,6 @@ namespace backend.Services.Implementations
                         idDiscapacidad = ci.idDiscapacidad,
                         porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
                         numeroConadis = ci.numeroConadis,
-                        foto = ci.foto,
                         esReal = ci.esReal ?? 1
                     };
                     _context.Instructores.Add(nuevo);
@@ -615,7 +612,6 @@ namespace backend.Services.Implementations
                     existing.idDiscapacidad = ci.idDiscapacidad;
                     existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
                     existing.numeroConadis = ci.numeroConadis;
-                    existing.foto = ci.foto;
                     existing.esReal = ci.esReal ?? existing.esReal;
                 }
                 processed++;
@@ -1120,7 +1116,7 @@ namespace backend.Services.Implementations
                     _context.Carreras.Add(new Carrera
                     {
                         idCarrera = item.idCarrera,
-                        CarreraNombre = item.Carrera,
+                        Carrera = item.Carrera,
                         fechaCreacion = item.fechaCreacion,
                         activa = item.activa == 1,
                         directorCarrera = item.directorCarrera,
@@ -1136,7 +1132,7 @@ namespace backend.Services.Implementations
                 }
                 else
                 {
-                    existing.CarreraNombre = item.Carrera;
+                    existing.Carrera = item.Carrera;
                     existing.fechaCreacion = item.fechaCreacion;
                     existing.activa = item.activa == 1;
                     existing.directorCarrera = item.directorCarrera;
@@ -1221,14 +1217,14 @@ namespace backend.Services.Implementations
                     _context.Instituciones.Add(new Institucion
                     {
                         idInstitucion = item.idInstitucion,
-                        InstitucionNombre = item.Institucion,
+                        Institucion = item.Institucion,
                         ciudad = item.ciudad,
                         provincia = item.provincia
                     });
                 }
                 else
                 {
-                    existing.InstitucionNombre = item.Institucion;
+                    existing.Institucion = item.Institucion;
                     existing.ciudad = item.ciudad;
                     existing.provincia = item.provincia;
                 }

@@ -49,7 +49,7 @@ namespace backend.Data
             modelBuilder.Entity<Carrera>(entity => {
                 entity.ToTable("carreras");
                 entity.HasKey(e => e.idCarrera);
-                entity.Property(e => e.CarreraNombre).HasColumnName("Carrera");
+                entity.Property(e => e.Carrera).HasColumnName("Carrera");
             });
 
             modelBuilder.Entity<Modalidad>(entity => {
@@ -60,7 +60,7 @@ namespace backend.Data
             modelBuilder.Entity<Institucion>(entity => {
                 entity.ToTable("instituciones");
                 entity.HasKey(e => e.idInstitucion);
-                entity.Property(e => e.InstitucionNombre).HasColumnName("Institucion");
+                entity.Property(e => e.Institucion).HasColumnName("Institucion");
             });
 
             // 2. TIPO LICENCIA

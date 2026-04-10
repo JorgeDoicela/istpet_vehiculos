@@ -12,7 +12,7 @@ namespace backend.Models
         public int idInstitucion { get; set; }
 
         [MaxLength(200)]
-        public string? InstitucionNombre { get; set; }
+        public string? Institucion { get; set; }
 
         [MaxLength(100)]
         public string? ciudad { get; set; }

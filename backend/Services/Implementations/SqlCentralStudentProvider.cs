@@ -77,8 +77,7 @@ namespace backend.Services.Implementations
                             ' ',
                             IFNULL(s.seccion, '')
                         ) AS DetalleRaw,
-                        TRIM(CONCAT_WS(' ', NULLIF(TRIM(car.Carrera), ''), NULLIF(TRIM(c.Nivel), ''))) AS Nivel,
-                        a.foto";
+                        TRIM(CONCAT_WS(' ', NULLIF(TRIM(car.Carrera), ''), NULLIF(TRIM(c.Nivel), ''))) AS Nivel";
 
                 // 0) Última matrícula válida (no usar alumnos.idPeriodo: en tu caso sigue ABR2024/50 mientras matriculas ya va por ABR2025/52).
                 //    Orden: fechaMatricula más reciente; empate → idMatricula más alto. Sin fecha → solo idMatricula.
@@ -148,8 +147,7 @@ namespace backend.Services.Implementations
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
                         'Alumno en SIGAFI sin matrícula registrada' AS DetalleRaw,
                         NULL AS Nivel,
-                        'SIN_MAT' AS idPeriodo,
-                        a.foto
+                        'SIN_MAT' AS idPeriodo
                     FROM alumnos a
                     WHERE a.idAlumno = @p0
                     LIMIT 1";
@@ -209,7 +207,7 @@ namespace backend.Services.Implementations
                            tipo, nacionalidad, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
                            idEtnia, idNacionalidad, idParroquiaNacimiento, emailInstitucional, fecha_ingreso,
                            fechaIngresoIess, fecha_retiro, idParroquiaResidencia, tipoSangre, codigoPostal,
-                           idDiscapacidad, porcentajeDiscapacidad, numeroConadis, foto, esReal
+                           idDiscapacidad, porcentajeDiscapacidad, numeroConadis, esReal
                     FROM profesores";
                 var result = (await QueryListAsync(sql, MapCentralInstructor)).ToList();
                 _cache.Set("sigafi:instructores", (IEnumerable<CentralInstructorDto>)result, CacheInstructores);
@@ -1137,8 +1135,7 @@ WHERE COALESCE(activo, 1) = 0";
             seccion = ReadNullableString(reader, "seccion"),
             NombreCompleto = ReadNullableString(reader, "NombreCompleto"),
             DetalleRaw = ReadNullableString(reader, "DetalleRaw"),
-            Nivel = ReadNullableString(reader, "Nivel"),
-            foto = ReadNullableBytes(reader, "foto")
+            Nivel = ReadNullableString(reader, "Nivel")
         };
 
         /// <summary>
@@ -1213,7 +1210,6 @@ WHERE COALESCE(activo, 1) = 0";
             idDiscapacidad = ReadInt(reader, "idDiscapacidad"),
             porcentajeDiscapacidad = ReadNullableInt(reader, "porcentajeDiscapacidad"),
             numeroConadis = ReadNullableString(reader, "numeroConadis"),
-            foto = ReadNullableString(reader, "foto"),
             esReal = ReadNullableInt(reader, "esReal")
         };
 

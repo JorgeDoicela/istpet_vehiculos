@@ -12,7 +12,7 @@ namespace backend.Models
         public int idCarrera { get; set; }
 
         [MaxLength(100)]
-        public string? CarreraNombre { get; set; }
+        public string? Carrera { get; set; }
 
         public DateTime? fechaCreacion { get; set; }
         public bool activa { get; set; } = true;
