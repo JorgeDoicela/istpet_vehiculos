@@ -338,7 +338,7 @@ namespace backend.Controllers
 
             var query = rawList.Select(v => new VehiculoLogisticaResponse {
                 idVehiculo = v.idVehiculo,
-                numeroVehiculo = int.TryParse(v.numero_vehiculo, out int n) ? n : 0,
+                numeroVehiculo = v.numero_vehiculo,
                 vehiculoStr = $"#{v.numero_vehiculo} ({v.placa})",
                 instructorNombre = "DOCENTE ASIGNADO"
             });
@@ -354,7 +354,7 @@ namespace backend.Controllers
                           select new VehiculoLite
                           {
                               idVehiculo = v.idVehiculo,
-                              numero_vehiculo = v.numero_vehiculo,
+                              numero_vehiculo = v.numero_vehiculo ?? "0",
                               placa = v.placa
                           }).ToListAsync();
         }

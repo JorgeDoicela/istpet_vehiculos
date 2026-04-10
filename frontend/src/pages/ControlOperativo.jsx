@@ -351,14 +351,15 @@ const ControlOperativo = () => {
                     sVeh = freshV.find((v) => v.idVehiculo === vid);
                 }
                 if (!sVeh && data.practicaVehiculo) {
-                    const m = String(data.practicaVehiculo).match(/#(\d+)/);
+                    const m = String(data.practicaVehiculo).match(/#([\w\-]+)/);
                     sVeh = {
                         idVehiculo: vid,
-                        numeroVehiculo: m ? parseInt(m[1], 10) : 0,
+                        numeroVehiculo: m ? m[1] : (data.numeroVehiculo || "0"),
                         vehiculoStr: data.practicaVehiculo,
                         instructorNombre: 'DOCENTE ASIGNADO'
                     };
                 }
+
                 if (sVeh) setVehiculoSeleccionado(sVeh);
             }
         } catch (err) {
@@ -390,6 +391,8 @@ const ControlOperativo = () => {
             setInstructorSeleccionado(null);
             setFiltroLicencia(null);
             cargarVehiculosDisponibles();
+            cargarClasesActivas(); // 🚀 Refrescar pestaña Llegada inmediatamente
+
         } catch (err) {
             showNotification(err.message, 'error');
         }
@@ -455,7 +458,7 @@ const ControlOperativo = () => {
                                                 placeholder="CEDULA / ID"
                                                 maxLength={10}
                                                 value={salidaIdAlumno}
-                                                onChange={(e) => setSalidaIdAlumno(e.target.value.replace(/\D/g, ''))}
+                                                 onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
                                                 className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-base lg:text-lg font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                             />
 

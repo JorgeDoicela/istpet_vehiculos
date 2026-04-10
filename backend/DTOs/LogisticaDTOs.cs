@@ -34,7 +34,7 @@ namespace backend.DTOs
     public class VehiculoLogisticaResponse
     {
         public int idVehiculo { get; set; }
-        public int numeroVehiculo { get; set; }
+        public string? numeroVehiculo { get; set; }
         public string vehiculoStr { get; set; } = string.Empty;
         public string? idInstructorFijo { get; set; }
         public string instructorNombre { get; set; } = string.Empty;

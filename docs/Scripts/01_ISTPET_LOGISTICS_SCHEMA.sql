@@ -266,17 +266,26 @@ SELECT
     p.idalumno AS idAlumno,
     e.primerNombre AS primer_nombre,
     e.apellidoPaterno AS apellido_paterno,
-    CONCAT(e.apellidoPaterno, ' ', e.primerNombre) AS estudiante,
+    COALESCE(CONCAT(e.apellidoPaterno, ' ', e.primerNombre), p.idalumno) AS estudiante,
     v.idVehiculo AS id_vehiculo,
     v.numero_vehiculo AS numero_vehiculo,
     v.placa AS placa,
-    CONCAT(i.primerApellido, ' ', i.primerNombre) AS instructor,
+    COALESCE(CONCAT(i.primerApellido, ' ', i.primerNombre), p.idProfesor) AS instructor,
     p.hora_salida AS salida
 FROM cond_alumnos_practicas p
-JOIN alumnos e ON p.idalumno = e.idAlumno
-JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
-JOIN profesores i ON p.idProfesor = i.idProfesor
+LEFT JOIN alumnos e ON p.idalumno = e.idAlumno
+LEFT JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
+LEFT JOIN profesores i ON p.idProfesor = i.idProfesor
 WHERE p.ensalida = 1 AND p.cancelado = 0;
+
+CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
+SELECT
+    idVehiculo AS id_vehiculo,
+    numero_vehiculo AS numero_vehiculo,
+    placa AS placa
+FROM vehiculos
+WHERE activo = 1 AND estado_mecanico != 'OPERATIVO';
+
 
 -- 6. Carga de Metadatos del Sistema (Requeridos)
 INSERT IGNORE INTO tipo_licencia (codigo, descripcion)

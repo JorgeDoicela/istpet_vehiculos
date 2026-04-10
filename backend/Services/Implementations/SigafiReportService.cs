@@ -121,7 +121,8 @@ WHERE COALESCE(p.cancelado, 0) = 0";
                     : reader.GetString(reader.GetOrdinal("profesor_nombre"));
 
                 var numOrdinal = reader.GetOrdinal("numero_vehiculo");
-                var numeroVeh = reader.IsDBNull(numOrdinal) ? 0 : Convert.ToInt32(reader.GetValue(numOrdinal));
+                var numeroVeh = reader.IsDBNull(numOrdinal) ? "0" : reader.GetValue(numOrdinal).ToString() ?? "0";
+
 
                 var placaOrd = reader.GetOrdinal("placa");
                 var placa = reader.IsDBNull(placaOrd) ? "" : reader.GetString(placaOrd);

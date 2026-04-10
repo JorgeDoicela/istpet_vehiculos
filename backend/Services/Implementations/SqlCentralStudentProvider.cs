@@ -527,7 +527,7 @@ WHERE COALESCE(p.cancelado, 0) = 0 AND COALESCE(p.ensalida, 0) = 1";
                         placa = ReadNullableString(reader, "placa") ?? "",
                         numeroVehiculo = num,
                         instructor = ReadNullableString(reader, "instructor") ?? "",
-                        salida = salidaDt
+                        salida = hs
                     });
                 }
             }
@@ -935,18 +935,13 @@ WHERE COALESCE(activo, 1) = 0";
                 return await reader.ReadAsync() ? mapper(reader) : (T?)null;
             });
 
-        private static int ReadNumeroVehiculoFlexible(MySqlDataReader reader, string column)
+        private static string? ReadNumeroVehiculoFlexible(MySqlDataReader reader, string column)
         {
             var ord = reader.GetOrdinal(column);
-            if (reader.IsDBNull(ord))
-                return 0;
-            var v = reader.GetValue(ord);
-            if (v is int i)
-                return i;
-            if (v is long l)
-                return (int)l;
-            return int.TryParse(Convert.ToString(v)?.Trim(), out var n) ? n : 0;
+            if (reader.IsDBNull(ord)) return null;
+            return reader.GetValue(ord)?.ToString();
         }
+
 
         private static CentralStudentDto MapCentralStudent(MySqlDataReader reader) => new()
         {

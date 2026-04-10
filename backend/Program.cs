@@ -258,26 +258,84 @@ if (!string.IsNullOrEmpty(port))
 var app = builder.Build();
 
 // Compatibilidad con instalaciones existentes:
-// si la BD fue creada antes de incluir audit_logs en el schema principal,
-// esta creación idempotente evita que el login falle por auditoría.
+// HEALER: Asegura que el esquema local esté alineado con el nuevo modelo 2026.
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.ExecuteSqlRawAsync(@"
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id          INT          NOT NULL AUTO_INCREMENT,
-    usuario     VARCHAR(50)  NOT NULL,
-    accion      VARCHAR(50)  NOT NULL,
-    entidad_id  VARCHAR(100) NULL,
-    detalles    TEXT         NULL,
-    ip_origen   VARCHAR(45)  NULL,
-    fecha_hora  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id),
-    INDEX idx_audit_usuario (usuario),
-    INDEX idx_audit_accion  (accion),
-    INDEX idx_audit_fecha   (fecha_hora)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;");
+    try
+    {
+        await db.Database.ExecuteSqlRawAsync(@"
+            -- 1. Reparar tabla tipo_licencia (Absolute Parity)
+            ALTER TABLE tipo_licencia ADD COLUMN IF NOT EXISTS id_categoria_sigafi INT NULL UNIQUE;
+
+            -- 2. Asegurar tabla matriculas_examen_conduccion
+            CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
+                idMatricula INT NOT NULL,
+                idCategoria INT NOT NULL,
+                nota DECIMAL(6,2) NULL,
+                observacion TEXT NULL,
+                usuario VARCHAR(50) NULL,
+                fechaExamen DATE NULL,
+                fechaIngreso DATETIME NULL,
+                instructor VARCHAR(80) NULL,
+                PRIMARY KEY (idMatricula, idCategoria)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+            -- 3. Asegurar tabla audit_logs
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id          INT          NOT NULL AUTO_INCREMENT,
+                usuario     VARCHAR(50)  NOT NULL,
+                accion      VARCHAR(50)  NOT NULL,
+                entidad_id  VARCHAR(100) NULL,
+                detalles    TEXT         NULL,
+                ip_origen   VARCHAR(45)  NULL,
+                fecha_hora  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                INDEX idx_audit_usuario (usuario),
+                INDEX idx_audit_accion  (accion),
+                INDEX idx_audit_fecha   (fecha_hora)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+
+            -- 4. Optimización de Performance (Índices)
+            CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado);
+            CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno);
+            CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo);
+
+            -- 5. Recrear Vistas Operativas
+            CREATE OR REPLACE VIEW v_clases_activas AS
+            SELECT
+                p.idPractica AS id_registro,
+                p.idalumno AS idAlumno,
+                e.primerNombre AS primer_nombre,
+                e.apellidoPaterno AS apellido_paterno,
+                COALESCE(CONCAT(e.apellidoPaterno, ' ', e.primerNombre), p.idalumno) AS estudiante,
+                v.idVehiculo AS id_vehiculo,
+                v.numero_vehiculo AS numero_vehiculo,
+                v.placa AS placa,
+                COALESCE(CONCAT(i.primerApellido, ' ', i.primerNombre), p.idProfesor) AS instructor,
+                p.hora_salida AS salida
+            FROM cond_alumnos_practicas p
+            LEFT JOIN alumnos e ON p.idalumno = e.idAlumno
+            LEFT JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
+            LEFT JOIN profesores i ON p.idProfesor = i.idProfesor
+            WHERE p.ensalida = 1 AND p.cancelado = 0;
+
+            CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
+            SELECT
+                idVehiculo AS id_vehiculo,
+                numero_vehiculo AS numero_vehiculo,
+                placa AS placa
+            FROM vehiculos
+            WHERE activo = 1 AND estado_mecanico != 'OPERATIVO';
+        ");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"⚠️ Schema Healer ADVERTENCIA: {ex.Message}");
+    }
 }
+
+
 
 if (app.Environment.IsDevelopment())
 {

@@ -15,8 +15,9 @@ namespace backend.Models
         public string idAlumno { get; set; } = string.Empty;
         public string estudiante { get; set; } = string.Empty;
         public string placa { get; set; } = string.Empty;
-        public int numeroVehiculo { get; set; }
+        public string? numeroVehiculo { get; set; }
         public string instructor { get; set; } = string.Empty;
-        public DateTime salida { get; set; }
+        public TimeSpan? salida { get; set; }
     }
+
 }

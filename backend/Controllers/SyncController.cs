@@ -84,7 +84,7 @@ namespace backend.Controllers
             var ok = await _syncService.PingSigafiAsync();
             if (!ok)
             {
-                return StatusCode(503, ApiResponse<object>.Fail("No hay conexión con SIGAFI remoto (192.168.7.50)."));
+                return StatusCode(503, ApiResponse<object>.Fail("No hay conexión con el servidor SIGAFI remoto. Verifique la conectividad de red."));
             }
 
             return Ok(ApiResponse<object>.Ok(new

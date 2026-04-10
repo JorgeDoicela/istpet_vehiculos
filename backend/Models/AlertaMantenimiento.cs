@@ -11,7 +11,8 @@ namespace backend.Models
     public class AlertaMantenimiento
     {
         public int id_vehiculo { get; set; }
-        public int numero_vehiculo { get; set; }
+        public string? numero_vehiculo { get; set; }
         public string placa { get; set; } = string.Empty;
     }
+
 }

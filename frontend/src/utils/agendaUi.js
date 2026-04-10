@@ -58,6 +58,26 @@ export function fmtFechaAgenda(fecha) {
   return d.toLocaleDateString('es-EC', { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
+/**
+ * Formatea un TimeSpan (HH:mm:ss o HH:mm) que viene como string del Backend (.NET).
+ * Evita usar 'new Date()' que falla con strings de solo tiempo.
+ */
+export function fmtTimeSpan(val) {
+  if (!val) return '--:--';
+  const s = String(val);
+  // Si parece un ISO completo, extraer tiempo
+  if (s.includes('T')) {
+      const parts = s.split('T')[1].split(':');
+      return `${parts[0]}:${parts[1]}`;
+  }
+  // Si es HH:mm:ss o HH:mm
+  const matches = s.match(/^(\d{1,2}):(\d{2})/);
+  if (matches) {
+      return `${matches[1].padStart(2, '0')}:${matches[2]}`;
+  }
+  return s.substring(0, 5);
+}
+
 export function fmtUltimaCargaAgenda(iso) {
   if (!iso) return '';
   const d = new Date(iso);

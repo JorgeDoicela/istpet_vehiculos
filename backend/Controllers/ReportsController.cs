@@ -118,7 +118,6 @@ namespace backend.Controllers
                         ? culture.TextInfo.ToUpper($"Placa {placa.Trim()}")
                         : culture.TextInfo.ToUpper("Práctica local"));
 
-                _ = int.TryParse((x.v.numero_vehiculo ?? "0").Trim(), out var numV);
 
                 var tsSalida = x.p.hora_salida;
                 var tsLlegada = x.p.hora_llegada;
@@ -139,7 +138,7 @@ namespace backend.Controllers
                     idProfesor = x.p.idProfesor,
                     profesor = culture.TextInfo.ToUpper(profNom),
                     categoria = categoria,
-                    numeroVehiculo = numV.ToString(),
+                    numeroVehiculo = x.v.numero_vehiculo ?? "0",
                     idAlumno = x.a.idAlumno,
                     nomina = culture.TextInfo.ToUpper(alumNom),
                     dia = culture.DateTimeFormat.GetDayName(fecha.DayOfWeek).ToLowerInvariant(),

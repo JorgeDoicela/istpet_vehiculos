@@ -2,6 +2,8 @@ using backend.Data;
 using backend.Models;
 using backend.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+
 
 namespace backend.Services.Implementations
 {
@@ -12,11 +14,14 @@ namespace backend.Services.Implementations
     public class SqlLogisticaService : ILogisticaService
     {
         private readonly AppDbContext _context;
+        private readonly ICentralStudentProvider _central;
 
-        public SqlLogisticaService(AppDbContext context)
+        public SqlLogisticaService(AppDbContext context, ICentralStudentProvider central)
         {
             _context = context;
+            _central = central;
         }
+
 
         public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor, int? idAsignacionHorario = null)
         {
@@ -46,7 +51,36 @@ namespace backend.Services.Implementations
                 if (estudianteOcupado)
                     return "ESTUDIANTE_EN_PISTA";
 
+                // 4.5 Asegurar que el instructor existe localmente para que el JOIN de la vista v_clases_activas no esconda el registro.
+                var instructorLocal = await _context.Instructores.AnyAsync(i => i.idProfesor == idInstructor);
+                if (!instructorLocal)
+                {
+                    try
+                    {
+                        var cp = await _central.GetInstructorFromCentralAsync(idInstructor);
+                        if (cp != null)
+                        {
+                            _context.Instructores.Add(new Instructor
+                            {
+                                idProfesor = cp.idProfesor,
+                                primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
+                                primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
+                                nombres = (cp.nombres ?? "").ToUpper(),
+                                apellidos = (cp.apellidos ?? "").ToUpper(),
+                                activo = true
+                            });
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    catch
+                    {
+                        // Si falla la central, se permite continuar para no bloquear la operación de salida,
+                        // aunque no aparezca en la vista v_clases_activas (que usa INNER JOIN o LEFT JOIN sin datos).
+                    }
+                }
+
                 // 5. Registrar salida (Usando modelo Practica que mapea a cond_alumnos_practicas)
+
                 var practica = new Practica
                 {
                     idalumno = matricula.idAlumno,
@@ -116,7 +150,7 @@ namespace backend.Services.Implementations
                 if (matricula != null && practica.tiempo.HasValue)
                 {
                     decimal horasCalculadas = (decimal)Math.Round(practica.tiempo.Value.TotalHours, 2);
-                    matricula.horas_completadas += (int)horasCalculadas;
+                    matricula.horas_completadas += horasCalculadas;
                 }
 
                 await _context.SaveChangesAsync();
