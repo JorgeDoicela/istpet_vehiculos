@@ -4,7 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <NoWarn>$(NoWarn);NU1903</NoWarn> <!-- Silenciamos vulnerabilidad de AutoMapper (No nos afecta) -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591;NU1903</NoWarn> <!-- 1591 silencia advertencias de falta de comentarios XML -->
   </PropertyGroup>
 
   <ItemGroup>

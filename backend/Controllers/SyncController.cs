@@ -119,5 +119,56 @@ namespace backend.Controllers
 
             return Ok(payload);
         }
+        /// <summary>
+        /// Auditoría de Paridad: Compara el conteo de registros entre SIGAFI y la base de datos local.
+        /// Este endpoint es público para facilitar la verificación rápida de la sincronización.
+        /// </summary>
+        [HttpGet("audit")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<backend.DTOs.DataParityAuditDto>>> GetAuditParity()
+        {
+            try
+            {
+                var audit = await _syncService.GetDataParityAuditAsync();
+                return Ok(ApiResponse<backend.DTOs.DataParityAuditDto>.Ok(audit, "Auditoría de paridad completada."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<backend.DTOs.DataParityAuditDto>.Fail($"Error en auditoría: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Inserta una cédula para comparar los datos de un estudiante entre SIGAFI y la base local.
+        /// </summary>
+        [HttpGet("inspect/student/{idAlumno}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante>>>> InspectStudent(string idAlumno)
+        {
+            var res = await _syncService.InspectStudentParityAsync(idAlumno);
+            return Ok(ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante>>.Ok(res));
+        }
+
+        /// <summary>
+        /// Inserta un ID de profesor para comparar los datos entre SIGAFI y la base local.
+        /// </summary>
+        [HttpGet("inspect/instructor/{idProfesor}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor>>>> InspectInstructor(string idProfesor)
+        {
+            var res = await _syncService.InspectInstructorParityAsync(idProfesor);
+            return Ok(ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor>>.Ok(res));
+        }
+
+        /// <summary>
+        /// Inserta una placa para comparar los datos de un vehículo entre SIGAFI y la base local.
+        /// </summary>
+        [HttpGet("inspect/vehicle/{placa}")]
+        [AllowAnonymous]
+        public async Task<ActionResult<ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>>>> InspectVehicle(string placa)
+        {
+            var res = await _syncService.InspectVehicleParityAsync(placa);
+            return Ok(ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>>.Ok(res));
+        }
     }
 }

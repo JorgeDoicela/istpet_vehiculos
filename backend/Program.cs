@@ -200,6 +200,13 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = System.IO.Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (System.IO.File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -341,11 +348,12 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ISTPET API v1"));
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ISTPET API v1");
+    c.RoutePrefix = "swagger"; // Asegura acceso en /swagger
+});
 
 app.UseMiddleware<backend.Middleware.ErrorHandlingMiddleware>();
 

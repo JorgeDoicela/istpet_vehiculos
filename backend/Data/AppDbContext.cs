@@ -37,6 +37,8 @@ namespace backend.Data
         public DbSet<Carrera> Carreras { get; set; }
         public DbSet<Modalidad> Modalidades { get; set; }
         public DbSet<Institucion> Instituciones { get; set; }
+        public DbSet<Periodo> Periodos { get; set; }
+        public DbSet<Seccion> Secciones { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

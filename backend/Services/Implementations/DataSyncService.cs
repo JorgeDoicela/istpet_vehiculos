@@ -13,6 +13,11 @@ namespace backend.Services.Interfaces
         Task<SyncLog> SyncWebUsersAsync();
         Task<SyncLog> MasterSyncAsync();
         Task<bool> PingSigafiAsync();
+        Task<backend.DTOs.DataParityAuditDto> GetDataParityAuditAsync();
+        
+        Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante>> InspectStudentParityAsync(string idAlumno);
+        Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor>> InspectInstructorParityAsync(string idProfesor);
+        Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>> InspectVehicleParityAsync(string placa);
     }
 }
 
@@ -1452,6 +1457,101 @@ namespace backend.Services.Implementations
             }
             await _context.SaveChangesAsync();
             return processed;
+        }
+
+        public async Task<backend.DTOs.DataParityAuditDto> GetDataParityAuditAsync()
+        {
+            var audit = new backend.DTOs.DataParityAuditDto { IsSigafiConnected = await PingSigafiAsync() };
+            if (!audit.IsSigafiConnected) return audit;
+
+            // Definición de tablas para auditar con delegados explícitos
+            var tables = new List<(string Name, Func<Task<int>> Remote, Func<Task<int>> Local)>();
+            
+            tables.Add(("alumnos", (Func<Task<int>>)(async () => (await _centralProvider.GetAllStudentsFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Estudiantes.CountAsync())));
+            tables.Add(("profesores", (Func<Task<int>>)(async () => (await _centralProvider.GetAllInstructorsFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Instructores.CountAsync())));
+            tables.Add(("matriculas", (Func<Task<int>>)(async () => (await _centralProvider.GetActiveEnrollmentsFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Matriculas.CountAsync())));
+            tables.Add(("vehiculos", (Func<Task<int>>)(async () => (await _centralProvider.GetAllVehiclesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Vehiculos.CountAsync())));
+            tables.Add(("cond_alumnos_practicas", (Func<Task<int>>)(async () => (await _centralProvider.GetAllPracticesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Practicas.CountAsync())));
+            tables.Add(("carreras", (Func<Task<int>>)(async () => (await _centralProvider.GetAllCarrerasFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Carreras.CountAsync())));
+            tables.Add(("periodos", (Func<Task<int>>)(async () => (await _centralProvider.GetAllPeriodosFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Periodos.CountAsync())));
+            tables.Add(("secciones", (Func<Task<int>>)(async () => (await _centralProvider.GetAllSeccionesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Secciones.CountAsync())));
+            tables.Add(("modalidades", (Func<Task<int>>)(async () => (await _centralProvider.GetAllModalidadesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Modalidades.CountAsync())));
+            tables.Add(("cond_alumnos_horarios", (Func<Task<int>>)(async () => (await _centralProvider.GetAllSchedulesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.HorariosAlumnos.CountAsync())));
+            tables.Add(("fechas_horarios", (Func<Task<int>>)(async () => (await _centralProvider.GetAllFechasHorariosFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.FechasHorarios.CountAsync())));
+            tables.Add(("horas", (Func<Task<int>>)(async () => (await _centralProvider.GetAllHorasFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Horas.CountAsync())));
+            tables.Add(("usuarios_web", (Func<Task<int>>)(async () => (await _centralProvider.GetAllWebUsersAsync()).Count()), (Func<Task<int>>)(() => _context.Usuarios.CountAsync())));
+
+            foreach (var t in tables)
+            {
+                try
+                {
+                    audit.Tables.Add(new backend.DTOs.TableParityInfo
+                    {
+                        TableName = t.Name,
+                        RemoteCount = await t.Remote(),
+                        LocalCount = await t.Local()
+                    });
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning("Error auditando tabla {table}: {msg}", t.Name, ex.Message);
+                }
+            }
+
+            return audit;
+        }
+
+        public async Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante>> InspectStudentParityAsync(string idAlumno)
+        {
+            var result = new backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante> { EntityId = idAlumno };
+            result.RemoteData = await _centralProvider.GetFromCentralAsync(idAlumno);
+            result.LocalData = await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
+
+            if (result.RemoteData != null && result.LocalData != null)
+            {
+                if (result.RemoteData.primerNombre != result.LocalData.primerNombre) result.Mismatches.Add("primerNombre");
+                if (result.RemoteData.apellidoPaterno != result.LocalData.apellidoPaterno) result.Mismatches.Add("apellidoPaterno");
+                if (result.RemoteData.email != result.LocalData.email) result.Mismatches.Add("email");
+                
+                result.InParity = result.Mismatches.Count == 0;
+            }
+
+            return result;
+        }
+
+        public async Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor>> InspectInstructorParityAsync(string idProfesor)
+        {
+            var result = new backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor> { EntityId = idProfesor };
+            result.RemoteData = await _centralProvider.GetInstructorFromCentralAsync(idProfesor);
+            result.LocalData = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == idProfesor);
+
+            if (result.RemoteData != null && result.LocalData != null)
+            {
+                if (result.RemoteData.nombres != result.LocalData.nombres) result.Mismatches.Add("nombres");
+                if (result.RemoteData.apellidos != result.LocalData.apellidos) result.Mismatches.Add("apellidos");
+                if (result.RemoteData.email != result.LocalData.email) result.Mismatches.Add("email");
+
+                result.InParity = result.Mismatches.Count == 0;
+            }
+
+            return result;
+        }
+
+        public async Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>> InspectVehicleParityAsync(string placa)
+        {
+            var result = new backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo> { EntityId = placa };
+            result.RemoteData = await _centralProvider.GetVehicleByPlacaFromCentralAsync(placa);
+            result.LocalData = await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == placa);
+
+            if (result.RemoteData != null && result.LocalData != null)
+            {
+                if (result.RemoteData.numero_vehiculo != result.LocalData.numero_vehiculo) result.Mismatches.Add("numero_vehiculo");
+                if (result.RemoteData.marca != result.LocalData.marca) result.Mismatches.Add("marca");
+                
+                result.InParity = result.Mismatches.Count == 0;
+            }
+
+            return result;
         }
     }
 }
