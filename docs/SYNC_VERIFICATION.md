@@ -156,20 +156,20 @@ LIMIT 50;
 Para validar que se replica el set esperado de columnas en tablas clave:
 
 ```sql
--- usuarios_web: incluir esRrhh y creado_en local
-SELECT usuario, salida, ingreso, activo, asistencia, esRrhh
+-- usuarios_web: espejo exacto
+SELECT usuario, password, salida, ingreso, activo, asistencia, esRrhh
 FROM istpet_vehiculos.usuarios_web
 LIMIT 5;
 
--- matriculas: espejo + campos locales
-SELECT idMatricula, valida, esOyente, documentoFactura, horas_completadas, estado
+-- matriculas: espejo exacto
+SELECT idMatricula, valida, esOyente, documentoFactura
 FROM istpet_vehiculos.matriculas
 LIMIT 10;
 
--- cond_alumnos_horarios: deben existir activos e inactivos
-SELECT activo, COUNT(*) AS total
-FROM istpet_vehiculos.cond_alumnos_horarios
-GROUP BY activo;
+-- estado operativo local separado
+SELECT idMatricula, horas_completadas, estado
+FROM istpet_vehiculos.matriculas_operacion
+LIMIT 10;
 ```
 
 ---

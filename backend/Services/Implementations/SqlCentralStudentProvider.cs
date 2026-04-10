@@ -67,7 +67,7 @@ namespace backend.Services.Implementations
                         a.tipo_sangre, a.user_alumno, a.password,
                         a.idDiscapacidad, a.idEtnia, a.idNacionalidad,
                         a.porcentaje_discapacidad, a.carnet_conadis, a.email_institucional,
-                        a.primerIngreso, a.archivofoto,
+                        a.primerIngreso,
                         s.seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
                         CONCAT(
@@ -143,7 +143,7 @@ namespace backend.Services.Implementations
                         a.tipo_sangre, a.user_alumno, a.password,
                         a.idDiscapacidad, a.idEtnia, a.idNacionalidad,
                         a.porcentaje_discapacidad, a.carnet_conadis, a.email_institucional,
-                        a.primerIngreso, a.archivofoto,
+                        a.primerIngreso,
                         NULL AS paralelo, NULL AS seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
                         'Alumno en SIGAFI sin matrícula registrada' AS DetalleRaw,
@@ -588,8 +588,7 @@ WHERE COALESCE(activo, 1) = 0";
             var result = (await QueryListAsync(
                 @"SELECT idNivel, idCarrera, Nivel, jerarquia, orden,
                          CAST(esRecuperacion AS SIGNED) AS esRecuperacion,
-                         aliasCurso,
-                         CAST(COALESCE(activo, 1) AS SIGNED) AS activo
+                         aliasCurso
                   FROM cursos",
                 reader => new CentralCursoDto
                 {
@@ -599,8 +598,7 @@ WHERE COALESCE(activo, 1) = 0";
                     jerarquia = ReadNullableInt(reader, "jerarquia"),
                     orden = ReadNullableInt(reader, "orden"),
                     esRecuperacion = ReadNullableInt(reader, "esRecuperacion"),
-                    aliasCurso = ReadNullableString(reader, "aliasCurso"),
-                    activo = ReadInt(reader, "activo")
+                    aliasCurso = ReadNullableString(reader, "aliasCurso")
                 })).ToList();
             _cache.Set("sigafi:cursos", (IEnumerable<CentralCursoDto>)result, CacheCursos);
             return result;
@@ -687,7 +685,7 @@ WHERE COALESCE(activo, 1) = 0";
                                   tipo_sangre, user_alumno, password,
                                   idDiscapacidad, idEtnia, idNacionalidad,
                                   porcentaje_discapacidad, carnet_conadis, email_institucional,
-                                  primerIngreso, archivofoto";
+                                  primerIngreso";
             try
             {
                 if (isCedula)
@@ -778,8 +776,7 @@ WHERE COALESCE(activo, 1) = 0";
             porcentaje_discapacidad = ReadNullableInt(reader, "porcentaje_discapacidad"),
             carnet_conadis = ReadNullableString(reader, "carnet_conadis"),
             email_institucional = ReadNullableString(reader, "email_institucional"),
-            primerIngreso = ReadNullableInt(reader, "primerIngreso"),
-            archivofoto = ReadNullableString(reader, "archivofoto")
+            primerIngreso = ReadNullableInt(reader, "primerIngreso")
         };
 
         public Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync()
@@ -790,7 +787,7 @@ WHERE COALESCE(activo, 1) = 0";
                                "fecha_Inscripcion, parroquia_nacimiento, nombre_padre, ocupacion_padre, nacionalidad_padre, " +
                                "nombre_madre, ocupacion_madre, nacionalidad_madre, barrio_residencia, parroquia_residencia, " +
                                "ciudad_residencia, tipo_sangre, user_alumno, password, idDiscapacidad, idEtnia, idNacionalidad, " +
-                               "porcentaje_discapacidad, carnet_conadis, email_institucional, primerIngreso, archivofoto " +
+                               "porcentaje_discapacidad, carnet_conadis, email_institucional, primerIngreso " +
                                "FROM alumnos";
             return QueryListAsync(sql, MapAlumnoLite);
         }
@@ -1135,7 +1132,6 @@ WHERE COALESCE(activo, 1) = 0";
             carnet_conadis = ReadNullableString(reader, "carnet_conadis"),
             email_institucional = ReadNullableString(reader, "email_institucional"),
             primerIngreso = ReadNullableInt(reader, "primerIngreso"),
-            archivofoto = ReadNullableString(reader, "archivofoto"),
             
             paralelo = ReadNullableString(reader, "paralelo"),
             seccion = ReadNullableString(reader, "seccion"),

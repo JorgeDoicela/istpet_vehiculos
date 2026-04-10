@@ -47,8 +47,7 @@ public class SigafiMirrorPersistenceService : ISigafiMirrorPersistenceService
                         idPeriodo = item.idPeriodo,
                         idNivel = item.idNivel,
                         idSeccion = item.idSeccion,
-                        idModalidad = item.idModalidad,
-                        activo = true
+                        idModalidad = item.idModalidad
                     });
                 }
                 else
@@ -61,7 +60,7 @@ public class SigafiMirrorPersistenceService : ISigafiMirrorPersistenceService
                     existing.email = item.email?.Length > 100 ? item.email[..100] : existing.email;
                     if (!string.IsNullOrEmpty(item.idPeriodo))
                         existing.idPeriodo = item.idPeriodo;
-                    existing.idNivel = item.idNivel ?? existing.idNivel;
+                    existing.idNivel = item.idNivel;
                     existing.idSeccion = item.idSeccion ?? existing.idSeccion;
                     existing.idModalidad = item.idModalidad ?? existing.idModalidad;
                 }
@@ -100,8 +99,8 @@ public class SigafiMirrorPersistenceService : ISigafiMirrorPersistenceService
                     continue;
 
                 var idPeriodo = string.IsNullOrWhiteSpace(d.idPeriodo) ? "SIN_MAT" : d.idPeriodo.Trim();
-                if (idPeriodo.Length > 10)
-                    idPeriodo = idPeriodo[..10];
+                if (idPeriodo.Length > 7)
+                    idPeriodo = idPeriodo[..7];
 
                 var existing = await _context.Practicas.FindAsync(new object[] { d.idPractica }, ct);
                 if (existing == null)

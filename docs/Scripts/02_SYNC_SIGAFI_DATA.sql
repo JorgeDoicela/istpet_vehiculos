@@ -58,14 +58,13 @@ SET nombres = CONCAT_WS(' ', primerNombre, segundoNombre),
     apellidos = CONCAT_WS(' ', primerApellido, segundoApellido);
 
 -- 4. Sincronización de Alumnos (Estudiantes)
-INSERT IGNORE INTO alumnos (idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno, activo)
+INSERT IGNORE INTO alumnos (idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno)
 SELECT 
     idAlumno, 
     UPPER(primerNombre), 
     UPPER(segundoNombre), 
     UPPER(apellidoPaterno), 
-    UPPER(apellidoMaterno), 
-    1
+    UPPER(apellidoMaterno)
 FROM sigafi_es.alumnos;
 
 -- 5. Sincronización de Vehículos y Asignaciones
@@ -74,8 +73,8 @@ INSERT IGNORE INTO asignacion_instructores_vehiculos (idAsignacion, idVehiculo, 
 SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, activo, observacion
 FROM sigafi_es.asignacion_instructores_vehiculos;
 
--- Luego sincronizamos vehículos vinculando el instructor sugerido por SIGAFI
-INSERT INTO vehiculos (idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria, activo, observacion, chasis, motor, modelo, id_tipo_licencia, id_instructor_fijo, estado_mecanico)
+-- Luego sincronizamos vehículos espejo
+INSERT INTO vehiculos (idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria, activo, observacion, chasis, motor, modelo)
 SELECT 
     v.idVehiculo, 
     v.idSubcategoria,
@@ -88,13 +87,9 @@ SELECT
     v.observacion,
     v.chasis,
     v.motor,
-    v.modelo,
-    1, -- Default Mapping
-    (SELECT a.idProfesor FROM sigafi_es.asignacion_instructores_vehiculos a WHERE a.idVehiculo = v.idVehiculo AND a.activo = 1 LIMIT 1),
-    'OPERATIVO'
+    v.modelo
 FROM sigafi_es.vehiculos v
 ON DUPLICATE KEY UPDATE
-    id_instructor_fijo = VALUES(id_instructor_fijo),
     idSubcategoria = VALUES(idSubcategoria),
     idCategoria = VALUES(idCategoria);
 

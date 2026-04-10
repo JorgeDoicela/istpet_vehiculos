@@ -54,8 +54,6 @@ namespace backend.Services.Interfaces
         public string? carnet_conadis { get; set; }
         public string? email_institucional { get; set; }
         public int? primerIngreso { get; set; }
-        public string? archivofoto { get; set; }
-
         public byte[]? foto { get; set; }
         public string? paralelo { get; set; }
         public string? seccion { get; set; }
@@ -180,7 +178,6 @@ namespace backend.Services.Interfaces
         public int? orden { get; set; }
         public int? esRecuperacion { get; set; }
         public string? aliasCurso { get; set; }
-        public int activo { get; set; }
     }
 
     public class CentralTipoLicenciaDto
@@ -343,7 +340,6 @@ namespace backend.Services.Interfaces
         public string? carnet_conadis { get; set; }
         public string? email_institucional { get; set; }
         public int? primerIngreso { get; set; }
-        public string? archivofoto { get; set; }
     }
 
     public interface ICentralStudentProvider

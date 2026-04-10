@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
 namespace backend.Models
 {
     /**
@@ -13,17 +12,17 @@ namespace backend.Models
         public int idPractica { get; set; }
 
         [Required]
-        [MaxLength(15)]
+        [MaxLength(14)]
         public string idalumno { get; set; } = string.Empty;
 
         public int idvehiculo { get; set; }
 
         [Required]
-        [MaxLength(15)]
+        [MaxLength(14)]
         public string idProfesor { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(10)]
+        [MaxLength(7)]
         public string idPeriodo { get; set; } = string.Empty;
 
         [MaxLength(15)]
@@ -48,7 +47,6 @@ namespace backend.Models
         public string? user_llegada { get; set; }
 
         public byte? cancelado { get; set; } = 0;
-        public string? observaciones { get; set; }
 
         // Navigation (Local Logic)
         [ForeignKey("idalumno")]

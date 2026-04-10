@@ -43,7 +43,7 @@ public static class SigafiVehicleUpsert
                     marca = cv.marca,
                     anio = cv.anio,
                     idCategoria = cv.idCategoria,
-                    activo = cv.activo == 1,
+                    activo = cv.activo,
                     observacion = cv.observacion,
                     chasis = cv.chasis,
                     motor = cv.motor,
@@ -58,7 +58,7 @@ public static class SigafiVehicleUpsert
                 existing.marca = cv.marca;
                 existing.anio = cv.anio;
                 existing.idCategoria = cv.idCategoria;
-                existing.activo = cv.activo == 1;
+                existing.activo = cv.activo;
                 existing.observacion = cv.observacion;
                 existing.chasis = cv.chasis;
                 existing.motor = cv.motor;

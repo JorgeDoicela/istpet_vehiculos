@@ -14,7 +14,7 @@ namespace backend.Models
 
         public int idVehiculo { get; set; }
 
-        [MaxLength(15)]
+        [MaxLength(14)]
         public string idProfesor { get; set; } = string.Empty;
 
         public DateTime? fecha_asignacion { get; set; }
@@ -29,7 +29,7 @@ namespace backend.Models
         [MaxLength(20)]
         public string? usuario_desactiva { get; set; }
 
-        [MaxLength(255)]
+        [MaxLength(200)]
         public string? observacion { get; set; }
 
         // Navigation Properties

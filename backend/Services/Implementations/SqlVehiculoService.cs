@@ -21,10 +21,7 @@ namespace backend.Services.Implementations
         {
             var central = await _central.GetAllVehiclesFromCentralAsync();
             await SigafiVehicleUpsert.MergeFromCentralAsync(_context, central);
-            return await _context.Vehiculos
-                .Include(v => v.TipoLicencia)
-                .Include(v => v.InstructorFijo)
-                .ToListAsync();
+            return await _context.Vehiculos.ToListAsync();
         }
 
         public async Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa)
@@ -39,10 +36,7 @@ namespace backend.Services.Implementations
                 if (cv != null)
                 {
                     await SigafiVehicleUpsert.MergeFromCentralAsync(_context, new[] { cv });
-                    return await _context.Vehiculos
-                        .Include(v => v.TipoLicencia)
-                        .Include(v => v.InstructorFijo)
-                        .FirstOrDefaultAsync(v => v.placa == key);
+                    return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == key);
                 }
             }
             catch (Exception)
@@ -50,10 +44,7 @@ namespace backend.Services.Implementations
                 // SIGAFI no disponible: continúa con espejo local.
             }
 
-            return await _context.Vehiculos
-                .Include(v => v.TipoLicencia)
-                .Include(v => v.InstructorFijo)
-                .FirstOrDefaultAsync(v => v.placa == key);
+            return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == key);
         }
     }
 }

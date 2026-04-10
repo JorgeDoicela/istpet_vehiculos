@@ -59,8 +59,7 @@ namespace backend.Services.Implementations
                         apellidoPaterno = (central.apellidoPaterno ?? "S/N").ToUpper(),
                         apellidoMaterno = (central.apellidoMaterno ?? "").ToUpper(),
                         celular         = null,
-                        email           = null,
-                        activo          = true
+                        email           = null
                     };
                     _context.Estudiantes.Add(local);
                 }
@@ -95,8 +94,7 @@ namespace backend.Services.Implementations
                     apellidoPaterno = (x.apellidoPaterno ?? "").ToUpper(),
                     apellidoMaterno = (x.apellidoMaterno ?? "").ToUpper(),
                     celular = x.celular,
-                    email = x.email,
-                    activo = true
+                    email = x.email
                 })
                 .ToList();
         }

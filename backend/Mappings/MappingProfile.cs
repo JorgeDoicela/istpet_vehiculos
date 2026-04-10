@@ -33,9 +33,7 @@ namespace backend.Mappings
 
             CreateMap<Vehiculo, VehiculoLogisticaResponse>()
                 .ForMember(dest => dest.numeroVehiculo, opt => opt.MapFrom(src => src.numero_vehiculo ?? "0"))
-                .ForMember(dest => dest.vehiculoStr, opt => opt.MapFrom(src => $"{src.placa} - #{src.numero_vehiculo}"))
-                .ForMember(dest => dest.idInstructorFijo, opt => opt.MapFrom(src => src.id_instructor_fijo))
-                .ForMember(dest => dest.instructorNombre, opt => opt.MapFrom(src => src.InstructorFijo != null ? src.InstructorFijo.nombres : "SIN INSTRUCTOR"));
+                .ForMember(dest => dest.vehiculoStr, opt => opt.MapFrom(src => $"{src.placa} - #{src.numero_vehiculo}"));
         }
     }
 }

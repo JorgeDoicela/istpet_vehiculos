@@ -124,9 +124,5 @@ namespace backend.Models
 
         public int primerIngreso { get; set; } = 1;
 
-        [MaxLength(100)]
-        public string? archivofoto { get; set; }
-
-        public bool activo { get; set; } = true;
     }
 }

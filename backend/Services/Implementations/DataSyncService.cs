@@ -83,13 +83,13 @@ namespace backend.Services.Implementations
                                 fecha_nacimiento = ci.fecha_nacimiento,
                                 sexo = ci.sexo,
                                 clave = ci.clave,
-                                practicas = ci.practicas,
+                                practicas = ci.practicas ?? 0,
                                 tipo = ci.tipo,
                                 nacionalidad = ci.nacionalidad,
                                 titulo = ci.titulo,
                                 abreviatura = ci.abreviatura,
                                 abreviatura_post = ci.abreviatura_post,
-                                activo = ci.activo == 1,
+                                activo = ci.activo,
                                 idEtnia = ci.idEtnia,
                                 idNacionalidad = ci.idNacionalidad,
                                 idParroquiaNacimiento = ci.idParroquiaNacimiento,
@@ -104,7 +104,7 @@ namespace backend.Services.Implementations
                                 porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
                                 numeroConadis = ci.numeroConadis,
                                 foto = ci.foto,
-                                esReal = ci.esReal
+                                esReal = ci.esReal ?? 1
                             });
                             log.RegistrosProcesados++;
                         }
@@ -128,13 +128,13 @@ namespace backend.Services.Implementations
                             existing.fecha_nacimiento = ci.fecha_nacimiento;
                             existing.sexo = ci.sexo;
                             existing.clave = ci.clave;
-                            existing.practicas = ci.practicas;
+                            existing.practicas = ci.practicas ?? existing.practicas;
                             existing.tipo = ci.tipo;
                             existing.nacionalidad = ci.nacionalidad;
                             existing.titulo = ci.titulo;
                             existing.abreviatura = ci.abreviatura;
                             existing.abreviatura_post = ci.abreviatura_post;
-                            existing.activo = ci.activo == 1;
+                            existing.activo = ci.activo;
                             existing.idEtnia = ci.idEtnia;
                             existing.idNacionalidad = ci.idNacionalidad;
                             existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
@@ -149,7 +149,7 @@ namespace backend.Services.Implementations
                             existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
                             existing.numeroConadis = ci.numeroConadis;
                             existing.foto = ci.foto;
-                            existing.esReal = ci.esReal;
+                            existing.esReal = ci.esReal ?? existing.esReal;
                             log.RegistrosProcesados++;
                         }
                     }
@@ -291,8 +291,7 @@ namespace backend.Services.Implementations
                             idAlumno = extCedula,
                             primerNombre = firstName,
                             apellidoPaterno = lastName,
-                            email = DataValidator.IsValidEmail(extEmail) ? extEmail : null,
-                            activo = true
+                            email = DataValidator.IsValidEmail(extEmail) ? extEmail : null
                         });
                         log.RegistrosProcesados++;
                     }
@@ -349,8 +348,7 @@ namespace backend.Services.Implementations
                                 ingreso = eu.ingreso == 1,
                                 activo = eu.activo == 1,
                                 asistencia = eu.asistencia == 1,
-                                esRrhh = eu.esRrhh == 1,
-                                creado_en = DateTime.Now
+                                esRrhh = eu.esRrhh == 1
                             });
                         }
                         else
@@ -445,23 +443,21 @@ namespace backend.Services.Implementations
                     {
                         idNivel = item.idNivel,
                         idCarrera = item.idCarrera,
-                        Nivel = item.Nivel?.Length > 160 ? item.Nivel[..160] : item.Nivel,
+                        Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel,
                         jerarquia = item.jerarquia,
                         orden = item.orden,
                         esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null,
-                        aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso,
-                        activo = item.activo == 1
+                        aliasCurso = item.aliasCurso?.Length > 5 ? item.aliasCurso[..5] : item.aliasCurso
                     });
                 }
                 else
                 {
                     existing.idCarrera = item.idCarrera;
-                    existing.Nivel = item.Nivel?.Length > 160 ? item.Nivel[..160] : item.Nivel;
+                    existing.Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel;
                     existing.jerarquia = item.jerarquia;
                     existing.orden = item.orden;
                     existing.esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null;
-                    existing.aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso;
-                    existing.activo = item.activo == 1;
+                    existing.aliasCurso = item.aliasCurso?.Length > 5 ? item.aliasCurso[..5] : item.aliasCurso;
                 }
                 processed++;
             }
@@ -506,16 +502,16 @@ namespace backend.Services.Implementations
                     _context.CategoriasExamenes.Add(new CategoriaExamenConduccion
                     {
                         IdCategoria = item.IdCategoria,
-                        categoria = item.categoria?.Length > 100 ? item.categoria[..100] : (item.categoria ?? string.Empty),
-                        tieneNota = item.tieneNota == 1,
-                        activa = item.activa == 1
+                        categoria = item.categoria?.Length > 100 ? item.categoria[..100] : item.categoria,
+                        tieneNota = (byte)item.tieneNota,
+                        activa = (byte)item.activa
                     });
                 }
                 else
                 {
-                    existing.categoria = item.categoria?.Length > 100 ? item.categoria[..100] : (item.categoria ?? string.Empty);
-                    existing.tieneNota = item.tieneNota == 1;
-                    existing.activa = item.activa == 1;
+                    existing.categoria = item.categoria?.Length > 100 ? item.categoria[..100] : item.categoria;
+                    existing.tieneNota = (byte)item.tieneNota;
+                    existing.activa = (byte)item.activa;
                 }
                 processed++;
             }
@@ -553,13 +549,13 @@ namespace backend.Services.Implementations
                         fecha_nacimiento = ci.fecha_nacimiento,
                         sexo = ci.sexo,
                         clave = ci.clave,
-                        practicas = ci.practicas,
+                        practicas = ci.practicas ?? 0,
                         tipo = ci.tipo,
                         nacionalidad = ci.nacionalidad,
                         titulo = ci.titulo,
                         abreviatura = ci.abreviatura,
                         abreviatura_post = ci.abreviatura_post,
-                        activo = ci.activo == 1,
+                        activo = ci.activo,
                         idEtnia = ci.idEtnia,
                         idNacionalidad = ci.idNacionalidad,
                         idParroquiaNacimiento = ci.idParroquiaNacimiento,
@@ -574,7 +570,7 @@ namespace backend.Services.Implementations
                         porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
                         numeroConadis = ci.numeroConadis,
                         foto = ci.foto,
-                        esReal = ci.esReal
+                        esReal = ci.esReal ?? 1
                     };
                     _context.Instructores.Add(nuevo);
                     byId[ci.idProfesor] = nuevo;
@@ -599,13 +595,13 @@ namespace backend.Services.Implementations
                     existing.fecha_nacimiento = ci.fecha_nacimiento;
                     existing.sexo = ci.sexo;
                     existing.clave = ci.clave;
-                    existing.practicas = ci.practicas;
+                    existing.practicas = ci.practicas ?? existing.practicas;
                     existing.tipo = ci.tipo;
                     existing.nacionalidad = ci.nacionalidad;
                     existing.titulo = ci.titulo;
                     existing.abreviatura = ci.abreviatura;
                     existing.abreviatura_post = ci.abreviatura_post;
-                    existing.activo = ci.activo == 1;
+                    existing.activo = ci.activo;
                     existing.idEtnia = ci.idEtnia;
                     existing.idNacionalidad = ci.idNacionalidad;
                     existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
@@ -620,7 +616,7 @@ namespace backend.Services.Implementations
                     existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
                     existing.numeroConadis = ci.numeroConadis;
                     existing.foto = ci.foto;
-                    existing.esReal = ci.esReal;
+                    existing.esReal = ci.esReal ?? existing.esReal;
                 }
                 processed++;
             }
@@ -718,9 +714,7 @@ namespace backend.Services.Implementations
                         porcentaje_discapacidad = item.porcentaje_discapacidad,
                         carnet_conadis = item.carnet_conadis,
                         email_institucional = item.email_institucional,
-                        primerIngreso = item.primerIngreso,
-                        archivofoto = item.archivofoto,
-                        activo = true
+                        primerIngreso = item.primerIngreso ?? 1
                     };
                     _context.Estudiantes.Add(nuevo);
                     byId[item.idAlumno] = nuevo;
@@ -767,8 +761,7 @@ namespace backend.Services.Implementations
                     existing.porcentaje_discapacidad = item.porcentaje_discapacidad;
                     existing.carnet_conadis = item.carnet_conadis;
                     existing.email_institucional = item.email_institucional;
-                    existing.primerIngreso = item.primerIngreso;
-                    existing.archivofoto = item.archivofoto;
+                    existing.primerIngreso = item.primerIngreso ?? existing.primerIngreso;
                 }
                 processed++;
             }
@@ -931,8 +924,8 @@ namespace backend.Services.Implementations
         private static Practica BuildPracticaFromCentralSyncItem(CentralPracticaSyncDto item)
         {
             var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
-            if (idPeriodo.Length > 10)
-                idPeriodo = idPeriodo[..10];
+            if (idPeriodo.Length > 7)
+                idPeriodo = idPeriodo[..7];
 
             var userAsigna = item.user_asigna?.Length > 20 ? item.user_asigna[..20] : item.user_asigna;
             var userLlegada = item.user_llegada?.Length > 20 ? item.user_llegada[..20] : item.user_llegada;
@@ -954,17 +947,15 @@ namespace backend.Services.Implementations
                 verificada = (byte?)(item.verificada != 0 ? 1 : 0),
                 user_asigna = userAsigna,
                 user_llegada = userLlegada,
-                cancelado = (byte?)(item.cancelado != 0 ? 1 : 0),
-                // Campo local opcional: solo se actualiza desde SIGAFI cuando la fuente lo entregue explícitamente.
-                observaciones = item.observaciones
+                cancelado = (byte?)(item.cancelado != 0 ? 1 : 0)
             };
         }
 
         private static void UpdatePracticaFromCentralSyncItem(Practica existing, CentralPracticaSyncDto item)
         {
             var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
-            if (idPeriodo.Length > 10)
-                idPeriodo = idPeriodo[..10];
+            if (idPeriodo.Length > 7)
+                idPeriodo = idPeriodo[..7];
 
             existing.idalumno = item.idalumno;
             existing.idvehiculo = item.idvehiculo;
@@ -980,12 +971,6 @@ namespace backend.Services.Implementations
             existing.user_asigna = item.user_asigna?.Length > 20 ? item.user_asigna[..20] : item.user_asigna;
             existing.user_llegada = item.user_llegada?.Length > 20 ? item.user_llegada[..20] : item.user_llegada;
             existing.cancelado = (byte?)(item.cancelado != 0 ? 1 : 0);
-
-            // No pisar notas locales cuando SIGAFI no envía observaciones.
-            if (item.observaciones is not null)
-            {
-                existing.observaciones = item.observaciones;
-            }
         }
 
         private async Task<int> SyncVehiclesAsync()
@@ -993,6 +978,7 @@ namespace backend.Services.Implementations
             var catToTipo = await _context.TipoLicencias
                 .Where(t => t.id_categoria_sigafi != null)
                 .ToDictionaryAsync(t => t.id_categoria_sigafi!.Value, t => t.id_tipo);
+            var vehiculosOperacion = await _context.VehiculosOperaciones.ToDictionaryAsync(v => v.idVehiculo);
 
             var rows = await _centralProvider.GetAllVehiclesFromCentralAsync();
             var normalizedRows = rows
@@ -1025,11 +1011,15 @@ namespace backend.Services.Implementations
                         marca = item.marca,
                         anio = item.anio,
                         idCategoria = item.idCategoria,
-                        activo = item.activo == 1,
+                        activo = item.activo,
                         observacion = item.observacion?.Length > 200 ? item.observacion[..200] : item.observacion,
                         chasis = item.chasis?.Length > 50 ? item.chasis[..50] : item.chasis,
                         motor = item.motor?.Length > 50 ? item.motor[..50] : item.motor,
-                        modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo,
+                        modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo
+                    });
+                    _context.VehiculosOperaciones.Add(new VehiculoOperacion
+                    {
+                        idVehiculo = item.idVehiculo,
                         id_tipo_licencia = tipoLicenciaId ?? 1
                     });
                 }
@@ -1041,13 +1031,19 @@ namespace backend.Services.Implementations
                     existing.marca = item.marca;
                     existing.anio = item.anio;
                     existing.idCategoria = item.idCategoria;
-                    existing.activo = item.activo == 1;
+                    existing.activo = item.activo;
                     existing.observacion = item.observacion?.Length > 200 ? item.observacion[..200] : item.observacion;
                     existing.chasis = item.chasis?.Length > 50 ? item.chasis[..50] : item.chasis;
                     existing.motor = item.motor?.Length > 50 ? item.motor[..50] : item.motor;
                     existing.modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo;
+                    if (!vehiculosOperacion.TryGetValue(existing.idVehiculo, out var op))
+                    {
+                        op = new VehiculoOperacion { idVehiculo = existing.idVehiculo };
+                        _context.VehiculosOperaciones.Add(op);
+                        vehiculosOperacion[existing.idVehiculo] = op;
+                    }
                     if (tipoLicenciaId.HasValue)
-                        existing.id_tipo_licencia = tipoLicenciaId.Value;
+                        op.id_tipo_licencia = tipoLicenciaId.Value;
                 }
                 processed++;
             }
@@ -1311,8 +1307,8 @@ namespace backend.Services.Implementations
                     continue;
 
                 var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
-                if (idPeriodo.Length > 10)
-                    idPeriodo = idPeriodo[..10];
+                if (idPeriodo.Length > 7)
+                    idPeriodo = idPeriodo[..7];
 
                 var exists = existingIds.Contains(item.idAsignacion);
                 if (!exists)
@@ -1382,10 +1378,10 @@ namespace backend.Services.Implementations
                     {
                         idAsignacionHorario = item.idAsignacionHorario,
                         idAsignacion = item.idAsignacion,
-                        idFecha = item.idFecha,
-                        idHora = item.idHora,
-                        asiste = (sbyte)item.asiste,
-                        activo = activoHorario,
+                        idFecha = item.idFecha ?? 0,
+                        idHora = item.idHora ?? 0,
+                        asiste = (byte)item.asiste,
+                        activo = activoHorario ? (byte)1 : (byte)0,
                         observacion = item.observacion
                     });
                     existingSet.Add(item.idAsignacionHorario);
@@ -1396,10 +1392,10 @@ namespace backend.Services.Implementations
                     {
                         idAsignacionHorario = item.idAsignacionHorario,
                         idAsignacion = item.idAsignacion,
-                        idFecha = item.idFecha,
-                        idHora = item.idHora,
-                        asiste = (sbyte)item.asiste,
-                        activo = activoHorario,
+                        idFecha = item.idFecha ?? 0,
+                        idHora = item.idHora ?? 0,
+                        asiste = (byte)item.asiste,
+                        activo = activoHorario ? (byte)1 : (byte)0,
                         observacion = item.observacion
                     });
                 }

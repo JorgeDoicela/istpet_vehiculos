@@ -12,8 +12,7 @@ namespace backend.Models
         [Key]
         public int idCategoria { get; set; }
 
-        [Required]
         [MaxLength(100)]
-        public string categoria { get; set; } = string.Empty;
+        public string? categoria { get; set; }
     }
 }

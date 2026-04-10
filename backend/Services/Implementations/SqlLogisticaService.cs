@@ -30,7 +30,8 @@ namespace backend.Services.Implementations
             {
                 // 1. Validar que el vehículo exista y esté operativo
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
-                if (vehiculo == null || !vehiculo.activo || vehiculo.estado_mecanico != "OPERATIVO")
+                var vehiculoOp = await _context.VehiculosOperaciones.FindAsync(idVehiculo);
+                if (vehiculo == null || vehiculo.activo == 0 || (vehiculoOp != null && vehiculoOp.estado_mecanico != "OPERATIVO"))
                     return "ERROR: Vehículo no disponible u operativo.";
 
                 // 2. Validar que el vehículo no esté ya en uso (ensalida = 1)
@@ -67,7 +68,7 @@ namespace backend.Services.Implementations
                                 primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
                                 nombres = (cp.nombres ?? "").ToUpper(),
                                 apellidos = (cp.apellidos ?? "").ToUpper(),
-                                activo = true
+                                activo = 1
                             });
                             await _context.SaveChangesAsync();
                         }
@@ -91,11 +92,16 @@ namespace backend.Services.Implementations
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
-                    cancelado = 0,
-                    observaciones = observaciones
+                    cancelado = 0
                 };
 
                 _context.Practicas.Add(practica);
+                await _context.SaveChangesAsync();
+                _context.PracticasOperaciones.Add(new PracticaOperacion
+                {
+                    idPractica = practica.idPractica,
+                    observaciones = observaciones
+                });
                 await _context.SaveChangesAsync();
 
                 // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo)
@@ -146,11 +152,32 @@ namespace backend.Services.Implementations
                 }
 
                 // 4. Actualizar Horas Completadas en Matrícula
-                var matricula = await _context.Matriculas.FirstOrDefaultAsync(m => m.idAlumno == practica.idalumno && m.estado == "ACTIVO");
+                var matricula = await _context.Matriculas.FirstOrDefaultAsync(m => m.idAlumno == practica.idalumno);
                 if (matricula != null && practica.tiempo.HasValue)
                 {
                     decimal horasCalculadas = (decimal)Math.Round(practica.tiempo.Value.TotalHours, 2);
-                    matricula.horas_completadas += horasCalculadas;
+                    var matriculaOp = await _context.MatriculasOperaciones.FindAsync(matricula.idMatricula);
+                    if (matriculaOp == null)
+                    {
+                        matriculaOp = new MatriculaOperacion
+                        {
+                            idMatricula = matricula.idMatricula,
+                            estado = "ACTIVO"
+                        };
+                        _context.MatriculasOperaciones.Add(matriculaOp);
+                    }
+                    matriculaOp.horas_completadas += horasCalculadas;
+                }
+
+                var practicaOp = await _context.PracticasOperaciones.FindAsync(practica.idPractica);
+                if (practicaOp == null)
+                {
+                    practicaOp = new PracticaOperacion { idPractica = practica.idPractica };
+                    _context.PracticasOperaciones.Add(practicaOp);
+                }
+                if (!string.IsNullOrWhiteSpace(observaciones))
+                {
+                    practicaOp.observaciones = observaciones;
                 }
 
                 await _context.SaveChangesAsync();

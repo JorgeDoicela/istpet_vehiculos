@@ -11,12 +11,11 @@ namespace backend.Models
         [Key]
         public int IdCategoria { get; set; }
 
-        [Required]
         [MaxLength(100)]
-        public string categoria { get; set; } = string.Empty;
+        public string? categoria { get; set; }
 
-        public bool tieneNota { get; set; }
+        public byte tieneNota { get; set; } = 0;
 
-        public bool activa { get; set; }
+        public byte activa { get; set; } = 1;
     }
 }

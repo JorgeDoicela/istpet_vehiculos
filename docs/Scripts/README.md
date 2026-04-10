@@ -30,7 +30,8 @@
 
 - **`periodos` / `secciones`**: si estan en **`01`** y se sincronizan desde SIGAFI en el Master Sync.
 - **`v_alerta_mantenimiento`**: no está en **`01`**; el dashboard usa SIGAFI y, si existe la vista en local, hace merge. Su ausencia no rompe el arranque.
-- **`02` vs Master Sync**: `02` es referencia/manual; la ingesta **operativa** y de mayor paridad está en el **Master Sync** (ver `docs/SYNC_VERIFICATION.md` y `docs/SIGAFI_PARITY_MATRIX.md`).
+- **`02` vs Master Sync**: `02` es referencia/manual; la ingesta **operativa** y la paridad estricta del espejo están en el **Master Sync** (ver `docs/SYNC_VERIFICATION.md` y `docs/SIGAFI_PARITY_MATRIX.md`).
+- **Campos operativos locales**: si necesitas lógica adicional no presente en SIGAFI, ahora debe vivir en tablas auxiliares como `vehiculos_operacion`, `matriculas_operacion` y `practicas_operacion`, no dentro de las tablas espejo.
 
 ---
 

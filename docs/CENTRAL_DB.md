@@ -209,7 +209,7 @@ El sistema Logistics está diseñado para minimizar la carga sobre el servidor c
 
 2. **Propósito de la Persistencia Local**:
    - **Autonomía Operativa**: El sistema puede seguir registrando salidas y llegadas incluso si la conexión con el servidor 192.168.7.50 se interrumpe temporalmente.
-   - **Enriquecimiento de Datos**: La base local almacena métricas que SIGAFI no posee, como el conteo de `horas_completadas` de práctica, el estado mecánico actual del vehículo y el instructor fijo asignado para logística.
+  - **Enriquecimiento de Datos**: La base local mantiene datos operativos fuera de las tablas espejo, en tablas auxiliares como `matriculas_operacion`, `vehiculos_operacion` y `practicas_operacion`.
    - **Performance**: Reduce drásticamente los tiempos de respuesta al evitar consultas transversales constantes para datos que cambian poco (nombres, fotos, etc.).
 
 3. **Sincronización de Usuarios e Instructores**:

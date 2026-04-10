@@ -150,6 +150,7 @@ namespace backend.Controllers
                 var profNom = pr != null ? $"{pr.apellidos} {pr.nombres}".Trim() : p.idProfesor;
                 var alumNom = a != null ? $"{a.apellidoPaterno} {a.apellidoMaterno} {a.primerNombre} {a.segundoNombre}".Trim() : p.idalumno;
 
+                var practicaOp = await _context.PracticasOperaciones.FirstOrDefaultAsync(x => x.idPractica == p.idPractica);
                 list.Add(new ReportePracticasDTO
                 {
                     idPractica = p.idPractica,
@@ -165,7 +166,7 @@ namespace backend.Controllers
                     horaLlegada = tsLlegada.HasValue ? DateTime.Today.Add(tsLlegada.Value).ToString("HH:mm") : null,
                     tiempo = string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}",
                         (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
-                    observaciones = p.observaciones,
+                    observaciones = practicaOp?.observaciones,
                     cancelado = p.cancelado ?? 0
                 });
             }

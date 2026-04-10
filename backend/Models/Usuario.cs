@@ -14,7 +14,7 @@ namespace backend.Models
         public string usuario { get; set; } = string.Empty;
 
         [Required]
-        [MaxLength(255)] 
+        [MaxLength(20)] 
         public string password { get; set; } = string.Empty;
 
         public bool salida { get; set; } = false;
@@ -33,7 +33,5 @@ namespace backend.Models
 
         [NotMapped]
         public string? nombre_completo { get; set; }
-
-        public DateTime creado_en { get; set; } = DateTime.Now;
     }
 }

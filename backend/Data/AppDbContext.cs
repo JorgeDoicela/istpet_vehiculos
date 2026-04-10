@@ -16,10 +16,13 @@ namespace backend.Data
         public DbSet<Curso> Cursos { get; set; }
         public DbSet<Estudiante> Estudiantes { get; set; }
         public DbSet<Matricula> Matriculas { get; set; }
+        public DbSet<MatriculaOperacion> MatriculasOperaciones { get; set; }
         public DbSet<Practica> Practicas { get; set; }
+        public DbSet<PracticaOperacion> PracticasOperaciones { get; set; }
         public DbSet<Asignacion> Asignaciones { get; set; }
         public DbSet<AsignacionInstructorVehiculo> AsignacionesInstructores { get; set; }
         public DbSet<CategoriaVehiculo> CategoriasVehiculos { get; set; }
+        public DbSet<VehiculoOperacion> VehiculosOperaciones { get; set; }
         public DbSet<HorarioAlumno> HorariosAlumnos { get; set; }
         public DbSet<CategoriaExamenConduccion> CategoriasExamenes { get; set; }
         public DbSet<MatriculaExamenConduccion> MatriculasExamenesConduccion { get; set; }
@@ -122,7 +125,6 @@ namespace backend.Data
                 entity.Property(e => e.idPeriodo).HasColumnName("idPeriodo");
                 entity.Property(e => e.paralelo).HasColumnName("paralelo");
                 entity.Property(e => e.valida).HasColumnName("valida");
-                entity.Property(e => e.estado).HasColumnName("estado");
             });
 
             // 8. CURSOS
@@ -159,6 +161,21 @@ namespace backend.Data
             modelBuilder.Entity<Asignacion>(entity => {
                 entity.ToTable("cond_alumnos_vehiculos");
                 entity.HasKey(e => e.idAsignacion);
+            });
+
+            modelBuilder.Entity<VehiculoOperacion>(entity => {
+                entity.ToTable("vehiculos_operacion");
+                entity.HasKey(e => e.idVehiculo);
+            });
+
+            modelBuilder.Entity<MatriculaOperacion>(entity => {
+                entity.ToTable("matriculas_operacion");
+                entity.HasKey(e => e.idMatricula);
+            });
+
+            modelBuilder.Entity<PracticaOperacion>(entity => {
+                entity.ToTable("practicas_operacion");
+                entity.HasKey(e => e.idPractica);
             });
 
             // 10. PERIODOS

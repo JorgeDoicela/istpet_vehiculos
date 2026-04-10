@@ -12,7 +12,6 @@ namespace backend.DTOs
         public string apellidoMaterno { get; set; } = string.Empty;
         public string? email { get; set; }
         public string? celular { get; set; }
-        public bool activo { get; set; }
         
         public string nombreCompleto => $"{apellidoPaterno} {apellidoMaterno} {primerNombre} {segundoNombre}".Trim();
     }

@@ -165,53 +165,49 @@ CREATE TABLE IF NOT EXISTS alumnos (
     porcentaje_discapacidad INT,
     carnet_conadis VARCHAR(20),
     email_institucional VARCHAR(100),
-    primerIngreso TINYINT DEFAULT 1,
-    archivofoto VARCHAR(100),
-    activo BOOLEAN DEFAULT TRUE
+    primerIngreso TINYINT DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS cursos (
     idNivel INT PRIMARY KEY,
     idCarrera INT,
-    Nivel VARCHAR(160),
+    Nivel VARCHAR(20),
     jerarquia INT,
     orden INT,
     esRecuperacion TINYINT,
-    aliasCurso VARCHAR(10),
-    activo BOOLEAN DEFAULT TRUE
+    aliasCurso VARCHAR(5)
 );
 
 CREATE TABLE IF NOT EXISTS usuarios_web (
-    usuario VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(255) NOT NULL,
+    usuario VARCHAR(20) PRIMARY KEY,
+    password VARCHAR(20),
     salida TINYINT DEFAULT 0,
     ingreso TINYINT DEFAULT 0,
-    activo BOOLEAN DEFAULT TRUE,
+    activo TINYINT DEFAULT 0,
     asistencia TINYINT DEFAULT 0,
-    esRrhh TINYINT DEFAULT 0,
-    creado_en DATETIME DEFAULT CURRENT_TIMESTAMP
+    esRrhh TINYINT DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS categoria_vehiculos (
     idCategoria INT PRIMARY KEY,
-    categoria VARCHAR(160) NOT NULL
+    categoria VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (
     IdCategoria INT PRIMARY KEY,
-    categoria VARCHAR(160) NOT NULL,
-    tieneNota BOOLEAN DEFAULT TRUE,
-    activa BOOLEAN DEFAULT TRUE
+    categoria VARCHAR(100),
+    tieneNota TINYINT DEFAULT 0,
+    activa TINYINT DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (
     idAsignacionHorario INT PRIMARY KEY,
     idAsignacion INT NOT NULL,
-    idFecha INT,
-    idHora INT,
+    idFecha INT NOT NULL,
+    idHora INT NOT NULL,
     asiste TINYINT DEFAULT 0,
-    activo BOOLEAN DEFAULT TRUE,
-    observacion TEXT,
+    activo TINYINT DEFAULT 1,
+    observacion VARCHAR(100),
     INDEX idx_asig_horario (idAsignacion)
 );
 
@@ -228,23 +224,17 @@ CREATE TABLE IF NOT EXISTS vehiculos (
     observacion VARCHAR(200),
     chasis VARCHAR(50),
     motor VARCHAR(50),
-    modelo VARCHAR(100),
-    -- Logistics / Operational Fields
-    id_tipo_licencia INT,
-    id_instructor_fijo VARCHAR(15),
-    estado_mecanico VARCHAR(30) DEFAULT 'OPERATIVO',
-    FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia(id_tipo),
-    FOREIGN KEY (id_instructor_fijo) REFERENCES profesores(idProfesor)
+    modelo VARCHAR(100)
 );
 
 CREATE TABLE IF NOT EXISTS matriculas (
     idMatricula INT PRIMARY KEY,
-    idAlumno VARCHAR(15) NOT NULL,
+    idAlumno VARCHAR(14) NOT NULL,
     idNivel INT NOT NULL,
-    idSeccion INT DEFAULT 1,
-    idModalidad INT DEFAULT 1,
-    idPeriodo VARCHAR(10),
-    fechaMatricula DATETIME DEFAULT CURRENT_TIMESTAMP,
+    idSeccion INT NOT NULL,
+    idModalidad INT NOT NULL,
+    idPeriodo CHAR(7) NOT NULL,
+    fechaMatricula TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     paralelo VARCHAR(10) DEFAULT 'A',
     arrastres TINYINT,
     folio INT,
@@ -260,9 +250,6 @@ CREATE TABLE IF NOT EXISTS matriculas (
     valida TINYINT DEFAULT 1,
     esOyente TINYINT DEFAULT 0,
     documentoFactura VARCHAR(14),
-    -- Logistics Operational Status
-    horas_completadas DECIMAL(10,2) DEFAULT 0.00,
-    estado VARCHAR(20) DEFAULT 'ACTIVO',
     FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
     FOREIGN KEY (idNivel) REFERENCES cursos(idNivel)
 );
@@ -283,36 +270,57 @@ CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
 
 CREATE TABLE IF NOT EXISTS cond_alumnos_practicas (
     idPractica INT PRIMARY KEY AUTO_INCREMENT,
-    idalumno VARCHAR(15) NOT NULL,
+    idalumno VARCHAR(14) NOT NULL,
     idvehiculo INT NOT NULL,
-    idProfesor VARCHAR(15) NOT NULL,
-    idPeriodo VARCHAR(10),
+    idProfesor VARCHAR(14) NOT NULL,
+    idPeriodo VARCHAR(7) NOT NULL,
     dia VARCHAR(15),
     fecha DATE NOT NULL,
     hora_salida TIME,
     hora_llegada TIME,
     tiempo TIME,
-    ensalida TINYINT DEFAULT 1,
+    ensalida TINYINT(1) DEFAULT 0,
     verificada TINYINT DEFAULT 0,
     user_asigna VARCHAR(20),
     user_llegada VARCHAR(20),
     cancelado TINYINT DEFAULT 0,
-    -- SIGAFI cond_alumnos_practicas: sin columna observaciones; campo opcional en réplica (notas locales / salidas).
-    observaciones TEXT,
     FOREIGN KEY (idalumno) REFERENCES alumnos(idAlumno),
     FOREIGN KEY (idvehiculo) REFERENCES vehiculos(idVehiculo),
     FOREIGN KEY (idProfesor) REFERENCES profesores(idProfesor)
 );
 
+CREATE TABLE IF NOT EXISTS vehiculos_operacion (
+    idVehiculo INT PRIMARY KEY,
+    id_tipo_licencia INT,
+    id_instructor_fijo VARCHAR(14),
+    estado_mecanico VARCHAR(30) DEFAULT 'OPERATIVO',
+    FOREIGN KEY (idVehiculo) REFERENCES vehiculos(idVehiculo),
+    FOREIGN KEY (id_tipo_licencia) REFERENCES tipo_licencia(id_tipo),
+    FOREIGN KEY (id_instructor_fijo) REFERENCES profesores(idProfesor)
+);
+
+CREATE TABLE IF NOT EXISTS matriculas_operacion (
+    idMatricula INT PRIMARY KEY,
+    horas_completadas DECIMAL(10,2) DEFAULT 0.00,
+    estado VARCHAR(20) DEFAULT 'ACTIVO',
+    FOREIGN KEY (idMatricula) REFERENCES matriculas(idMatricula)
+);
+
+CREATE TABLE IF NOT EXISTS practicas_operacion (
+    idPractica INT PRIMARY KEY,
+    observaciones TEXT,
+    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica)
+);
+
 CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
     idAsignacion INT PRIMARY KEY AUTO_INCREMENT,
-    idAlumno VARCHAR(15) NOT NULL,
+    idAlumno VARCHAR(14) NOT NULL,
     idVehiculo INT NOT NULL,
-    idProfesor VARCHAR(15) NOT NULL,
-    idPeriodo VARCHAR(10),
-    fechaAsignacion DATETIME,
-    fechaInicio DATETIME,
-    fechaFin DATETIME,
+    idProfesor VARCHAR(14),
+    idPeriodo VARCHAR(7) NOT NULL,
+    fechaAsignacion TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    fechaInicio DATE,
+    fechaFin DATE,
     activa TINYINT DEFAULT 1,
     observacion VARCHAR(200),
     FOREIGN KEY (idAlumno) REFERENCES alumnos(idAlumno),
@@ -323,7 +331,7 @@ CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
 CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (
     idAsignacion INT PRIMARY KEY,
     idVehiculo INT NOT NULL,
-    idProfesor VARCHAR(15) NOT NULL,
+    idProfesor VARCHAR(14) NOT NULL,
     fecha_asignacion DATE,
     fecha_salidad DATE,
     activo TINYINT DEFAULT 1,
@@ -379,11 +387,12 @@ WHERE p.ensalida = 1 AND p.cancelado = 0;
 
 CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
 SELECT
-    idVehiculo AS id_vehiculo,
-    numero_vehiculo AS numero_vehiculo,
-    placa AS placa
-FROM vehiculos
-WHERE activo = 1 AND estado_mecanico != 'OPERATIVO';
+    v.idVehiculo AS id_vehiculo,
+    v.numero_vehiculo AS numero_vehiculo,
+    v.placa AS placa
+FROM vehiculos v
+INNER JOIN vehiculos_operacion vo ON vo.idVehiculo = v.idVehiculo
+WHERE v.activo = 1 AND vo.estado_mecanico != 'OPERATIVO';
 
 
 -- 6. Carga de Metadatos del Sistema (Requeridos)

@@ -14,14 +14,15 @@ namespace backend.Models
 
         public int idAsignacion { get; set; }
 
-        public int? idFecha { get; set; }
+        public int idFecha { get; set; }
 
-        public int? idHora { get; set; }
+        public int idHora { get; set; }
 
-        public sbyte asiste { get; set; } // 0: No, 1: Sí
+        public byte asiste { get; set; } = 0;
 
-        public bool activo { get; set; }
+        public byte activo { get; set; } = 1;
 
+        [MaxLength(100)]
         public string? observacion { get; set; }
 
         // Mapped helpers (Dynamic hydration from sigafi_es)

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
 namespace backend.Models
 {
     /**
@@ -13,7 +12,7 @@ namespace backend.Models
         public int idMatricula { get; set; }
 
         [Required]
-        [MaxLength(15)]
+        [MaxLength(14)]
         public string idAlumno { get; set; } = string.Empty;
 
         [ForeignKey("idAlumno")]
@@ -29,9 +28,11 @@ namespace backend.Models
         public int idModalidad { get; set; }
 
         [Required]
-        [MaxLength(10)]
+        [Column(TypeName = "char(7)")]
+        [MaxLength(7)]
         public string idPeriodo { get; set; } = string.Empty;
 
+        [Column(TypeName = "timestamp")]
         public DateTime? fechaMatricula { get; set; }
 
         [MaxLength(10)]
@@ -41,10 +42,8 @@ namespace backend.Models
 
         public int? folio { get; set; }
 
-        [Column(TypeName = "decimal(5,2)")]
         public decimal? beca_matricula { get; set; }
 
-        [Column(TypeName = "decimal(5,2)")]
         public decimal? beca_colegiatura { get; set; }
 
         public bool? retirado { get; set; }
@@ -70,12 +69,5 @@ namespace backend.Models
 
         [MaxLength(14)]
         public string? documentoFactura { get; set; }
-
-        // --- Logistics Operational Status ---
-        [Column(TypeName = "decimal(10,2)")]
-        public decimal horas_completadas { get; set; } = 0;
-        
-        [MaxLength(20)]
-        public string estado { get; set; } = "ACTIVO";
     }
 }

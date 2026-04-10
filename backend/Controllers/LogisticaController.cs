@@ -29,6 +29,8 @@ namespace backend.Controllers
             public int idVehiculo { get; set; }
             public string? numero_vehiculo { get; set; }
             public string? placa { get; set; }
+            public string? idInstructorFijo { get; set; }
+            public int idTipoLicencia { get; set; }
         }
 
         private readonly AppDbContext _context;
@@ -201,7 +203,7 @@ namespace backend.Controllers
             if (centralData.idPeriodo == "SIN_MAT")
             {
                 matriculaUsada = await _context.Matriculas
-                    .Where(m => m.idAlumno == eBase.idAlumno && m.estado == "ACTIVO")
+                    .Where(m => m.idAlumno == eBase.idAlumno)
                     .OrderByDescending(m => m.idMatricula)
                     .FirstOrDefaultAsync() ?? new Matricula();
 
@@ -214,8 +216,7 @@ namespace backend.Controllers
                         idSeccion = idSeccionPersist,
                         idModalidad = idModalidadPersist,
                         idPeriodo = "SIN_MAT",
-                        paralelo = centralData.paralelo ?? "A",
-                        estado = "ACTIVO"
+                        paralelo = centralData.paralelo ?? "A"
                     };
                     _context.Matriculas.Add(matriculaUsada);
                 }
@@ -235,15 +236,13 @@ namespace backend.Controllers
                         idSeccion = idSeccionPersist,
                         idModalidad = idModalidadPersist,
                         idPeriodo = centralData.idPeriodo,
-                        paralelo = centralData.paralelo ?? "A",
-                        estado = "ACTIVO"
+                        paralelo = centralData.paralelo ?? "A"
                     };
                     _context.Matriculas.Add(matriculaUsada);
                 }
                 else
                 {
                     matriculaUsada.paralelo = centralData.paralelo ?? matriculaUsada.paralelo;
-                    matriculaUsada.estado = "ACTIVO";
                     if (centralData.idNivel > 0)
                         matriculaUsada.idNivel = centralData.idNivel;
                     if (centralData.idSeccion > 0)
@@ -254,6 +253,19 @@ namespace backend.Controllers
             }
 
             await _context.SaveChangesAsync();
+            if (matriculaUsada.idMatricula > 0)
+            {
+                var operacionMatricula = await _context.MatriculasOperaciones.FirstOrDefaultAsync(x => x.idMatricula == matriculaUsada.idMatricula);
+                if (operacionMatricula == null)
+                {
+                    _context.MatriculasOperaciones.Add(new MatriculaOperacion
+                    {
+                        idMatricula = matriculaUsada.idMatricula,
+                        estado = "ACTIVO"
+                    });
+                    await _context.SaveChangesAsync();
+                }
+            }
 
             var nivelDisplay = (centralData.Nivel ?? nivelLocal?.Nivel ?? "S/N").ToUpper();
             var detalleSigafi = ConstruirDetalleMatriculaSigafi(centralData.DetalleRaw, jornadaEtiqueta);
@@ -305,7 +317,7 @@ namespace backend.Controllers
                         primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
                         nombres = (cp.nombres ?? "").ToUpper(),
                         apellidos = (cp.apellidos ?? "").ToUpper(),
-                        activo = true
+                        activo = 1
                     };
                     _context.Instructores.Add(localProf);
                     await _context.SaveChangesAsync();
@@ -340,7 +352,9 @@ namespace backend.Controllers
                 idVehiculo = v.idVehiculo,
                 numeroVehiculo = v.numero_vehiculo,
                 vehiculoStr = $"#{v.numero_vehiculo} ({v.placa})",
-                instructorNombre = "DOCENTE ASIGNADO"
+                instructorNombre = "DOCENTE ASIGNADO",
+                idInstructorFijo = v.idInstructorFijo,
+                idTipoLicencia = v.idTipoLicencia
             });
 
             return Ok(ApiResponse<IEnumerable<VehiculoLogisticaResponse>>.Ok(query));
@@ -349,13 +363,17 @@ namespace backend.Controllers
         private async Task<List<VehiculoLite>> GetVehiculosOperativosLocalesAsync()
         {
             return await (from v in _context.Vehiculos
-                          where v.activo && v.estado_mecanico == "OPERATIVO"
+                          join vo in _context.VehiculosOperaciones on v.idVehiculo equals vo.idVehiculo into voJoin
+                          from vo in voJoin.DefaultIfEmpty()
+                          where v.activo == 1 && (vo == null || vo.estado_mecanico == "OPERATIVO")
                           && !_context.Practicas.Any(p => p.idvehiculo == v.idVehiculo && p.ensalida == 1 && p.cancelado == 0)
                           select new VehiculoLite
                           {
                               idVehiculo = v.idVehiculo,
                               numero_vehiculo = v.numero_vehiculo ?? "0",
-                              placa = v.placa
+                              placa = v.placa,
+                              idInstructorFijo = vo != null ? vo.id_instructor_fijo : null,
+                              idTipoLicencia = vo != null && vo.id_tipo_licencia.HasValue ? vo.id_tipo_licencia.Value : 0
                           }).ToListAsync();
         }
 
@@ -386,7 +404,7 @@ namespace backend.Controllers
             if (centralData == null)
             {
                 var localOnly = await _context.Instructores
-                    .Where(i => i.idProfesor == idProfesor && i.activo)
+                    .Where(i => i.idProfesor == idProfesor && i.activo == 1)
                     .Select(i => new InstructorLogisticaResponse
                     {
                         idInstructor = i.idProfesor,
@@ -408,7 +426,7 @@ namespace backend.Controllers
                     primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
                     nombres = (centralData.nombres ?? "").ToUpper(),
                     apellidos = (centralData.apellidos ?? "").ToUpper(),
-                    activo = centralData.activo == 1
+                    activo = centralData.activo
                 };
                 _context.Instructores.Add(existing);
             }
@@ -418,7 +436,7 @@ namespace backend.Controllers
                 existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido).ToUpper();
                 existing.nombres = (centralData.nombres ?? existing.nombres).ToUpper();
                 existing.apellidos = (centralData.apellidos ?? existing.apellidos).ToUpper();
-                existing.activo = centralData.activo == 1;
+                existing.activo = centralData.activo;
             }
 
             await _context.SaveChangesAsync();
@@ -482,7 +500,7 @@ namespace backend.Controllers
             // SIGAFI es la fuente de verdad: sus resultados se agregan aunque el alumno
             // aún no exista en el espejo local (p. ej. recién matriculado hoy).
             var localTask = _context.Estudiantes.AsNoTracking()
-                .Where(e => e.activo && (
+                .Where(e => (
                     e.idAlumno.StartsWith(q)
                     || (e.primerNombre   != null && e.primerNombre.Contains(q))
                     || (e.segundoNombre  != null && e.segundoNombre.Contains(q))

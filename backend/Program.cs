@@ -325,11 +325,12 @@ await using (var scope = app.Services.CreateAsyncScope())
 
             CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
             SELECT
-                idVehiculo AS id_vehiculo,
-                numero_vehiculo AS numero_vehiculo,
-                placa AS placa
-            FROM vehiculos
-            WHERE activo = 1 AND estado_mecanico != 'OPERATIVO';
+                v.idVehiculo AS id_vehiculo,
+                v.numero_vehiculo AS numero_vehiculo,
+                v.placa AS placa
+            FROM vehiculos v
+            INNER JOIN vehiculos_operacion vo ON vo.idVehiculo = v.idVehiculo
+            WHERE v.activo = 1 AND vo.estado_mecanico != 'OPERATIVO';
         ");
     }
     catch (Exception ex)

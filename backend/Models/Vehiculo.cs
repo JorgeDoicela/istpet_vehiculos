@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-
 namespace backend.Models
 {
     /**
@@ -41,18 +39,5 @@ namespace backend.Models
         [MaxLength(100)]
         public string? modelo { get; set; }
 
-        // Logistics / Operational Fields (Local Augmentation)
-        public int id_tipo_licencia { get; set; } = 1; // Default to Type C
-
-        [ForeignKey("id_tipo_licencia")]
-        public TipoLicencia? TipoLicencia { get; set; }
-
-        public string? id_instructor_fijo { get; set; } // FK to idProfesor
-
-        [ForeignKey("id_instructor_fijo")]
-        public Instructor? InstructorFijo { get; set; }
-
-        [MaxLength(50)]
-        public string estado_mecanico { get; set; } = "OPERATIVO";
     }
 }
