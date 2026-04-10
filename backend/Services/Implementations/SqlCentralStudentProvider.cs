@@ -32,6 +32,12 @@ namespace backend.Services.Implementations
         private static readonly TimeSpan CacheCursos       = TimeSpan.FromMinutes(15);
         private static readonly TimeSpan CacheLicencias    = TimeSpan.FromMinutes(15);
         private static readonly TimeSpan CacheCategorias   = TimeSpan.FromMinutes(15);
+        
+        private const string AlumnoLiteCols = @"idAlumno, tipoDocumento, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno,
+                                  fecha_Nacimiento, direccion, telefono, celular, email, 
+                                  sexo, idPeriodo, idNivel, idSeccion, idModalidad, idInstitucion,
+                                  tituloColegio, fecha_Inscripcion, tipo_sangre, user_alumno, password,
+                                  email_institucional, primerIngreso";
 
         public SqlCentralStudentProvider(
             AppDbContext context,
@@ -57,16 +63,12 @@ namespace backend.Services.Implementations
                 const string selectBase = @"
                     SELECT
                         a.idAlumno, a.tipoDocumento, a.primerNombre, a.segundoNombre, a.apellidoPaterno, a.apellidoMaterno,
-                        a.fecha_Nacimiento, a.direccion, a.telefono, a.celular, a.email, a.ciudad_Nacimiento, a.provincia_Nacimiento,
-                        a.sexo, a.nacionalidad, m.idNivel, COALESCE(p.idPeriodo, m.idPeriodo) AS idPeriodo, 
+                        a.fecha_Nacimiento, a.direccion, a.telefono, a.celular, a.email,
+                        a.sexo, m.idNivel, COALESCE(p.idPeriodo, m.idPeriodo) AS idPeriodo, 
                         COALESCE(m.idSeccion, 0) AS idSeccion, COALESCE(m.idModalidad, 0) AS idModalidad, m.paralelo,
-                        a.idInstitucion, a.tituloColegio, a.fecha_Inscripcion, a.parroquia_nacimiento,
-                        a.nombre_padre, a.ocupacion_padre, a.nacionalidad_padre,
-                        a.nombre_madre, a.ocupacion_madre, a.nacionalidad_madre,
-                        a.barrio_residencia, a.parroquia_residencia, a.ciudad_residencia,
+                        a.idInstitucion, a.tituloColegio, a.fecha_Inscripcion,
                         a.tipo_sangre, a.user_alumno, a.password,
-                        a.idDiscapacidad, a.idEtnia, a.idNacionalidad,
-                        a.porcentaje_discapacidad, a.carnet_conadis, a.email_institucional,
+                        a.email_institucional,
                         a.primerIngreso,
                         s.seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
@@ -132,16 +134,12 @@ namespace backend.Services.Implementations
                     SELECT
                         a.idAlumno, a.tipoDocumento, a.primerNombre, a.segundoNombre, 
                         a.apellidoPaterno, a.apellidoMaterno, a.fecha_Nacimiento, a.direccion, 
-                        a.telefono, a.celular, a.email, a.ciudad_Nacimiento, a.provincia_Nacimiento,
-                        a.sexo, a.nacionalidad, 
+                        a.telefono, a.celular, a.email,
+                        a.sexo,
                         0 AS idNivel, 0 AS idSeccion, 0 AS idModalidad, NULL AS idInstitucion,
-                        a.tituloColegio, a.fecha_Inscripcion, a.parroquia_nacimiento,
-                        a.nombre_padre, a.ocupacion_padre, a.nacionalidad_padre,
-                        a.nombre_madre, a.ocupacion_madre, a.nacionalidad_madre,
-                        a.barrio_residencia, a.parroquia_residencia, a.ciudad_residencia,
+                        a.tituloColegio, a.fecha_Inscripcion,
                         a.tipo_sangre, a.user_alumno, a.password,
-                        a.idDiscapacidad, a.idEtnia, a.idNacionalidad,
-                        a.porcentaje_discapacidad, a.carnet_conadis, a.email_institucional,
+                        a.email_institucional,
                         a.primerIngreso,
                         NULL AS paralelo, NULL AS seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
@@ -178,10 +176,10 @@ namespace backend.Services.Implementations
                         idProfesor, tipodocumento, apellidos, nombres, primerApellido, segundoApellido,
                         primerNombre, segundoNombre, estadoCivil, direccion, callePrincipal, calleSecundaria,
                         numeroCasa, telefono, celular, email, fecha_nacimiento, sexo, clave, practicas,
-                        tipo, nacionalidad, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
-                        idEtnia, idNacionalidad, idParroquiaNacimiento, emailInstitucional, fecha_ingreso,
-                        fechaIngresoIess, fecha_retiro, idParroquiaResidencia, tipoSangre, codigoPostal,
-                        idDiscapacidad, porcentajeDiscapacidad, numeroConadis, foto, esReal
+                        tipo, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
+                        emailInstitucional, fecha_ingreso,
+                        fechaIngresoIess, fecha_retiro, tipoSangre,
+                        foto, esReal
                     FROM profesores
                     WHERE idProfesor = @p0
                     LIMIT 1";
@@ -204,10 +202,9 @@ namespace backend.Services.Implementations
                     SELECT idProfesor, tipodocumento, apellidos, nombres, primerApellido, segundoApellido,
                            primerNombre, segundoNombre, estadoCivil, direccion, callePrincipal, calleSecundaria,
                            numeroCasa, telefono, celular, email, fecha_nacimiento, sexo, clave, practicas,
-                           tipo, nacionalidad, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
-                           idEtnia, idNacionalidad, idParroquiaNacimiento, emailInstitucional, fecha_ingreso,
-                           fechaIngresoIess, fecha_retiro, idParroquiaResidencia, tipoSangre, codigoPostal,
-                           idDiscapacidad, porcentajeDiscapacidad, numeroConadis, esReal
+                           tipo, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
+                           emailInstitucional, fecha_ingreso,
+                           fechaIngresoIess, fecha_retiro, tipoSangre, esReal
                     FROM profesores";
                 var result = (await QueryListAsync(sql, MapCentralInstructor)).ToList();
                 _cache.Set("sigafi:instructores", (IEnumerable<CentralInstructorDto>)result, CacheInstructores);
@@ -671,19 +668,6 @@ WHERE COALESCE(activo, 1) = 0";
             // Si parece nombre busca por prefijo en apellidoPaterno y primerNombre (sin LIKE '%x' para usar índices).
             var q = query.Trim();
             var isCedula = q.All(char.IsDigit);
-
-            const string cols = @"idAlumno, tipoDocumento, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno,
-                                  fecha_Nacimiento, direccion, telefono, celular, email, 
-                                  ciudad_Nacimiento, provincia_Nacimiento, sexo, nacionalidad,
-                                  idPeriodo, idNivel, idSeccion, idModalidad, idInstitucion,
-                                  tituloColegio, fecha_Inscripcion, parroquia_nacimiento,
-                                  nombre_padre, ocupacion_padre, nacionalidad_padre,
-                                  nombre_madre, ocupacion_madre, nacionalidad_madre,
-                                  barrio_residencia, parroquia_residencia, ciudad_residencia,
-                                  tipo_sangre, user_alumno, password,
-                                  idDiscapacidad, idEtnia, idNacionalidad,
-                                  porcentaje_discapacidad, carnet_conadis, email_institucional,
-                                  primerIngreso";
             try
             {
                 if (isCedula)
@@ -693,7 +677,7 @@ WHERE COALESCE(activo, 1) = 0";
                         var list = new List<CentralAlumnoLiteDto>();
                         await using var conn = new MySqlConnection(_connectionString);
                         await conn.OpenAsync();
-                        var sql = $"SELECT {cols} FROM alumnos WHERE idAlumno LIKE CONCAT(@p0,'%') LIMIT 15";
+                        var sql = $"SELECT {AlumnoLiteCols} FROM alumnos WHERE idAlumno LIKE CONCAT(@p0,'%') LIMIT 15";
                         await using var cmd = new MySqlCommand(sql, conn);
                         cmd.Parameters.AddWithValue("@p0", q);
                         await using var reader = await cmd.ExecuteReaderAsync();
@@ -710,7 +694,7 @@ WHERE COALESCE(activo, 1) = 0";
                         var list = new List<CentralAlumnoLiteDto>();
                         await using var conn = new MySqlConnection(_connectionString);
                         await conn.OpenAsync();
-                        var sql = $@"SELECT {cols} FROM alumnos
+                        var sql = $@"SELECT {AlumnoLiteCols} FROM alumnos
                                      WHERE apellidoPaterno LIKE CONCAT(@p0,'%')
                                         OR apellidoMaterno LIKE CONCAT(@p0,'%')
                                         OR primerNombre    LIKE CONCAT(@p0,'%')
@@ -744,10 +728,6 @@ WHERE COALESCE(activo, 1) = 0";
             telefono = ReadNullableString(reader, "telefono"),
             celular = ReadNullableString(reader, "celular"),
             email = ReadNullableString(reader, "email"),
-            ciudad_Nacimiento = ReadNullableString(reader, "ciudad_Nacimiento"),
-            provincia_Nacimiento = ReadNullableString(reader, "provincia_Nacimiento"),
-            sexo = ReadNullableString(reader, "sexo"),
-            nacionalidad = ReadNullableString(reader, "nacionalidad"),
             idNivel = ReadInt(reader, "idNivel"),
             idPeriodo = ReadNullableString(reader, "idPeriodo"),
             idSeccion = ReadNullableInt(reader, "idSeccion"),
@@ -755,39 +735,17 @@ WHERE COALESCE(activo, 1) = 0";
             idInstitucion = ReadNullableInt(reader, "idInstitucion"),
             tituloColegio = ReadNullableString(reader, "tituloColegio"),
             fecha_Inscripcion = ReadNullableDate(reader, "fecha_Inscripcion"),
-            parroquia_nacimiento = ReadNullableString(reader, "parroquia_nacimiento"),
-            nombre_padre = ReadNullableString(reader, "nombre_padre"),
-            ocupacion_padre = ReadNullableString(reader, "ocupacion_padre"),
-            nacionalidad_padre = ReadNullableString(reader, "nacionalidad_padre"),
-            nombre_madre = ReadNullableString(reader, "nombre_madre"),
-            ocupacion_madre = ReadNullableString(reader, "ocupacion_madre"),
-            nacionalidad_madre = ReadNullableString(reader, "nacionalidad_madre"),
-            barrio_residencia = ReadNullableString(reader, "barrio_residencia"),
-            parroquia_residencia = ReadNullableString(reader, "parroquia_residencia"),
-            ciudad_residencia = ReadNullableString(reader, "ciudad_residencia"),
+            sexo = ReadNullableString(reader, "sexo"),
             tipo_sangre = ReadNullableString(reader, "tipo_sangre"),
             user_alumno = ReadNullableString(reader, "user_alumno"),
             password = ReadNullableString(reader, "password"),
-            idDiscapacidad = ReadNullableInt(reader, "idDiscapacidad"),
-            idEtnia = ReadNullableInt(reader, "idEtnia"),
-            idNacionalidad = ReadNullableInt(reader, "idNacionalidad"),
-            porcentaje_discapacidad = ReadNullableInt(reader, "porcentaje_discapacidad"),
-            carnet_conadis = ReadNullableString(reader, "carnet_conadis"),
             email_institucional = ReadNullableString(reader, "email_institucional"),
             primerIngreso = ReadNullableInt(reader, "primerIngreso")
         };
 
         public Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync()
         {
-            const string sql = "SELECT idAlumno, tipoDocumento, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno, " +
-                               "fecha_Nacimiento, direccion, telefono, celular, email, ciudad_Nacimiento, provincia_Nacimiento, " +
-                               "sexo, nacionalidad, idNivel, idPeriodo, idSeccion, idModalidad, idInstitucion, tituloColegio, " +
-                               "fecha_Inscripcion, parroquia_nacimiento, nombre_padre, ocupacion_padre, nacionalidad_padre, " +
-                               "nombre_madre, ocupacion_madre, nacionalidad_madre, barrio_residencia, parroquia_residencia, " +
-                               "ciudad_residencia, tipo_sangre, user_alumno, password, idDiscapacidad, idEtnia, idNacionalidad, " +
-                               "porcentaje_discapacidad, carnet_conadis, email_institucional, primerIngreso " +
-                               "FROM alumnos";
-            return QueryListAsync(sql, MapAlumnoLite);
+            return QueryListAsync("SELECT " + AlumnoLiteCols + " FROM alumnos", MapAlumnoLite);
         }
 
         public Task<IEnumerable<CentralMatriculaDto>> GetActiveEnrollmentsFromCentralAsync() =>
@@ -1024,10 +982,7 @@ WHERE COALESCE(activo, 1) = 0";
             telefono = ReadNullableString(reader, "telefono"),
             celular = ReadNullableString(reader, "celular"),
             email = ReadNullableString(reader, "email"),
-            ciudad_Nacimiento = ReadNullableString(reader, "ciudad_Nacimiento"),
-            provincia_Nacimiento = ReadNullableString(reader, "provincia_Nacimiento"),
             sexo = ReadNullableString(reader, "sexo"),
-            nacionalidad = ReadNullableString(reader, "nacionalidad"),
             idNivel = ReadInt(reader, "idNivel"),
             idPeriodo = ReadString(reader, "idPeriodo"),
             idSeccion = ReadInt(reader, "idSeccion"),
@@ -1035,24 +990,6 @@ WHERE COALESCE(activo, 1) = 0";
             idInstitucion = ReadNullableInt(reader, "idInstitucion"),
             tituloColegio = ReadNullableString(reader, "tituloColegio"),
             fecha_Inscripcion = ReadNullableDate(reader, "fecha_Inscripcion"),
-            parroquia_nacimiento = ReadNullableString(reader, "parroquia_nacimiento"),
-            nombre_padre = ReadNullableString(reader, "nombre_padre"),
-            ocupacion_padre = ReadNullableString(reader, "ocupacion_padre"),
-            nacionalidad_padre = ReadNullableString(reader, "nacionalidad_padre"),
-            nombre_madre = ReadNullableString(reader, "nombre_madre"),
-            ocupacion_madre = ReadNullableString(reader, "ocupacion_madre"),
-            nacionalidad_madre = ReadNullableString(reader, "nacionalidad_madre"),
-            barrio_residencia = ReadNullableString(reader, "barrio_residencia"),
-            parroquia_residencia = ReadNullableString(reader, "parroquia_residencia"),
-            ciudad_residencia = ReadNullableString(reader, "ciudad_residencia"),
-            tipo_sangre = ReadNullableString(reader, "tipo_sangre"),
-            user_alumno = ReadNullableString(reader, "user_alumno"),
-            password = ReadNullableString(reader, "password"),
-            idDiscapacidad = ReadNullableInt(reader, "idDiscapacidad"),
-            idEtnia = ReadNullableInt(reader, "idEtnia"),
-            idNacionalidad = ReadNullableInt(reader, "idNacionalidad"),
-            porcentaje_discapacidad = ReadNullableInt(reader, "porcentaje_discapacidad"),
-            carnet_conadis = ReadNullableString(reader, "carnet_conadis"),
             email_institucional = ReadNullableString(reader, "email_institucional"),
             primerIngreso = ReadNullableInt(reader, "primerIngreso"),
             
@@ -1202,24 +1139,15 @@ WHERE COALESCE(activo, 1) = 0";
             clave = ReadNullableString(reader, "clave"),
             practicas = ReadNullableInt(reader, "practicas"),
             tipo = ReadNullableString(reader, "tipo"),
-            nacionalidad = ReadNullableString(reader, "nacionalidad"),
             titulo = ReadNullableString(reader, "titulo"),
             abreviatura = ReadNullableString(reader, "abreviatura"),
             abreviatura_post = ReadNullableString(reader, "abreviatura_post"),
             activo = ReadInt(reader, "activo"),
-            idEtnia = ReadInt(reader, "idEtnia"),
-            idNacionalidad = ReadInt(reader, "idNacionalidad"),
-            idParroquiaNacimiento = ReadInt(reader, "idParroquiaNacimiento"),
             emailInstitucional = ReadNullableString(reader, "emailInstitucional"),
             fecha_ingreso = ReadNullableDate(reader, "fecha_ingreso"),
             fechaIngresoIess = ReadNullableDate(reader, "fechaIngresoIess"),
             fecha_retiro = ReadNullableDate(reader, "fecha_retiro"),
-            idParroquiaResidencia = ReadInt(reader, "idParroquiaResidencia"),
             tipoSangre = ReadNullableString(reader, "tipoSangre"),
-            codigoPostal = ReadNullableString(reader, "codigoPostal"),
-            idDiscapacidad = ReadInt(reader, "idDiscapacidad"),
-            porcentajeDiscapacidad = ReadNullableInt(reader, "porcentajeDiscapacidad"),
-            numeroConadis = ReadNullableString(reader, "numeroConadis"),
             esReal = ReadNullableInt(reader, "esReal")
         };
 

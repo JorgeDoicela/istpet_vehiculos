@@ -85,24 +85,15 @@ namespace backend.Services.Implementations
                                 clave = ci.clave,
                                 practicas = ci.practicas ?? 0,
                                 tipo = ci.tipo,
-                                nacionalidad = ci.nacionalidad,
                                 titulo = ci.titulo,
                                 abreviatura = ci.abreviatura,
                                 abreviatura_post = ci.abreviatura_post,
                                 activo = ci.activo,
-                                idEtnia = ci.idEtnia,
-                                idNacionalidad = ci.idNacionalidad,
-                                idParroquiaNacimiento = ci.idParroquiaNacimiento,
                                 emailInstitucional = ci.emailInstitucional,
                                 fecha_ingreso = ci.fecha_ingreso,
                                 fechaIngresoIess = ci.fechaIngresoIess,
                                 fecha_retiro = ci.fecha_retiro,
-                                idParroquiaResidencia = ci.idParroquiaResidencia,
                                 tipoSangre = ci.tipoSangre,
-                                codigoPostal = ci.codigoPostal,
-                                idDiscapacidad = ci.idDiscapacidad,
-                                porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
-                                numeroConadis = ci.numeroConadis,
                                 esReal = ci.esReal ?? 1
                             });
                             log.RegistrosProcesados++;
@@ -129,24 +120,15 @@ namespace backend.Services.Implementations
                             existing.clave = ci.clave;
                             existing.practicas = ci.practicas ?? existing.practicas;
                             existing.tipo = ci.tipo;
-                            existing.nacionalidad = ci.nacionalidad;
                             existing.titulo = ci.titulo;
                             existing.abreviatura = ci.abreviatura;
                             existing.abreviatura_post = ci.abreviatura_post;
                             existing.activo = ci.activo;
-                            existing.idEtnia = ci.idEtnia;
-                            existing.idNacionalidad = ci.idNacionalidad;
-                            existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
                             existing.emailInstitucional = ci.emailInstitucional;
                             existing.fecha_ingreso = ci.fecha_ingreso;
                             existing.fechaIngresoIess = ci.fechaIngresoIess;
                             existing.fecha_retiro = ci.fecha_retiro;
-                            existing.idParroquiaResidencia = ci.idParroquiaResidencia;
                             existing.tipoSangre = ci.tipoSangre;
-                            existing.codigoPostal = ci.codigoPostal;
-                            existing.idDiscapacidad = ci.idDiscapacidad;
-                            existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
-                            existing.numeroConadis = ci.numeroConadis;
                             existing.esReal = ci.esReal ?? existing.esReal;
                             log.RegistrosProcesados++;
                         }
@@ -552,24 +534,15 @@ namespace backend.Services.Implementations
                         clave = ci.clave,
                         practicas = ci.practicas ?? 0,
                         tipo = ci.tipo,
-                        nacionalidad = ci.nacionalidad,
                         titulo = ci.titulo,
                         abreviatura = ci.abreviatura,
                         abreviatura_post = ci.abreviatura_post,
                         activo = ci.activo,
-                        idEtnia = ci.idEtnia,
-                        idNacionalidad = ci.idNacionalidad,
-                        idParroquiaNacimiento = ci.idParroquiaNacimiento,
                         emailInstitucional = ci.emailInstitucional,
                         fecha_ingreso = ci.fecha_ingreso,
                         fechaIngresoIess = ci.fechaIngresoIess,
                         fecha_retiro = ci.fecha_retiro,
-                        idParroquiaResidencia = ci.idParroquiaResidencia,
                         tipoSangre = ci.tipoSangre,
-                        codigoPostal = ci.codigoPostal,
-                        idDiscapacidad = ci.idDiscapacidad,
-                        porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
-                        numeroConadis = ci.numeroConadis,
                         esReal = ci.esReal ?? 1
                     };
                     _context.Instructores.Add(nuevo);
@@ -597,24 +570,15 @@ namespace backend.Services.Implementations
                     existing.clave = ci.clave;
                     existing.practicas = ci.practicas ?? existing.practicas;
                     existing.tipo = ci.tipo;
-                    existing.nacionalidad = ci.nacionalidad;
                     existing.titulo = ci.titulo;
                     existing.abreviatura = ci.abreviatura;
                     existing.abreviatura_post = ci.abreviatura_post;
                     existing.activo = ci.activo;
-                    existing.idEtnia = ci.idEtnia;
-                    existing.idNacionalidad = ci.idNacionalidad;
-                    existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
                     existing.emailInstitucional = ci.emailInstitucional;
                     existing.fecha_ingreso = ci.fecha_ingreso;
                     existing.fechaIngresoIess = ci.fechaIngresoIess;
                     existing.fecha_retiro = ci.fecha_retiro;
-                    existing.idParroquiaResidencia = ci.idParroquiaResidencia;
                     existing.tipoSangre = ci.tipoSangre;
-                    existing.codigoPostal = ci.codigoPostal;
-                    existing.idDiscapacidad = ci.idDiscapacidad;
-                    existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
-                    existing.numeroConadis = ci.numeroConadis;
                     existing.esReal = ci.esReal ?? existing.esReal;
                 }
                 processed++;
@@ -683,10 +647,7 @@ namespace backend.Services.Implementations
                         telefono = item.telefono,
                         celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular,
                         email = item.email?.Length > 100 ? item.email[..100] : item.email,
-                        ciudad_Nacimiento = item.ciudad_Nacimiento,
-                        provincia_Nacimiento = item.provincia_Nacimiento,
                         sexo = item.sexo,
-                        nacionalidad = item.nacionalidad,
                         idNivel = item.idNivel,
                         idPeriodo = item.idPeriodo,
                         idSeccion = item.idSeccion,
@@ -694,24 +655,9 @@ namespace backend.Services.Implementations
                         idInstitucion = item.idInstitucion,
                         tituloColegio = item.tituloColegio,
                         fecha_Inscripcion = item.fecha_Inscripcion,
-                        parroquia_nacimiento = item.parroquia_nacimiento,
-                        nombre_padre = item.nombre_padre,
-                        ocupacion_padre = item.ocupacion_padre,
-                        nacionalidad_padre = item.nacionalidad_padre,
-                        nombre_madre = item.nombre_madre,
-                        ocupacion_madre = item.ocupacion_madre,
-                        nacionalidad_madre = item.nacionalidad_madre,
-                        barrio_residencia = item.barrio_residencia,
-                        parroquia_residencia = item.parroquia_residencia,
-                        ciudad_residencia = item.ciudad_residencia,
                         tipo_sangre = item.tipo_sangre,
                         user_alumno = item.user_alumno,
                         password = item.password,
-                        idDiscapacidad = item.idDiscapacidad,
-                        idEtnia = item.idEtnia,
-                        idNacionalidad = item.idNacionalidad,
-                        porcentaje_discapacidad = item.porcentaje_discapacidad,
-                        carnet_conadis = item.carnet_conadis,
                         email_institucional = item.email_institucional,
                         primerIngreso = item.primerIngreso ?? 1
                     };
@@ -730,10 +676,7 @@ namespace backend.Services.Implementations
                     existing.telefono = item.telefono;
                     existing.celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular;
                     existing.email = item.email?.Length > 100 ? item.email[..100] : item.email;
-                    existing.ciudad_Nacimiento = item.ciudad_Nacimiento;
-                    existing.provincia_Nacimiento = item.provincia_Nacimiento;
                     existing.sexo = item.sexo;
-                    existing.nacionalidad = item.nacionalidad;
                     existing.idNivel = item.idNivel;
                     existing.idPeriodo = item.idPeriodo ?? existing.idPeriodo;
                     existing.idSeccion = item.idSeccion ?? existing.idSeccion;
@@ -741,24 +684,9 @@ namespace backend.Services.Implementations
                     existing.idInstitucion = item.idInstitucion;
                     existing.tituloColegio = item.tituloColegio;
                     existing.fecha_Inscripcion = item.fecha_Inscripcion;
-                    existing.parroquia_nacimiento = item.parroquia_nacimiento;
-                    existing.nombre_padre = item.nombre_padre;
-                    existing.ocupacion_padre = item.ocupacion_padre;
-                    existing.nacionalidad_padre = item.nacionalidad_padre;
-                    existing.nombre_madre = item.nombre_madre;
-                    existing.ocupacion_madre = item.ocupacion_madre;
-                    existing.nacionalidad_madre = item.nacionalidad_madre;
-                    existing.barrio_residencia = item.barrio_residencia;
-                    existing.parroquia_residencia = item.parroquia_residencia;
-                    existing.ciudad_residencia = item.ciudad_residencia;
                     existing.tipo_sangre = item.tipo_sangre;
                     existing.user_alumno = item.user_alumno;
                     existing.password = item.password;
-                    existing.idDiscapacidad = item.idDiscapacidad;
-                    existing.idEtnia = item.idEtnia;
-                    existing.idNacionalidad = item.idNacionalidad;
-                    existing.porcentaje_discapacidad = item.porcentaje_discapacidad;
-                    existing.carnet_conadis = item.carnet_conadis;
                     existing.email_institucional = item.email_institucional;
                     existing.primerIngreso = item.primerIngreso ?? existing.primerIngreso;
                 }

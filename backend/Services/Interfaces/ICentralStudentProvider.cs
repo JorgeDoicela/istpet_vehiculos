@@ -23,10 +23,6 @@ namespace backend.Services.Interfaces
         public string? telefono { get; set; }
         public string? celular { get; set; }
         public string? email { get; set; }
-        public string? ciudad_Nacimiento { get; set; }
-        public string? provincia_Nacimiento { get; set; }
-        public string? sexo { get; set; }
-        public string? nacionalidad { get; set; }
         public int idNivel { get; set; }
         public string idPeriodo { get; set; } = string.Empty;
         public int idSeccion { get; set; }
@@ -34,24 +30,10 @@ namespace backend.Services.Interfaces
         public int? idInstitucion { get; set; }
         public string? tituloColegio { get; set; }
         public DateTime? fecha_Inscripcion { get; set; }
-        public string? parroquia_nacimiento { get; set; }
-        public string? nombre_padre { get; set; }
-        public string? ocupacion_padre { get; set; }
-        public string? nacionalidad_padre { get; set; }
-        public string? nombre_madre { get; set; }
-        public string? ocupacion_madre { get; set; }
-        public string? nacionalidad_madre { get; set; }
-        public string? barrio_residencia { get; set; }
-        public string? parroquia_residencia { get; set; }
-        public string? ciudad_residencia { get; set; }
+        public string? sexo { get; set; }
         public string? tipo_sangre { get; set; }
         public string? user_alumno { get; set; }
         public string? password { get; set; }
-        public int? idDiscapacidad { get; set; }
-        public int? idEtnia { get; set; }
-        public int? idNacionalidad { get; set; }
-        public int? porcentaje_discapacidad { get; set; }
-        public string? carnet_conadis { get; set; }
         public string? email_institucional { get; set; }
         public int? primerIngreso { get; set; }
         public byte[]? foto { get; set; }
@@ -87,24 +69,15 @@ namespace backend.Services.Interfaces
         public string? clave { get; set; }
         public int? practicas { get; set; }
         public string? tipo { get; set; }
-        public string? nacionalidad { get; set; }
         public string? titulo { get; set; }
         public string? abreviatura { get; set; }
         public string? abreviatura_post { get; set; }
         public int activo { get; set; }
-        public int idEtnia { get; set; }
-        public int idNacionalidad { get; set; }
-        public int idParroquiaNacimiento { get; set; }
         public string? emailInstitucional { get; set; }
         public DateTime? fecha_ingreso { get; set; }
         public DateTime? fechaIngresoIess { get; set; }
         public DateTime? fecha_retiro { get; set; }
-        public int idParroquiaResidencia { get; set; }
         public string? tipoSangre { get; set; }
-        public string? codigoPostal { get; set; }
-        public int idDiscapacidad { get; set; }
-        public int? porcentajeDiscapacidad { get; set; }
-        public string? numeroConadis { get; set; }
         public string? foto { get; set; }
         public int? esReal { get; set; }
     }
@@ -309,10 +282,6 @@ namespace backend.Services.Interfaces
         public string? telefono { get; set; }
         public string? celular { get; set; }
         public string? email { get; set; }
-        public string? ciudad_Nacimiento { get; set; }
-        public string? provincia_Nacimiento { get; set; }
-        public string? sexo { get; set; }
-        public string? nacionalidad { get; set; }
         public int idNivel { get; set; } = 1;
         public string? idPeriodo { get; set; }
         public int? idSeccion { get; set; }
@@ -320,24 +289,10 @@ namespace backend.Services.Interfaces
         public int? idInstitucion { get; set; }
         public string? tituloColegio { get; set; }
         public DateTime? fecha_Inscripcion { get; set; }
-        public string? parroquia_nacimiento { get; set; }
-        public string? nombre_padre { get; set; }
-        public string? ocupacion_padre { get; set; }
-        public string? nacionalidad_padre { get; set; }
-        public string? nombre_madre { get; set; }
-        public string? ocupacion_madre { get; set; }
-        public string? nacionalidad_madre { get; set; }
-        public string? barrio_residencia { get; set; }
-        public string? parroquia_residencia { get; set; }
-        public string? ciudad_residencia { get; set; }
+        public string? sexo { get; set; }
         public string? tipo_sangre { get; set; }
         public string? user_alumno { get; set; }
         public string? password { get; set; }
-        public int? idDiscapacidad { get; set; }
-        public int? idEtnia { get; set; }
-        public int? idNacionalidad { get; set; }
-        public int? porcentaje_discapacidad { get; set; }
-        public string? carnet_conadis { get; set; }
         public string? email_institucional { get; set; }
         public int? primerIngreso { get; set; }
     }

@@ -41,17 +41,8 @@ namespace backend.Models
         [MaxLength(40)]
         public string? email { get; set; }
 
-        [MaxLength(30)]
-        public string? ciudad_Nacimiento { get; set; }
-
-        [MaxLength(40)]
-        public string? provincia_Nacimiento { get; set; }
-
         [MaxLength(1)]
         public string? sexo { get; set; }
-
-        [MaxLength(50)]
-        public string? nacionalidad { get; set; }
 
         public int? idNivel { get; set; }
 
@@ -69,36 +60,6 @@ namespace backend.Models
 
         public DateTime? fecha_Inscripcion { get; set; }
 
-        [MaxLength(100)]
-        public string? parroquia_nacimiento { get; set; }
-
-        [MaxLength(150)]
-        public string? nombre_padre { get; set; }
-
-        [MaxLength(150)]
-        public string? ocupacion_padre { get; set; }
-
-        [MaxLength(30)]
-        public string? nacionalidad_padre { get; set; }
-
-        [MaxLength(150)]
-        public string? nombre_madre { get; set; }
-
-        [MaxLength(150)]
-        public string? ocupacion_madre { get; set; }
-
-        [MaxLength(150)]
-        public string? nacionalidad_madre { get; set; }
-
-        [MaxLength(150)]
-        public string? barrio_residencia { get; set; }
-
-        [MaxLength(150)]
-        public string? parroquia_residencia { get; set; }
-
-        [MaxLength(100)]
-        public string? ciudad_residencia { get; set; }
-
         [MaxLength(6)]
         public string? tipo_sangre { get; set; }
 
@@ -107,17 +68,6 @@ namespace backend.Models
 
         [MaxLength(20)]
         public string? password { get; set; }
-
-        public int? idDiscapacidad { get; set; }
-
-        public int? idEtnia { get; set; }
-
-        public int? idNacionalidad { get; set; }
-
-        public int? porcentaje_discapacidad { get; set; }
-
-        [MaxLength(20)]
-        public string? carnet_conadis { get; set; }
 
         [MaxLength(100)]
         public string? email_institucional { get; set; }
