@@ -6,7 +6,7 @@ namespace backend.Services.Interfaces
      */
     public interface ILogisticaService
     {
-        Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor, int? idAsignacionHorario = null);
-        Task<string> RegistrarLlegadaAsync(int idRegistro, string observaciones, int registradoPor);
+        Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, int? idAsignacionHorario = null);
+        Task<string> RegistrarLlegadaAsync(int idRegistro, int registradoPor);
     }
 }

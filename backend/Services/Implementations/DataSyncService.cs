@@ -200,7 +200,6 @@ namespace backend.Services.Implementations
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_practicas_horarios_alumnos", SyncPracticeScheduleLinksAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("fechas_horarios", SyncFechasHorariosAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("horario_profesores", SyncHorariosProfesoresAsync, warnings, log);
-            log.RegistrosProcesados += await ExecuteSyncStepAsync("horas", SyncHorasAsync, warnings, log);
 
             if (warnings.Count == 0)
             {
@@ -1062,7 +1061,6 @@ namespace backend.Services.Implementations
                         revisaArrastres = item.revisaArrastres == 1,
                         codigo_cases = item.codigo_cases,
                         aliasCarrera = item.aliasCarrera,
-                        BolsaEmpleo = item.BolsaEmpleo == 1,
                         esInstituto = item.esInstituto == 1
                     });
                 }
@@ -1078,7 +1076,6 @@ namespace backend.Services.Implementations
                     existing.revisaArrastres = item.revisaArrastres == 1;
                     existing.codigo_cases = item.codigo_cases;
                     existing.aliasCarrera = item.aliasCarrera;
-                    existing.BolsaEmpleo = item.BolsaEmpleo == 1;
                     existing.esInstituto = item.esInstituto == 1;
                 }
                 processed++;
@@ -1434,31 +1431,6 @@ namespace backend.Services.Implementations
             return processed;
         }
 
-        private async Task<int> SyncHorasAsync()
-        {
-            var rows = await _centralProvider.GetAllHorasFromCentralAsync();
-            var processed = 0;
-            foreach (var item in rows)
-            {
-                var existing = await _context.Horas.FirstOrDefaultAsync(x => x.idHora == item.idHora);
-                if (existing == null)
-                {
-                    _context.Horas.Add(new Hora
-                    {
-                        idHora = item.idHora,
-                        detalle = item.detalle
-                    });
-                }
-                else
-                {
-                    existing.detalle = item.detalle;
-                }
-                processed++;
-            }
-            await _context.SaveChangesAsync();
-            return processed;
-        }
-
         public async Task<backend.DTOs.DataParityAuditDto> GetDataParityAuditAsync()
         {
             var audit = new backend.DTOs.DataParityAuditDto { IsSigafiConnected = await PingSigafiAsync() };
@@ -1478,7 +1450,7 @@ namespace backend.Services.Implementations
             tables.Add(("modalidades", (Func<Task<int>>)(async () => (await _centralProvider.GetAllModalidadesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Modalidades.CountAsync())));
             tables.Add(("cond_alumnos_horarios", (Func<Task<int>>)(async () => (await _centralProvider.GetAllSchedulesFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.HorariosAlumnos.CountAsync())));
             tables.Add(("fechas_horarios", (Func<Task<int>>)(async () => (await _centralProvider.GetAllFechasHorariosFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.FechasHorarios.CountAsync())));
-            tables.Add(("horas", (Func<Task<int>>)(async () => (await _centralProvider.GetAllHorasFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.Horas.CountAsync())));
+            tables.Add(("horario_profesores", (Func<Task<int>>)(async () => (await _centralProvider.GetAllHorariosProfesoresFromCentralAsync()).Count()), (Func<Task<int>>)(() => _context.HorariosProfesores.CountAsync())));
             tables.Add(("usuarios_web", (Func<Task<int>>)(async () => (await _centralProvider.GetAllWebUsersAsync()).Count()), (Func<Task<int>>)(() => _context.Usuarios.CountAsync())));
 
             foreach (var t in tables)

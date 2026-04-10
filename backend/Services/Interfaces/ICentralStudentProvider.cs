@@ -266,7 +266,6 @@ namespace backend.Services.Interfaces
         public string? user_asigna { get; set; }
         public string? user_llegada { get; set; }
         public int cancelado { get; set; }
-        public string? observaciones { get; set; }
     }
 
     public class CentralAlumnoLiteDto
@@ -346,7 +345,6 @@ namespace backend.Services.Interfaces
         
         Task<IEnumerable<CentralFechaHorarioDto>> GetAllFechasHorariosFromCentralAsync();
         Task<IEnumerable<CentralHorarioProfesorDto>> GetAllHorariosProfesoresFromCentralAsync();
-        Task<IEnumerable<CentralHoraDto>> GetAllHorasFromCentralAsync();
 
         Task<bool> PingSigafiAsync();
 

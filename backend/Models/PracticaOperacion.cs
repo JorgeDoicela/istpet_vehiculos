@@ -7,6 +7,5 @@ namespace backend.Models
         [Key]
         public int idPractica { get; set; }
 
-        public string? observaciones { get; set; }
     }
 }

@@ -874,9 +874,6 @@ WHERE COALESCE(activo, 1) = 0";
         public Task<IEnumerable<CentralHorarioProfesorDto>> GetAllHorariosProfesoresFromCentralAsync()
             => QueryListAsync("SELECT * FROM horario_profesores", MapCentralHorarioProfesor);
 
-        public Task<IEnumerable<CentralHoraDto>> GetAllHorasFromCentralAsync()
-            => QueryListAsync("SELECT * FROM horas", MapCentralHora);
-
         private static CentralPracticaSyncDto MapCentralPracticaSync(MySqlDataReader reader) => new()
         {
             idPractica = ReadInt(reader, "idPractica"),
@@ -893,8 +890,7 @@ WHERE COALESCE(activo, 1) = 0";
             verificada = ReadInt(reader, "verificada"),
             user_asigna = ReadNullableString(reader, "user_asigna"),
             user_llegada = ReadNullableString(reader, "user_llegada"),
-            cancelado = ReadInt(reader, "cancelado"),
-            observaciones = ReadNullableString(reader, "observaciones")
+            cancelado = ReadInt(reader, "cancelado")
         };
 
         public async Task<bool> PingSigafiAsync()
@@ -1035,7 +1031,6 @@ WHERE COALESCE(activo, 1) = 0";
             revisaArrastres = ReadInt(reader, "revisaArrastres"),
             codigo_cases = ReadNullableString(reader, "codigo_cases"),
             aliasCarrera = ReadNullableString(reader, "aliasCarrera"),
-            BolsaEmpleo = ReadInt(reader, "BolsoEmpleo"),
             esInstituto = ReadInt(reader, "esInstituto")
         };
 
@@ -1079,11 +1074,7 @@ WHERE COALESCE(activo, 1) = 0";
             activo = ReadInt(reader, "activo")
         };
 
-        private static CentralHoraDto MapCentralHora(MySqlDataReader reader) => new()
-        {
-            idHora = ReadInt(reader, "idHora"),
-            detalle = ReadNullableString(reader, "detalle")
-        };
+
 
         /// <summary>
         /// Intenta leer la etiqueta de modalidad/jornada en SIGAFI (nombres de columna varían entre instalaciones).

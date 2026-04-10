@@ -48,15 +48,14 @@ CREATE TABLE IF NOT EXISTS carreras (
     Carrera VARCHAR(100),
     fechaCreacion DATE,
     activa TINYINT(1) DEFAULT 1,
-    directorCarrera VARCHAR(100),
+    directorCarrera VARCHAR(200),
     numero_creditos INT,
-    ordenCarrera INT DEFAULT 0,
+    ordenCarrera INT,
     numero_alumnos INT,
-    revisaArrastres TINYINT DEFAULT 1,
+    revisaArrastres TINYINT,
     codigo_cases VARCHAR(20),
-    aliasCarrera VARCHAR(5),
-    BolsaEmpleo TINYINT(1) DEFAULT 0,
-    esInstituto TINYINT DEFAULT 0
+    aliasCarrera VARCHAR(50),
+    esInstituto TINYINT
 );
 
 CREATE TABLE IF NOT EXISTS secciones (
@@ -306,12 +305,6 @@ CREATE TABLE IF NOT EXISTS matriculas_operacion (
     FOREIGN KEY (idMatricula) REFERENCES matriculas(idMatricula)
 );
 
-CREATE TABLE IF NOT EXISTS practicas_operacion (
-    idPractica INT PRIMARY KEY,
-    observaciones TEXT,
-    FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica)
-);
-
 CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (
     idAsignacion INT PRIMARY KEY AUTO_INCREMENT,
     idAlumno VARCHAR(14) NOT NULL,
@@ -348,6 +341,18 @@ CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (
     PRIMARY KEY (idPractica, idAsignacionHorario),
     FOREIGN KEY (idPractica) REFERENCES cond_alumnos_practicas(idPractica),
     FOREIGN KEY (idAsignacionHorario) REFERENCES cond_alumnos_horarios(idAsignacionHorario)
+);
+
+-- Tabla de Horarios de Profesores (Parity)
+CREATE TABLE IF NOT EXISTS horario_profesores (
+    idHorario INT PRIMARY KEY,
+    idAsignacion INT,
+    idHora INT,
+    idFecha INT,
+    asiste TINYINT DEFAULT 1,
+    activo TINYINT DEFAULT 1,
+    INDEX idx_hp_asignacion (idAsignacion),
+    INDEX idx_hp_fecha (idFecha)
 );
 
 -- 4. Auditoría del sistema

@@ -33,7 +33,6 @@ namespace backend.Models
         [MaxLength(5)]
         public string? aliasCarrera { get; set; }
 
-        public bool BolsaEmpleo { get; set; } = false;
         public bool esInstituto { get; set; } = false;
     }
 }

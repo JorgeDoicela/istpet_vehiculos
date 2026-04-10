@@ -62,7 +62,7 @@ namespace backend.Services.Implementations
             response.Modules.Add(await ProbeDeepAsync("cond_practicas_horarios_alumnos", () => _central.GetPracticeScheduleLinksFromCentralAsync(), cancellationToken));
             response.Modules.Add(await ProbeDeepAsync("fechas_horarios", () => _central.GetAllFechasHorariosFromCentralAsync(), cancellationToken));
             response.Modules.Add(await ProbeDeepAsync("horario_profesores", () => _central.GetAllHorariosProfesoresFromCentralAsync(), cancellationToken));
-            response.Modules.Add(await ProbeDeepAsync("horas", () => _central.GetAllHorasFromCentralAsync(), cancellationToken));
+
 
             return response;
         }

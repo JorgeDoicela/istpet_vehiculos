@@ -23,7 +23,7 @@ namespace backend.Services.Implementations
         }
 
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string observaciones, int registradoPor, int? idAsignacionHorario = null)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, int? idAsignacionHorario = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -99,8 +99,7 @@ namespace backend.Services.Implementations
                 await _context.SaveChangesAsync();
                 _context.PracticasOperaciones.Add(new PracticaOperacion
                 {
-                    idPractica = practica.idPractica,
-                    observaciones = observaciones
+                    idPractica = practica.idPractica
                 });
                 await _context.SaveChangesAsync();
 
@@ -127,7 +126,7 @@ namespace backend.Services.Implementations
             }
         }
 
-        public async Task<string> RegistrarLlegadaAsync(int idPractica, string observaciones, int registradoPor)
+        public async Task<string> RegistrarLlegadaAsync(int idPractica, int registradoPor)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -175,10 +174,7 @@ namespace backend.Services.Implementations
                     practicaOp = new PracticaOperacion { idPractica = practica.idPractica };
                     _context.PracticasOperaciones.Add(practicaOp);
                 }
-                if (!string.IsNullOrWhiteSpace(observaciones))
-                {
-                    practicaOp.observaciones = observaciones;
-                }
+                _context.PracticasOperaciones.Add(practicaOp);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

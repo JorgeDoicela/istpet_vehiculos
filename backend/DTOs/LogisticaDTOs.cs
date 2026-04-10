@@ -140,7 +140,6 @@ namespace backend.DTOs
         public int revisaArrastres { get; set; }
         public string? codigo_cases { get; set; }
         public string? aliasCarrera { get; set; }
-        public int BolsaEmpleo { get; set; }
         public int esInstituto { get; set; }
     }
 
@@ -184,9 +183,4 @@ namespace backend.DTOs
         public int activo { get; set; }
     }
 
-    public class CentralHoraDto
-    {
-        public int idHora { get; set; }
-        public string? detalle { get; set; }
-    }
 }

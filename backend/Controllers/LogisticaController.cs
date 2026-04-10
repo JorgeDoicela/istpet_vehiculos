@@ -454,14 +454,14 @@ namespace backend.Controllers
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             var result = await _logisticaService.RegistrarSalidaAsync(
                 req.idMatricula, req.idVehiculo, req.idInstructor,
-                req.observaciones ?? "Ninguna", req.registradoPor, req.idAsignacionHorario);
+                req.registradoPor, req.idAsignacionHorario);
 
             if (result == "EXITO")
             {
                 await _audit.LogAsync(
                     req.registradoPor.ToString(), "SALIDA",
                     entidadId: $"mat:{req.idMatricula}/veh:{req.idVehiculo}",
-                    detalles: $"Instructor: {req.idInstructor}. Obs: {req.observaciones}",
+                    detalles: $"Instructor: {req.idInstructor}.",
                     ipOrigen: ip);
                 return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
             }
@@ -474,14 +474,14 @@ namespace backend.Controllers
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             var result = await _logisticaService.RegistrarLlegadaAsync(
-                req.idPractica, req.observaciones ?? "Ninguna", req.registradoPor);
+                req.idPractica, req.registradoPor);
 
             if (result == "EXITO")
             {
                 await _audit.LogAsync(
                     req.registradoPor.ToString(), "LLEGADA",
                     entidadId: $"practica:{req.idPractica}",
-                    detalles: $"Obs: {req.observaciones}",
+                    detalles: $"Salió: OK.",
                     ipOrigen: ip);
                 return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
             }

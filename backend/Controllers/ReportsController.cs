@@ -166,7 +166,6 @@ namespace backend.Controllers
                     horaLlegada = tsLlegada.HasValue ? DateTime.Today.Add(tsLlegada.Value).ToString("HH:mm") : null,
                     tiempo = string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}",
                         (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
-                    observaciones = practicaOp?.observaciones,
                     cancelado = p.cancelado ?? 0
                 });
             }
