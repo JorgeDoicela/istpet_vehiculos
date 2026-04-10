@@ -213,6 +213,7 @@ namespace backend.Controllers
                 {
                     matriculaUsada = new Matricula
                     {
+                        idMatricula = centralData.idMatricula,
                         idAlumno = eBase.idAlumno,
                         idNivel = idNivelPersist,
                         idSeccion = idSeccionPersist,
@@ -233,6 +234,7 @@ namespace backend.Controllers
                 {
                     matriculaUsada = new Matricula
                     {
+                        idMatricula = centralData.idMatricula,
                         idAlumno = eBase.idAlumno,
                         idNivel = idNivelPersist,
                         idSeccion = idSeccionPersist,

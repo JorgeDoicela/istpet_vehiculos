@@ -65,6 +65,7 @@ namespace backend.Services.Implementations
                         a.idAlumno, a.tipoDocumento, a.primerNombre, a.segundoNombre, a.apellidoPaterno, a.apellidoMaterno,
                         a.fecha_Nacimiento, a.direccion, a.telefono, a.celular, a.email,
                         a.sexo, m.idNivel, COALESCE(p.idPeriodo, m.idPeriodo) AS idPeriodo, 
+                        m.idMatricula,
                         COALESCE(m.idSeccion, 0) AS idSeccion, COALESCE(m.idModalidad, 0) AS idModalidad, m.paralelo,
                         a.idInstitucion, a.tituloColegio, a.fecha_Inscripcion,
                         a.tipo_sangre, a.user_alumno, a.password,
@@ -136,6 +137,7 @@ namespace backend.Services.Implementations
                         a.apellidoPaterno, a.apellidoMaterno, a.fecha_Nacimiento, a.direccion, 
                         a.telefono, a.celular, a.email,
                         a.sexo,
+                        0 AS idMatricula,
                         0 AS idNivel, 0 AS idSeccion, 0 AS idModalidad, NULL AS idInstitucion,
                         a.tituloColegio, a.fecha_Inscripcion,
                         a.tipo_sangre, a.user_alumno, a.password,
@@ -967,6 +969,7 @@ WHERE COALESCE(activo, 1) = 0";
 
         private static CentralStudentDto MapCentralStudent(MySqlDataReader reader) => new()
         {
+            idMatricula = ReadInt(reader, "idMatricula"),
             idAlumno = ReadString(reader, "idAlumno"),
             tipoDocumento = ReadNullableString(reader, "tipoDocumento"),
             primerNombre = ReadNullableString(reader, "primerNombre"),

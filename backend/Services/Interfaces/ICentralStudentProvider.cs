@@ -12,6 +12,7 @@ namespace backend.Services.Interfaces
      */
     public class CentralStudentDto
     {
+        public int idMatricula { get; set; }
         public string idAlumno { get; set; } = string.Empty;
         public string? tipoDocumento { get; set; }
         public string? primerNombre { get; set; }
