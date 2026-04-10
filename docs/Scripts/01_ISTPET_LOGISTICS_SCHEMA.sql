@@ -1,9 +1,7 @@
 -- ============================================================
 -- 01_ISTPET_LOGISTICS_SCHEMA.sql
--- Version: 2026.1 (Professional Architecture)
 -- Propósito: Esquema de la BD LOCAL istpet_vehiculos (espejo operativo).
 -- Los datos de negocio se originan en SIGAFI (sigafi_es remoto) y se rellenan vía Master Sync API.
--- Índice de scripts: docs/Scripts/README.md
 -- ============================================================
 
 DROP DATABASE IF EXISTS istpet_vehiculos;

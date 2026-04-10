@@ -271,12 +271,11 @@ await using (var scope = app.Services.CreateAsyncScope())
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        await db.Database.ExecuteSqlRawAsync(@"
-            -- 1. Reparar tabla tipo_licencia (Absolute Parity)
-            ALTER TABLE tipo_licencia ADD COLUMN IF NOT EXISTS id_categoria_sigafi INT NULL UNIQUE;
-
-            -- 2. Asegurar tabla matriculas_examen_conduccion
-            CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
+        var schemaCommands = new List<string>
+        {
+            "ALTER TABLE tipo_licencia ADD COLUMN id_categoria_sigafi INT NULL UNIQUE",
+            
+            @"CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
                 idMatricula INT NOT NULL,
                 idCategoria INT NOT NULL,
                 nota DECIMAL(6,2) NULL,
@@ -286,10 +285,27 @@ await using (var scope = app.Services.CreateAsyncScope())
                 fechaIngreso DATETIME NULL,
                 instructor VARCHAR(80) NULL,
                 PRIMARY KEY (idMatricula, idCategoria)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
 
-            -- 3. Asegurar tabla audit_logs
-            CREATE TABLE IF NOT EXISTS audit_logs (
+            @"CREATE TABLE IF NOT EXISTS fechas_horarios (
+                idFecha INT NOT NULL,
+                fecha DATE NOT NULL,
+                finsemana TINYINT NOT NULL DEFAULT 0,
+                dia VARCHAR(15) NULL,
+                PRIMARY KEY (idFecha)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
+
+            @"CREATE TABLE IF NOT EXISTS horario_profesores (
+                idHorario INT NOT NULL,
+                idAsignacion INT NULL,
+                idHora INT NULL,
+                idFecha INT NULL,
+                asiste TINYINT DEFAULT 1,
+                activo TINYINT DEFAULT 1,
+                PRIMARY KEY (idHorario)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
+
+            @"CREATE TABLE IF NOT EXISTS audit_logs (
                 id          INT          NOT NULL AUTO_INCREMENT,
                 usuario     VARCHAR(50)  NOT NULL,
                 accion      VARCHAR(50)  NOT NULL,
@@ -301,18 +317,14 @@ await using (var scope = app.Services.CreateAsyncScope())
                 INDEX idx_audit_usuario (usuario),
                 INDEX idx_audit_accion  (accion),
                 INDEX idx_audit_fecha   (fecha_hora)
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
 
-            -- 4. Optimización de Performance (Índices)
-            CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado);
-            CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno);
-            CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo);
-            CREATE INDEX IF NOT EXISTS idx_practicas_fecha ON cond_alumnos_practicas (fecha);
-            CREATE INDEX IF NOT EXISTS idx_practicas_alumno_fk ON cond_alumnos_practicas (idalumno);
-            CREATE INDEX IF NOT EXISTS idx_practicas_profesor_fk ON cond_alumnos_practicas (idProfesor);
+            "CREATE INDEX idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)",
+            "CREATE INDEX idx_practicas_alumno ON cond_alumnos_practicas (idalumno)",
+            "CREATE INDEX idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)",
+            "CREATE INDEX idx_practicas_fecha ON cond_alumnos_practicas (fecha)",
 
-            -- 5. Recrear Vistas Operativas
-            CREATE OR REPLACE VIEW v_clases_activas AS
+            @"CREATE OR REPLACE VIEW v_clases_activas AS
             SELECT
                 p.idPractica AS id_registro,
                 p.idalumno AS idAlumno,
@@ -328,17 +340,23 @@ await using (var scope = app.Services.CreateAsyncScope())
             LEFT JOIN alumnos e ON p.idalumno = e.idAlumno
             LEFT JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
             LEFT JOIN profesores i ON p.idProfesor = i.idProfesor
-            WHERE p.ensalida = 1 AND p.cancelado = 0;
+            WHERE p.ensalida = 1 AND p.cancelado = 0",
 
-            CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
+            @"CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
             SELECT
                 v.idVehiculo AS id_vehiculo,
                 v.numero_vehiculo AS numero_vehiculo,
                 v.placa AS placa
             FROM vehiculos v
             INNER JOIN vehiculos_operacion vo ON vo.idVehiculo = v.idVehiculo
-            WHERE v.activo = 1 AND vo.estado_mecanico != 'OPERATIVO';
-        ");
+            WHERE v.activo = 1 AND vo.estado_mecanico != 'OPERATIVO'"
+        };
+
+        foreach (var cmd in schemaCommands)
+        {
+            try { await db.Database.ExecuteSqlRawAsync(cmd); }
+            catch { /* Ignorar errores de columnas/índices ya existentes */ }
+        }
     }
     catch (Exception ex)
     {
