@@ -200,7 +200,6 @@ namespace backend.Services.Implementations
                     practicaOp = new PracticaOperacion { idPractica = practica.idPractica };
                     _context.PracticasOperaciones.Add(practicaOp);
                 }
-                _context.PracticasOperaciones.Add(practicaOp);
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

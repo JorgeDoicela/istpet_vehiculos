@@ -151,6 +151,9 @@ namespace backend.Controllers
 
         private async Task<EstudianteLogisticaResponse> BuildLogisticaFromSigafiAndPersistAsync(CentralStudentDto centralData)
         {
+            // [JIT RESILIENCE] Ensure all catalog dependencies exist locally BEFORE any persistence or fallback calculations.
+            await EnsureCatalogDependenciesExistAsync(centralData.idPeriodo, centralData.idNivel, centralData.idSeccion, centralData.idModalidad);
+
             var eBase = await _context.Estudiantes.FindAsync(centralData.idAlumno);
             if (eBase == null)
             {
@@ -255,9 +258,6 @@ namespace backend.Controllers
                         matriculaUsada.idModalidad = centralData.idModalidad;
                 }
             }
-
-            // [JIT RESILIENCE] Ensure all catalog dependencies exist locally before saving.
-            await EnsureCatalogDependenciesExistAsync(centralData.idPeriodo, centralData.idNivel, centralData.idSeccion, centralData.idModalidad);
 
             await _context.SaveChangesAsync();
             if (matriculaUsada.idMatricula > 0)
