@@ -28,9 +28,9 @@
 
 ## Detalles que suelen preguntarse
 
-- **`periodos` / `secciones`**: no están en **`01`**; el backend las consulta en **SIGAFI** vía `SqlCentralStudentProvider`, no como tablas obligatorias en el espejo local.
+- **`periodos` / `secciones`**: si estan en **`01`** y se sincronizan desde SIGAFI en el Master Sync.
 - **`v_alerta_mantenimiento`**: no está en **`01`**; el dashboard usa SIGAFI y, si existe la vista en local, hace merge. Su ausencia no rompe el arranque.
-- **`02` vs Master Sync**: `02` documenta el modelo de datos; la ingesta **operativa** y completa está en el **Master Sync** (ver `docs/SYNC_VERIFICATION.md`).
+- **`02` vs Master Sync**: `02` es referencia/manual; la ingesta **operativa** y de mayor paridad está en el **Master Sync** (ver `docs/SYNC_VERIFICATION.md` y `docs/SIGAFI_PARITY_MATRIX.md`).
 
 ---
 

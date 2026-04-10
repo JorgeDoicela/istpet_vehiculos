@@ -445,21 +445,23 @@ namespace backend.Services.Implementations
                     {
                         idNivel = item.idNivel,
                         idCarrera = item.idCarrera,
-                        Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel,
+                        Nivel = item.Nivel?.Length > 160 ? item.Nivel[..160] : item.Nivel,
                         jerarquia = item.jerarquia,
                         orden = item.orden,
                         esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null,
-                        aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso
+                        aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso,
+                        activo = item.activo == 1
                     });
                 }
                 else
                 {
                     existing.idCarrera = item.idCarrera;
-                    existing.Nivel = item.Nivel?.Length > 20 ? item.Nivel[..20] : item.Nivel;
+                    existing.Nivel = item.Nivel?.Length > 160 ? item.Nivel[..160] : item.Nivel;
                     existing.jerarquia = item.jerarquia;
                     existing.orden = item.orden;
                     existing.esRecuperacion = item.esRecuperacion.HasValue ? (byte?)item.esRecuperacion.Value : null;
                     existing.aliasCurso = item.aliasCurso?.Length > 10 ? item.aliasCurso[..10] : item.aliasCurso;
+                    existing.activo = item.activo == 1;
                 }
                 processed++;
             }
@@ -806,8 +808,7 @@ namespace backend.Services.Implementations
                         user_matricula = item.user_matricula,
                         valida = item.valida,
                         esOyente = item.esOyente == 1,
-                        documentoFactura = item.documentoFactura,
-                        estado = "ACTIVO"
+                        documentoFactura = item.documentoFactura
                     };
                     _context.Matriculas.Add(nuevo);
                     byId[item.idMatricula] = nuevo;
@@ -898,7 +899,7 @@ namespace backend.Services.Implementations
             var alumnoSet = (await _context.Estudiantes.Select(e => e.idAlumno).ToListAsync()).ToHashSet();
             var vehiculoSet = (await _context.Vehiculos.Select(v => v.idVehiculo).ToListAsync()).ToHashSet();
             var profesorSet = (await _context.Instructores.Select(i => i.idProfesor).ToListAsync()).ToHashSet();
-            var existingIds = (await _context.Practicas.Select(p => p.idPractica).ToListAsync()).ToHashSet();
+            var existingById = await _context.Practicas.ToDictionaryAsync(p => p.idPractica);
             var processed = 0;
             foreach (var item in rows)
             {
@@ -909,15 +910,15 @@ namespace backend.Services.Implementations
                 if (!alumnoSet.Contains(item.idalumno) || !vehiculoSet.Contains(item.idvehiculo) || !profesorSet.Contains(item.idProfesor))
                     continue;
 
-                var mapped = BuildPracticaFromCentralSyncItem(item);
-                if (!existingIds.Contains(item.idPractica))
+                if (!existingById.TryGetValue(item.idPractica, out var existing))
                 {
+                    var mapped = BuildPracticaFromCentralSyncItem(item);
                     _context.Practicas.Add(mapped);
-                    existingIds.Add(item.idPractica);
+                    existingById[item.idPractica] = mapped;
                 }
                 else
                 {
-                    _context.Practicas.Update(mapped);
+                    UpdatePracticaFromCentralSyncItem(existing, item);
                 }
 
                 processed++;
@@ -954,8 +955,37 @@ namespace backend.Services.Implementations
                 user_asigna = userAsigna,
                 user_llegada = userLlegada,
                 cancelado = (byte?)(item.cancelado != 0 ? 1 : 0),
+                // Campo local opcional: solo se actualiza desde SIGAFI cuando la fuente lo entregue explícitamente.
                 observaciones = item.observaciones
             };
+        }
+
+        private static void UpdatePracticaFromCentralSyncItem(Practica existing, CentralPracticaSyncDto item)
+        {
+            var idPeriodo = item.idPeriodo?.Trim() ?? string.Empty;
+            if (idPeriodo.Length > 10)
+                idPeriodo = idPeriodo[..10];
+
+            existing.idalumno = item.idalumno;
+            existing.idvehiculo = item.idvehiculo;
+            existing.idProfesor = item.idProfesor;
+            existing.idPeriodo = idPeriodo;
+            existing.dia = item.dia?.Length > 15 ? item.dia[..15] : item.dia;
+            existing.fecha = item.fecha;
+            existing.hora_salida = item.hora_salida;
+            existing.hora_llegada = item.hora_llegada;
+            existing.tiempo = item.tiempo;
+            existing.ensalida = (byte?)(item.ensalida != 0 ? 1 : 0);
+            existing.verificada = (byte?)(item.verificada != 0 ? 1 : 0);
+            existing.user_asigna = item.user_asigna?.Length > 20 ? item.user_asigna[..20] : item.user_asigna;
+            existing.user_llegada = item.user_llegada?.Length > 20 ? item.user_llegada[..20] : item.user_llegada;
+            existing.cancelado = (byte?)(item.cancelado != 0 ? 1 : 0);
+
+            // No pisar notas locales cuando SIGAFI no envía observaciones.
+            if (item.observaciones is not null)
+            {
+                existing.observaciones = item.observaciones;
+            }
         }
 
         private async Task<int> SyncVehiclesAsync()
@@ -997,8 +1027,8 @@ namespace backend.Services.Implementations
                         idCategoria = item.idCategoria,
                         activo = item.activo == 1,
                         observacion = item.observacion?.Length > 200 ? item.observacion[..200] : item.observacion,
-                        chasis = item.chasis?.Length > 100 ? item.chasis[..100] : item.chasis,
-                        motor = item.motor?.Length > 100 ? item.motor[..100] : item.motor,
+                        chasis = item.chasis?.Length > 50 ? item.chasis[..50] : item.chasis,
+                        motor = item.motor?.Length > 50 ? item.motor[..50] : item.motor,
                         modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo,
                         id_tipo_licencia = tipoLicenciaId ?? 1
                     });
@@ -1013,8 +1043,8 @@ namespace backend.Services.Implementations
                     existing.idCategoria = item.idCategoria;
                     existing.activo = item.activo == 1;
                     existing.observacion = item.observacion?.Length > 200 ? item.observacion[..200] : item.observacion;
-                    existing.chasis = item.chasis?.Length > 100 ? item.chasis[..100] : item.chasis;
-                    existing.motor = item.motor?.Length > 100 ? item.motor[..100] : item.motor;
+                    existing.chasis = item.chasis?.Length > 50 ? item.chasis[..50] : item.chasis;
+                    existing.motor = item.motor?.Length > 50 ? item.motor[..50] : item.motor;
                     existing.modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo;
                     if (tipoLicenciaId.HasValue)
                         existing.id_tipo_licencia = tipoLicenciaId.Value;

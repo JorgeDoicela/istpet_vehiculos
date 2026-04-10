@@ -180,6 +180,7 @@ namespace backend.Services.Interfaces
         public int? orden { get; set; }
         public int? esRecuperacion { get; set; }
         public string? aliasCurso { get; set; }
+        public int activo { get; set; }
     }
 
     public class CentralTipoLicenciaDto

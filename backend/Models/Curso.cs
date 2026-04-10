@@ -14,7 +14,7 @@ namespace backend.Models
 
         public int idCarrera { get; set; }
 
-        [MaxLength(20)]
+        [MaxLength(160)]
         [Column("Nivel")]
         public string? Nivel { get; set; }
 
@@ -24,5 +24,7 @@ namespace backend.Models
 
         [MaxLength(10)]
         public string? aliasCurso { get; set; }
+
+        public bool activo { get; set; } = true;
     }
 }

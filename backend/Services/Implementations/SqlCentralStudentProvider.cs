@@ -391,7 +391,8 @@ namespace backend.Services.Implementations
                         salida,
                         ingreso,
                         activo,
-                        asistencia
+                        asistencia,
+                        esRrhh
                     FROM usuarios_web";
                 return await QueryListAsync(sql, reader => new CentralUserDto
                 {
@@ -400,7 +401,8 @@ namespace backend.Services.Implementations
                     salida = ReadInt(reader, "salida"),
                     ingreso = ReadInt(reader, "ingreso"),
                     activo = ReadInt(reader, "activo"),
-                    asistencia = ReadInt(reader, "asistencia")
+                    asistencia = ReadInt(reader, "asistencia"),
+                    esRrhh = ReadInt(reader, "esRrhh")
                 });
             }
             catch (Exception ex)
@@ -584,7 +586,11 @@ WHERE COALESCE(activo, 1) = 0";
             if (_cache.TryGetValue("sigafi:cursos", out IEnumerable<CentralCursoDto>? cached) && cached != null)
                 return cached;
             var result = (await QueryListAsync(
-                @"SELECT idNivel, idCarrera, Nivel, jerarquia, orden, CAST(esRecuperacion AS SIGNED) AS esRecuperacion, aliasCurso FROM cursos",
+                @"SELECT idNivel, idCarrera, Nivel, jerarquia, orden,
+                         CAST(esRecuperacion AS SIGNED) AS esRecuperacion,
+                         aliasCurso,
+                         CAST(COALESCE(activo, 1) AS SIGNED) AS activo
+                  FROM cursos",
                 reader => new CentralCursoDto
                 {
                     idNivel = ReadInt(reader, "idNivel"),
@@ -593,7 +599,8 @@ WHERE COALESCE(activo, 1) = 0";
                     jerarquia = ReadNullableInt(reader, "jerarquia"),
                     orden = ReadNullableInt(reader, "orden"),
                     esRecuperacion = ReadNullableInt(reader, "esRecuperacion"),
-                    aliasCurso = ReadNullableString(reader, "aliasCurso")
+                    aliasCurso = ReadNullableString(reader, "aliasCurso"),
+                    activo = ReadInt(reader, "activo")
                 })).ToList();
             _cache.Set("sigafi:cursos", (IEnumerable<CentralCursoDto>)result, CacheCursos);
             return result;
@@ -794,8 +801,7 @@ WHERE COALESCE(activo, 1) = 0";
                          CAST(arrastres AS SIGNED) AS arrastres, folio, beca_matricula, beca_colegiatura, CAST(retirado AS SIGNED) AS retirado, fechaRetiro, observacion,
                          CAST(convalidacion AS SIGNED) AS convalidacion, carrera_convalidada, numero_permiso, user_matricula, 
                          COALESCE(valida, 1) AS valida, CAST(esOyente AS SIGNED) AS esOyente, documentoFactura
-                  FROM matriculas
-                  WHERE COALESCE(valida, 1) = 1",
+                  FROM matriculas",
                 reader => new CentralMatriculaDto
                 {
                     idMatricula = ReadInt(reader, "idMatricula"),
@@ -863,8 +869,7 @@ WHERE COALESCE(activo, 1) = 0";
                          CAST(asiste AS SIGNED) AS asiste,
                          CAST(COALESCE(activo, 1) AS SIGNED) AS activo,
                          observacion
-                  FROM cond_alumnos_horarios
-                  WHERE COALESCE(activo, 1) = 1",
+                  FROM cond_alumnos_horarios",
                 MapCentralHorario);
 
         public Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync() =>

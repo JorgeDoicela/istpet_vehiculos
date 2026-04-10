@@ -34,6 +34,13 @@ graph LR
 
 El acceso es **solo lectura** hacia SIGAFI — el sistema nunca escribe en la base central.
 
+Politica de espejo actual:
+
+- Se replica paridad casi total de atributos para tablas usadas por el sistema.
+- Se excluyen columnas BLOB de foto por rendimiento.
+- Se conserva `password` en las tablas donde existe en SIGAFI.
+- Las extensiones operativas locales se mantienen sin sobrescribir desde SIGAFI.
+
 ---
 
 ## Tablas de SIGAFI Consultadas
@@ -47,7 +54,7 @@ apellidoPaterno VARCHAR(50)
 apellidoMaterno VARCHAR(50)
 celular        VARCHAR(15)
 email          VARCHAR(100)
-foto           LONGBLOB    -- Foto del alumno en binario (Base64 en respuesta)
+foto           LONGBLOB    -- No se replica al espejo local por politica de rendimiento
 ```
 
 ### `sigafi_es.profesores`

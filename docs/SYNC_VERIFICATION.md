@@ -74,7 +74,7 @@ A partir de aquí, las peticiones a endpoints protegidos irán con el JWT.
 
 **`GET /api/Sync/sigafi-probe`**
 
-Ejecuta las **mismas lecturas** que usa el Master Sync (cursos, alumnos, matrículas válidas, vehículos, prácticas, horarios, etc.) y devuelve, por módulo:
+Ejecuta las **mismas lecturas** que usa el Master Sync (cursos, alumnos, matrículas, vehículos, prácticas, horarios, etc.) y devuelve, por módulo:
 
 | Campo | Significado |
 | :--- | :--- |
@@ -90,7 +90,7 @@ Además:
 
 - Todos los módulos `ok: true` y conteos razonables → extracción desde SIGAFI coherente.
 - Un módulo con `ok: false` → revisar el mensaje y alinear consultas en `SqlCentralStudentProvider` con el esquema real de SIGAFI.
-- `rowCount: 0` en una tabla que en SIGAFI sí tiene datos → revisar filtros (por ejemplo matrículas válidas, periodos activos).
+- `rowCount: 0` en una tabla que en SIGAFI sí tiene datos → revisar SQL del provider, permisos y nombres de columnas.
 
 ---
 
@@ -149,6 +149,27 @@ FROM sigafi_es.alumnos s
 LEFT JOIN istpet_vehiculos.alumnos l ON l.idAlumno = s.idAlumno
 WHERE l.idAlumno IS NULL
 LIMIT 50;
+```
+
+### Verificar paridad por columnas (muestra)
+
+Para validar que se replica el set esperado de columnas en tablas clave:
+
+```sql
+-- usuarios_web: incluir esRrhh y creado_en local
+SELECT usuario, salida, ingreso, activo, asistencia, esRrhh
+FROM istpet_vehiculos.usuarios_web
+LIMIT 5;
+
+-- matriculas: espejo + campos locales
+SELECT idMatricula, valida, esOyente, documentoFactura, horas_completadas, estado
+FROM istpet_vehiculos.matriculas
+LIMIT 10;
+
+-- cond_alumnos_horarios: deben existir activos e inactivos
+SELECT activo, COUNT(*) AS total
+FROM istpet_vehiculos.cond_alumnos_horarios
+GROUP BY activo;
 ```
 
 ---

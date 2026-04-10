@@ -34,7 +34,6 @@ namespace backend.Models
         [NotMapped]
         public string? nombre_completo { get; set; }
 
-        [NotMapped]
         public DateTime creado_en { get; set; } = DateTime.Now;
     }
 }
