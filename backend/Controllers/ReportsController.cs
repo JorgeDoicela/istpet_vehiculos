@@ -69,11 +69,21 @@ namespace backend.Controllers
                     }
                 }
 
-                var desdeSigafi = await _sigafiReports.GetReportePracticasAsync(desde, hasta, cedulaProfesor);
-                var desdeLocal = await BuildReportePracticasLocalAsync(desde, hasta, cedulaProfesor);
+                // Ejecución en PARALELO para máxima eficiencia, esperando a que AMBOS terminen
+                var taskSigafi = _sigafiReports.GetReportePracticasAsync(desde, hasta, cedulaProfesor);
+                var taskLocal = BuildReportePracticasLocalAsync(desde, hasta, cedulaProfesor);
+
+                await Task.WhenAll(taskSigafi, taskLocal);
+                
+                var desdeSigafi = await taskSigafi;
+                var desdeLocal = await taskLocal;
+                
+                Console.WriteLine($"[REPORTS-SYNC] SIGAFI: {desdeSigafi.Count} | Local: {desdeLocal.Count} | Total Real: {desdeSigafi.Count + desdeLocal.Count}");
+                
                 var merged = SigafiLocalReadMerge.MergeReportePracticas(desdeSigafi, desdeLocal);
-                return Ok(ApiResponse<IEnumerable<ReportePracticasDTO>>.Ok(merged,
-                    "SIGAFI + espejo local (sin duplicar por idPractica)."));
+                Console.WriteLine($"[REPORTS-RESULT] Merged total (deduplicated): {merged.Count} items.");
+
+                return Ok(ApiResponse<IEnumerable<ReportePracticasDTO>>.Ok(merged, "Reporte unificado (SIGAFI + Espejo local)."));
             }
             catch (Exception ex)
             {
@@ -87,8 +97,7 @@ namespace backend.Controllers
             string? cedulaProfesor)
         {
             var culture = new CultureInfo("es-EC");
-            var q = _context.Practicas.AsNoTracking()
-                .Where(p => (p.cancelado ?? 0) == 0);
+            var q = _context.Practicas.AsNoTracking();
 
             if (fechaInicio.HasValue)
                 q = q.Where(p => p.fecha >= fechaInicio.Value.Date);
@@ -99,18 +108,28 @@ namespace backend.Controllers
 
             var rows = await (
                 from p in q
-                join a in _context.Estudiantes.AsNoTracking() on p.idalumno equals a.idAlumno
-                join v in _context.Vehiculos.AsNoTracking() on p.idvehiculo equals v.idVehiculo
-                join pr in _context.Instructores.AsNoTracking() on p.idProfesor equals pr.idProfesor
+                join a in _context.Estudiantes.AsNoTracking() on p.idalumno equals a.idAlumno into alumnosJoin
+                from a in alumnosJoin.DefaultIfEmpty()
+                join v in _context.Vehiculos.AsNoTracking() on p.idvehiculo equals v.idVehiculo into vehiculosJoin
+                from v in vehiculosJoin.DefaultIfEmpty()
+                join pr in _context.Instructores.AsNoTracking() on p.idProfesor equals pr.idProfesor into profesJoin
+                from pr in profesJoin.DefaultIfEmpty()
                 select new { p, a, v, pr }).ToListAsync();
 
             var list = new List<ReportePracticasDTO>(rows.Count);
             foreach (var x in rows)
             {
-                var fecha = x.p.fecha.Date;
-                var marca = (x.v.marca ?? "").Trim();
-                var modelo = (x.v.modelo ?? "").Trim();
-                var placa = x.v.placa ?? "";
+                var p = x.p;
+                var a = x.a;
+                var v = x.v;
+                var pr = x.pr;
+
+                var fecha = p.fecha.Date;
+                var marca = (v?.marca ?? "").Trim();
+                var modelo = (v?.modelo ?? "").Trim();
+                var placa = v?.placa ?? "";
+                var numeroVehiculo = v?.numero_vehiculo ?? "0";
+
                 var categoriaDetalle = string.Join(" ", new[] { marca, modelo }.Where(s => !string.IsNullOrWhiteSpace(s)));
                 var categoria = !string.IsNullOrWhiteSpace(categoriaDetalle)
                     ? culture.TextInfo.ToUpper(categoriaDetalle)
@@ -118,9 +137,8 @@ namespace backend.Controllers
                         ? culture.TextInfo.ToUpper($"Placa {placa.Trim()}")
                         : culture.TextInfo.ToUpper("Práctica local"));
 
-
-                var tsSalida = x.p.hora_salida;
-                var tsLlegada = x.p.hora_llegada;
+                var tsSalida = p.hora_salida;
+                var tsLlegada = p.hora_llegada;
                 var duracion = TimeSpan.Zero;
                 if (tsSalida.HasValue && tsLlegada.HasValue)
                 {
@@ -129,17 +147,17 @@ namespace backend.Controllers
                         duracion = TimeSpan.Zero;
                 }
 
-                var profNom = $"{x.pr.apellidos} {x.pr.nombres}".Trim();
-                var alumNom = $"{x.a.apellidoPaterno} {x.a.apellidoMaterno} {x.a.primerNombre} {x.a.segundoNombre}".Trim();
+                var profNom = pr != null ? $"{pr.apellidos} {pr.nombres}".Trim() : p.idProfesor;
+                var alumNom = a != null ? $"{a.apellidoPaterno} {a.apellidoMaterno} {a.primerNombre} {a.segundoNombre}".Trim() : p.idalumno;
 
                 list.Add(new ReportePracticasDTO
                 {
-                    idPractica = x.p.idPractica,
-                    idProfesor = x.p.idProfesor,
+                    idPractica = p.idPractica,
+                    idProfesor = p.idProfesor,
                     profesor = culture.TextInfo.ToUpper(profNom),
                     categoria = categoria,
-                    numeroVehiculo = x.v.numero_vehiculo ?? "0",
-                    idAlumno = x.a.idAlumno,
+                    numeroVehiculo = numeroVehiculo,
+                    idAlumno = a?.idAlumno ?? p.idalumno,
                     nomina = culture.TextInfo.ToUpper(alumNom),
                     dia = culture.DateTimeFormat.GetDayName(fecha.DayOfWeek).ToLowerInvariant(),
                     fecha = fecha.ToString("dd/M/yyyy"),
@@ -147,7 +165,8 @@ namespace backend.Controllers
                     horaLlegada = tsLlegada.HasValue ? DateTime.Today.Add(tsLlegada.Value).ToString("HH:mm") : null,
                     tiempo = string.Format(CultureInfo.InvariantCulture, "{0:00}:{1:00}:{2:00}",
                         (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
-                    observaciones = x.p.observaciones
+                    observaciones = p.observaciones,
+                    cancelado = p.cancelado ?? 0
                 });
             }
 

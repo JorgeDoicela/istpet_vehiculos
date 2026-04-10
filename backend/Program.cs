@@ -300,6 +300,9 @@ await using (var scope = app.Services.CreateAsyncScope())
             CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado);
             CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno);
             CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo);
+            CREATE INDEX IF NOT EXISTS idx_practicas_fecha ON cond_alumnos_practicas (fecha);
+            CREATE INDEX IF NOT EXISTS idx_practicas_alumno_fk ON cond_alumnos_practicas (idalumno);
+            CREATE INDEX IF NOT EXISTS idx_practicas_profesor_fk ON cond_alumnos_practicas (idProfesor);
 
             -- 5. Recrear Vistas Operativas
             CREATE OR REPLACE VIEW v_clases_activas AS

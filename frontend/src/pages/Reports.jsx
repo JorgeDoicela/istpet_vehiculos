@@ -21,6 +21,7 @@ const Reports = () => {
         fechaFin: new Date().toISOString().split('T')[0],
         instructorId: ''
     });
+    const [statusMsg, setStatusMsg] = useState('');
 
     useEffect(() => {
         cargarInstructores();
@@ -38,11 +39,40 @@ const Reports = () => {
 
     const ejecutarReporte = async () => {
         setLoading(true);
+        setStatusMsg('');
         try {
             const res = await reportService.getReportePracticas(filtros);
-            setData(res);
+            
+            // Extraer lista con soporte para mayúsculas/minúsculas de forma limpia
+            const rawData = res?.Data || res?.data || (Array.isArray(res) ? res : []);
+            
+            const listaNormalizada = rawData.map(item => ({
+                idPractica: item.idPractica || item.IdPractica,
+                idProfesor: item.idProfesor || item.IdProfesor,
+                profesor: item.profesor || item.Profesor,
+                categoria: item.categoria || item.Categoria,
+                numeroVehiculo: item.numeroVehiculo || item.NumeroVehiculo,
+                idAlumno: item.idAlumno || item.IdAlumno,
+                nomina: item.nomina || item.Nomina,
+                dia: item.dia || item.Dia,
+                fecha: item.fecha || item.Fecha,
+                horaSalida: item.horaSalida || item.HoraSalida,
+                horaLlegada: item.horaLlegada || item.HoraLlegada,
+                tiempo: item.tiempo || item.Tiempo,
+                observaciones: item.observaciones || item.Observaciones,
+                cancelado: item.cancelado || item.Cancelado || 0
+            }));
+
+            setData(listaNormalizada);
+            
+            if (listaNormalizada.length > 0) {
+                setStatusMsg(`Se encontraron ${listaNormalizada.length} registros totales.`);
+            } else {
+                setStatusMsg('No se encontraron registros para el periodo seleccionado.');
+            }
         } catch (error) {
             console.error('Error al generar reporte:', error);
+            setStatusMsg('Error de conexión con el servidor de reportes.');
         } finally {
             setLoading(false);
         }
@@ -83,6 +113,11 @@ const Reports = () => {
                         <div className="min-w-0">
                             <p className="text-[10px] font-black tracking-[0.3em] text-[var(--istpet-gold)] uppercase mb-1">Administración Zenith</p>
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--apple-text-main)] tracking-tighter break-words">Reporte de Prácticas</h1>
+                            {statusMsg && (
+                                <p className="text-[10px] font-bold text-[var(--apple-primary)] mt-2 uppercase tracking-wide opacity-80 bg-[var(--apple-primary)]/10 inline-block px-3 py-1 rounded-full">
+                                    {statusMsg}
+                                </p>
+                            )}
                         </div>
                         
                         <div className="flex w-full sm:w-auto shrink-0">
@@ -160,7 +195,14 @@ const Reports = () => {
                                 </svg>
                             </div>
                         )}
-                        {!loading && data.length > 0 && data.map((item) => (
+                        {data.length > 500 && (
+                            <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
+                                <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
+                                    Limitado a los últimos 500 de {data.length} registros. Use Excel para el total.
+                                </p>
+                            </div>
+                        )}
+                        {!loading && data.length > 0 && data.slice(0, 500).map((item) => (
                             <article
                                 key={item.idPractica}
                                 className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3"
@@ -219,60 +261,75 @@ const Reports = () => {
                         ))}
                     </div>
 
+                    {data.length > 500 && (
+                        <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
+                            <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
+                                Mostrando 500 de {data.length} registros para optimizar carga. Use "Descargar Excel" para el reporte completo.
+                            </p>
+                        </div>
+                    )}
+
                     <div className="hidden md:block reports-table-wrap overflow-x-auto custom-scrollbar">
                         <table className="reports-data-table w-full min-w-[920px] text-left border-collapse">
                             <thead>
                                 <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg)]/20">
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">ID Prof</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Profesor</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Categoría</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]"># Veh</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">ID Alumno</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Nómina</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Semana</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Fecha</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Salida</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Llegada</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Tiempo</th>
-                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Estado</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">idprofesor</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">profesor</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">categoria</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">numero_vehiculo</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">idalumno</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">nomina</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">dia</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">fecha</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">hora_salida</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">hora_llegada</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">tiempo</th>
+                                    <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">cancelado</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {data.length > 0 ? (
-                                    data.map((item) => (
-                                        <tr key={item.idPractica} className="border-b border-[var(--apple-border)] hover:bg-[var(--apple-primary)]/5 transition-colors group">
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-sub)] font-mono">{item.idProfesor}</td>
+                            <tbody className="divide-y divide-[var(--apple-border)]">
+                                {data.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="12" className="py-20 text-center animate-pulse">
+                                            <div className="flex flex-col items-center gap-3">
+                                                <div className="w-12 h-12 rounded-full border-2 border-t-[var(--istpet-gold)] border-transparent animate-spin"></div>
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--apple-text-sub)] opacity-40">
+                                                    {loading ? "PROCESANDO REPORTES MASIVOS..." : "NO HAY REGISTROS"}
+                                                </p>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    data.slice(0, 500).map((item) => (
+                                        <tr key={item.idPractica} className="hover:bg-[var(--apple-bg)]/60 transition-colors group">
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idProfesor}</td>
                                             <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.profesor}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4">
-                                                <span className="text-[9px] font-black px-2 py-0.5 rounded-md bg-[var(--apple-bg)] border border-[var(--apple-border)] text-[var(--istpet-gold)]">
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black">
+                                                <span className="bg-[var(--apple-bg)] px-2 py-1 rounded border border-[var(--apple-border)] text-[var(--istpet-gold)]">
                                                     {item.categoria}
                                                 </span>
                                             </td>
                                             <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
-                                                <div className="w-8 h-8 rounded-lg bg-[var(--apple-text-main)] text-[var(--apple-bg)] flex items-center justify-center font-black text-xs mx-auto">
+                                                <span className="inline-flex w-7 h-7 rounded bg-[var(--apple-text-main)] text-[var(--apple-bg)] items-center justify-center font-black text-[10px]">
                                                     {item.numeroVehiculo}
-                                                </div>
-                                            </td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-sub)] font-mono">{item.idAlumno}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.nomina}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-black text-[var(--apple-text-sub)] uppercase italic">{item.dia}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-main)] tabular-nums">{item.fecha}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-emerald-600 tabular-nums">{item.horaSalida}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-rose-500 tabular-nums">{item.horaLlegada || '--:--:--'}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] tabular-nums">{item.tiempo}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4">
-                                                <span className={`text-[8px] font-black px-2 py-1 rounded-full uppercase tracking-tighter ${item.horaLlegada ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white animate-pulse'}`}>
-                                                    {item.horaLlegada ? 'COMPLETADA' : 'EN PISTA'}
                                                 </span>
+                                            </td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idAlumno}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase truncate max-w-[150px]">{item.nomina}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-sub)] uppercase italic">{item.dia}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.fecha}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-emerald-600 tabular-nums">{item.horaSalida}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-rose-500 tabular-nums">{item.horaLlegada || "--:--:--"}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.tiempo}</td>
+                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
+                                                {item.cancelado ? (
+                                                    <span className="text-[10px] font-black text-rose-500">SÍ</span>
+                                                ) : (
+                                                    <span className="text-[10px] font-black text-[var(--apple-text-sub)] opacity-20">NO</span>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
-                                ) : !loading && (
-                                    <tr>
-                                        <td colSpan="12" className="px-5 py-20 text-center">
-                                            <p className="text-xs font-black uppercase tracking-widest text-[var(--apple-text-sub)]">No hay registros</p>
-                                        </td>
-                                    </tr>
                                 )}
                             </tbody>
                         </table>

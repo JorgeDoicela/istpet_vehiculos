@@ -383,8 +383,7 @@ namespace backend.Services.Implementations
                         salida,
                         ingreso,
                         activo,
-                        asistencia,
-                        esRrhh
+                        asistencia
                     FROM usuarios_web";
                 return await QueryListAsync(sql, reader => new CentralUserDto
                 {
@@ -393,8 +392,7 @@ namespace backend.Services.Implementations
                     salida = ReadInt(reader, "salida"),
                     ingreso = ReadInt(reader, "ingreso"),
                     activo = ReadInt(reader, "activo"),
-                    asistencia = ReadInt(reader, "asistencia"),
-                    esRrhh = ReadInt(reader, "esRrhh")
+                    asistencia = ReadInt(reader, "asistencia")
                 });
             }
             catch (Exception ex)

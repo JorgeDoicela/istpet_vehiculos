@@ -36,7 +36,9 @@ namespace backend.Services.Implementations
 
             var builder = new MySqlConnectionStringBuilder(fallback)
             {
-                Database = dbName.Trim()
+                Database = dbName.Trim(),
+                ConnectionTimeout = 10, // Máximo 10 segundos esperando al servidor remoto
+                DefaultCommandTimeout = 20
             };
             return builder.ConnectionString;
         }
@@ -52,7 +54,7 @@ namespace backend.Services.Implementations
             var sql = @"
 SELECT
     p.idPractica AS id_practica,
-    pr.idProfesor AS id_profesor,
+    p.idProfesor AS id_profesor,
     TRIM(CONCAT(
         COALESCE(pr.primerApellido, ''), ' ',
         COALESCE(pr.segundoApellido, ''), ' ',
@@ -63,7 +65,7 @@ SELECT
     v.placa AS placa,
     v.Marca AS marca,
     v.Modelo AS modelo,
-    a.idAlumno AS id_alumno,
+    p.idalumno AS id_alumno,
     TRIM(CONCAT(
         COALESCE(a.apellidoPaterno, ''), ' ',
         COALESCE(a.apellidoMaterno, ''), ' ',
@@ -76,10 +78,10 @@ SELECT
     COALESCE(p.cancelado, 0) AS cancelado,
     p.user_asigna AS user_asigna
 FROM cond_alumnos_practicas p
-INNER JOIN alumnos a ON a.idAlumno = p.idalumno
-INNER JOIN profesores pr ON pr.idProfesor = p.idProfesor
-INNER JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
-WHERE COALESCE(p.cancelado, 0) = 0";
+LEFT JOIN alumnos a ON a.idAlumno = p.idalumno
+LEFT JOIN profesores pr ON pr.idProfesor = p.idProfesor
+LEFT JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+WHERE 1=1";
 
             var args = new List<MySqlParameter>();
 
@@ -106,16 +108,22 @@ WHERE COALESCE(p.cancelado, 0) = 0";
             var list = new List<ReportePracticasDTO>();
 
             await using var conn = new MySqlConnection(connStr);
+            Console.WriteLine($"[SIGAFI-REPORT] Conectando a SIGAFI... {connStr.Split(';').FirstOrDefault(x => x.StartsWith("Server"))}");
             await conn.OpenAsync();
-            await using var cmd = new MySqlCommand(sql, conn);
+            
+            await using var cmd = new MySqlCommand(sql, conn)
+            {
+                CommandTimeout = 20 // Segundos de gracia para reportes pesados
+            };
             foreach (var p in args)
                 cmd.Parameters.Add(p);
 
+            Console.WriteLine($"[SIGAFI-REPORT] Ejecutando query remota...");
             await using var reader = await cmd.ExecuteReaderAsync();
             while (await reader.ReadAsync())
             {
                 var idPractica = reader.GetInt32(reader.GetOrdinal("id_practica"));
-                var idProf = reader.GetString(reader.GetOrdinal("id_profesor"));
+                var idProf = reader.IsDBNull(reader.GetOrdinal("id_profesor")) ? "---" : reader.GetString(reader.GetOrdinal("id_profesor"));
                 var profNombre = reader.IsDBNull(reader.GetOrdinal("profesor_nombre"))
                     ? ""
                     : reader.GetString(reader.GetOrdinal("profesor_nombre"));
@@ -129,7 +137,7 @@ WHERE COALESCE(p.cancelado, 0) = 0";
                 var marca = reader.IsDBNull(reader.GetOrdinal("marca")) ? "" : reader.GetString(reader.GetOrdinal("marca")).Trim();
                 var modelo = reader.IsDBNull(reader.GetOrdinal("modelo")) ? "" : reader.GetString(reader.GetOrdinal("modelo")).Trim();
 
-                var idAlumno = reader.GetString(reader.GetOrdinal("id_alumno"));
+                var idAlumno = reader.IsDBNull(reader.GetOrdinal("id_alumno")) ? "---" : reader.GetString(reader.GetOrdinal("id_alumno"));
                 var alumnoNom = reader.IsDBNull(reader.GetOrdinal("alumno_nombre"))
                     ? ""
                     : reader.GetString(reader.GetOrdinal("alumno_nombre"));
@@ -173,7 +181,8 @@ WHERE COALESCE(p.cancelado, 0) = 0";
                     horaSalida = horaSalidaStr,
                     horaLlegada = horaLlegadaStr,
                     tiempo = string.Format("{0:00}:{1:00}:{2:00}", (int)duracion.TotalHours, duracion.Minutes, duracion.Seconds),
-                    observaciones = ReadOptionalString(reader, "user_asigna")
+                    observaciones = ReadOptionalString(reader, "user_asigna"),
+                    cancelado = reader.IsDBNull(reader.GetOrdinal("cancelado")) ? 0 : Convert.ToInt32(reader.GetValue(reader.GetOrdinal("cancelado")))
                 });
             }
 

@@ -91,6 +91,7 @@ namespace backend.DTOs
         public string? horaLlegada { get; set; }
         public string tiempo { get; set; } = string.Empty;
         public string? observaciones { get; set; }
+        public int cancelado { get; set; }
     }
 
     public class CentralUserDto
