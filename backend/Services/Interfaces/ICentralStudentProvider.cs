@@ -223,7 +223,7 @@ namespace backend.Services.Interfaces
         public int idVehiculo { get; set; }
         public string idProfesor { get; set; } = string.Empty;
         public DateTime? fecha_asignacion { get; set; }
-        public DateTime? fecha_salidad { get; set; }
+        public DateTime? fecha_salida { get; set; }
         public int activo { get; set; }
         public string? usuario_asigna { get; set; }
         public string? usuario_desactiva { get; set; }

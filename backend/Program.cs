@@ -286,11 +286,21 @@ await using (var scope = app.Services.CreateAsyncScope())
             "CREATE TABLE IF NOT EXISTS categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR(100))",
             "CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (IdCategoria INT PRIMARY KEY, categoria VARCHAR(100), activa TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS subcategorias_vehiculos (idSubcategoria INT PRIMARY KEY, subcategoria VARCHAR(100), idCategoria INT)",
+            
+            // Core Mirror Tables
+            "CREATE TABLE IF NOT EXISTS profesores (idProfesor VARCHAR(14) PRIMARY KEY, apellidos VARCHAR(100), nombres VARCHAR(100), primerApellido VARCHAR(50), segundoApellido VARCHAR(50), primerNombre VARCHAR(50), segundoNombre VARCHAR(50), activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS alumnos (idAlumno VARCHAR(14) PRIMARY KEY, apellidoPaterno VARCHAR(50), apellidoMaterno VARCHAR(50), primerNombre VARCHAR(50), segundoNombre VARCHAR(50), email VARCHAR(100), idPeriodo CHAR(7), idNivel INT, idSeccion INT, idModalidad INT, activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS matriculas (idMatricula INT PRIMARY KEY, idAlumno VARCHAR(14), idNivel INT, idSeccion INT, idModalidad INT, idPeriodo CHAR(7), paralelo VARCHAR(5) DEFAULT 'A', valida TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS vehiculos (idVehiculo INT PRIMARY KEY, numero_vehiculo VARCHAR(3), placa VARCHAR(10), marca VARCHAR(50), anio INT, idCategoria INT, activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS cond_alumnos_practicas (idPractica INT PRIMARY KEY, idalumno VARCHAR(14), idvehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fecha DATE, hora_salida TIME, hora_llegada TIME, ensalida TINYINT DEFAULT 0, cancelado TINYINT DEFAULT 0)",
+            "CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idVehiculo INT, idProfesor VARCHAR(14), fecha_asignacion DATETIME, fecha_salida DATETIME, activo TINYINT DEFAULT 1)",
+
             "CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(14), idVehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fechaAsignacion DATETIME DEFAULT CURRENT_TIMESTAMP, activa TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT NOT NULL, idFecha INT NOT NULL, idHora INT NOT NULL, asiste TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, observacion VARCHAR(100))",
             "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
             "CREATE TABLE IF NOT EXISTS matriculas_operacion (idMatricula INT PRIMARY KEY, horas_completadas DECIMAL(10,2) DEFAULT 0, estado VARCHAR(20) DEFAULT 'ACTIVO')",
             "CREATE TABLE IF NOT EXISTS practicas_operacion (idPractica INT PRIMARY KEY, validada TINYINT DEFAULT 0, observacion_admin TEXT NULL)",
+            "CREATE TABLE IF NOT EXISTS usuarios_web (usuario VARCHAR(20) PRIMARY KEY, password VARCHAR(255), salida TINYINT DEFAULT 0, ingreso TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, asistencia TINYINT DEFAULT 0, esRrhh TINYINT DEFAULT 0)",
 
             // -------------------------------------------------------------------------
             // 2. HARDENING DE COLUMNAS (PROFESORES / ALUMNOS / MATRICULAS)
@@ -317,7 +327,7 @@ await using (var scope = app.Services.CreateAsyncScope())
             "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_colegiatura DECIMAL(10,2) DEFAULT 0",
             "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_matricula DECIMAL(10,2) DEFAULT 0",
 
-            "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salidad DATE NULL",
+            "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salida DATETIME NULL",
 
             // -------------------------------------------------------------------------
             // 3. SANEAMIENTO DE CONSTRAINTS (NULLABILITY)
