@@ -253,6 +253,22 @@ namespace backend.Controllers
                 var ins = await _central.GetInstructorFromCentralAsync(usuario);
                 if (ins != null)
                 {
+                    // [JIT RESILIENCE] Si loggeó pero no está en espejo local, lo guardamos ya
+                    if (!await _context.Instructores.AnyAsync(p => p.idProfesor == ins.idProfesor))
+                    {
+                        var ni = new Instructor
+                        {
+                            idProfesor = ins.idProfesor,
+                            primerNombre = (ins.primerNombre ?? ins.nombres ?? "S/N").ToUpper(),
+                            primerApellido = (ins.primerApellido ?? ins.apellidos ?? "S/N").ToUpper(),
+                            nombres = (ins.nombres ?? "").ToUpper(),
+                            apellidos = (ins.apellidos ?? "").ToUpper(),
+                            activo = 1
+                        };
+                        _context.Instructores.Add(ni);
+                        await _context.SaveChangesAsync();
+                    }
+
                     var n = $"{ins.apellidos} {ins.nombres}".Trim();
                     if (string.IsNullOrWhiteSpace(n)) n = $"{ins.primerApellido} {ins.primerNombre}".Trim();
                     if (!string.IsNullOrWhiteSpace(n)) return n;
@@ -265,9 +281,30 @@ namespace backend.Controllers
 
             try
             {
-                var alumnoCentral = await _central.GetFromCentralAsync(usuario);
-                if (!string.IsNullOrWhiteSpace(alumnoCentral?.NombreCompleto))
-                    return alumnoCentral!.NombreCompleto.Trim();
+                var ac = await _central.GetFromCentralAsync(usuario);
+                if (ac != null)
+                {
+                    // [JIT RESILIENCE] Si loggeó pero no está en espejo local, lo guardamos ya
+                    if (!await _context.Estudiantes.AnyAsync(e => e.idAlumno == ac.idAlumno))
+                    {
+                        var ne = new Estudiante
+                        {
+                            idAlumno = ac.idAlumno,
+                            primerNombre = (ac.primerNombre ?? "S/N").ToUpper(),
+                            segundoNombre = (ac.segundoNombre ?? "").ToUpper(),
+                            apellidoPaterno = (ac.apellidoPaterno ?? "S/N").ToUpper(),
+                            apellidoMaterno = (ac.apellidoMaterno ?? "").ToUpper(),
+                            idPeriodo = ac.idPeriodo,
+                            idNivel = ac.idNivel,
+                            idSeccion = ac.idSeccion,
+                            idModalidad = ac.idModalidad
+                        };
+                        _context.Estudiantes.Add(ne);
+                        await _context.SaveChangesAsync();
+                    }
+                    if (!string.IsNullOrWhiteSpace(ac.NombreCompleto))
+                        return ac.NombreCompleto.Trim();
+                }
             }
             catch (Exception ex)
             {

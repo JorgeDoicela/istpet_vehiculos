@@ -52,9 +52,9 @@ public class SigafiMirrorPersistenceService : ISigafiMirrorPersistenceService
                 }
                 else
                 {
-                    existing.primerNombre = (item.primerNombre ?? existing.primerNombre).ToUpper();
+                    existing.primerNombre = (item.primerNombre ?? existing.primerNombre ?? "S/N").ToUpper();
                     existing.segundoNombre = item.segundoNombre?.ToUpper();
-                    existing.apellidoPaterno = (item.apellidoPaterno ?? existing.apellidoPaterno).ToUpper();
+                    existing.apellidoPaterno = (item.apellidoPaterno ?? existing.apellidoPaterno ?? "S/N").ToUpper();
                     existing.apellidoMaterno = item.apellidoMaterno?.ToUpper();
                     existing.celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular;
                     existing.email = item.email?.Length > 100 ? item.email[..100] : existing.email;

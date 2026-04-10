@@ -173,7 +173,7 @@ namespace backend.Controllers
 
         [HttpGet("db-diag")]
         [AllowAnonymous]
-        public async Task<IActionResult> DbDiag()
+        public IActionResult DbDiag()
         {
             try
             {

@@ -96,7 +96,9 @@ namespace backend.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error al materializar alumno desde SIGAFI: {ex.Message}"));
+                _logger.LogError(ex, "ERROR CRÍTICO al materializar alumno {idAlumno} desde SIGAFI. Detalle: {message}", idAlumno, ex.Message);
+                var inner = ex.InnerException != null ? $" | Inner: {ex.InnerException.Message}" : "";
+                return StatusCode(500, ApiResponse<EstudianteLogisticaResponse>.Fail($"Error al materializar alumno desde SIGAFI: {ex.Message}{inner}"));
             }
         }
 
@@ -252,6 +254,9 @@ namespace backend.Controllers
                 }
             }
 
+            // [JIT RESILIENCE] Ensure all catalog dependencies exist locally before saving.
+            await EnsureCatalogDependenciesExistAsync(centralData.idPeriodo, centralData.idNivel, centralData.idSeccion, centralData.idModalidad);
+
             await _context.SaveChangesAsync();
             if (matriculaUsada.idMatricula > 0)
             {
@@ -288,6 +293,103 @@ namespace backend.Controllers
             };
         }
 
+        /// <summary>
+        /// JIT (Just-In-Time) Synchronization of Catalog Dependencies.
+        /// Checks if the required foreign keys exist locally; if not, fetches the catalog from SIGAFI.
+        /// </summary>
+        private async Task EnsureCatalogDependenciesExistAsync(string idPeriodo, int idNivel, int idSeccion, int idModalidad)
+        {
+            // 1. Periodo
+            if (!string.IsNullOrEmpty(idPeriodo) && idPeriodo != "SIN_MAT")
+            {
+                var exists = await _context.Periodos.AnyAsync(p => p.idPeriodo == idPeriodo);
+                if (!exists)
+                {
+                    _logger.LogInformation("[JIT-SYNC] Periodo {id} no hallado. Sincronizando catálogo completo...", idPeriodo);
+                    var items = await _centralProvider.GetAllPeriodosFromCentralAsync();
+                    foreach (var i in items)
+                    {
+                        if (!await _context.Periodos.AnyAsync(p => p.idPeriodo == i.idPeriodo))
+                        {
+                            _context.Periodos.Add(new Periodo { 
+                                idPeriodo = i.idPeriodo, 
+                                detalle = i.detalle, 
+                                fecha_inicial = i.fecha_inicial, 
+                                fecha_final = i.fecha_final, 
+                                activo = i.activo == 1 
+                            });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // 2. Nivel (Curso)
+            if (idNivel > 0)
+            {
+                var exists = await _context.Cursos.AnyAsync(c => c.idNivel == idNivel);
+                if (!exists)
+                {
+                    _logger.LogInformation("[JIT-SYNC] Nivel {id} no hallado. Sincronizando catálogo completo...", idNivel);
+                    var items = await _centralProvider.GetAllCoursesFromCentralAsync();
+                    foreach (var i in items)
+                    {
+                        if (!await _context.Cursos.AnyAsync(c => c.idNivel == i.idNivel))
+                        {
+                            _context.Cursos.Add(new Curso { 
+                                idNivel = i.idNivel, 
+                                idCarrera = i.idCarrera, 
+                                Nivel = i.Nivel, 
+                                jerarquia = i.jerarquia ?? 1 
+                            });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // 3. Seccion
+            if (idSeccion > 0)
+            {
+                var exists = await _context.Secciones.AnyAsync(s => s.idSeccion == idSeccion);
+                if (!exists)
+                {
+                    _logger.LogInformation("[JIT-SYNC] Sección {id} no hallada. Sincronizando catálogo completo...", idSeccion);
+                    var items = await _centralProvider.GetAllSeccionesFromCentralAsync();
+                    foreach (var i in items)
+                    {
+                        if (!await _context.Secciones.AnyAsync(s => s.idSeccion == i.idSeccion))
+                        {
+                            _context.Secciones.Add(new Seccion { idSeccion = i.idSeccion, seccion = i.seccion });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            // 4. Modalidad
+            if (idModalidad > 0)
+            {
+                var exists = await _context.Modalidades.AnyAsync(m => m.idModalidad == idModalidad);
+                if (!exists)
+                {
+                    _logger.LogInformation("[JIT-SYNC] Modalidad {id} no hallada. Sincronizando catálogo completo...", idModalidad);
+                    var items = await _centralProvider.GetAllModalidadesFromCentralAsync();
+                    foreach (var i in items)
+                    {
+                        if (!await _context.Modalidades.AnyAsync(m => m.idModalidad == i.idModalidad))
+                        {
+                            _context.Modalidades.Add(new Modalidad { 
+                                idModalidad = i.idModalidad, 
+                                modalidad = i.modalidad 
+                            });
+                        }
+                    }
+                    await _context.SaveChangesAsync();
+                }
+            }
+        }
+
         private async Task EnrichEstudianteLogisticaDesdeSigafiAsync(EstudianteLogisticaResponse student)
         {
             var scheduled = await _centralProvider.GetScheduledPracticeAsync(student.idAlumno);
@@ -313,8 +415,8 @@ namespace backend.Controllers
                     localProf = new Instructor
                     {
                         idProfesor = cp.idProfesor,
-                        primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
-                        primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
+                        primerNombre = (cp.primerNombre ?? cp.nombres ?? "S/N").ToUpper(),
+                        primerApellido = (cp.primerApellido ?? cp.apellidos ?? "S/N").ToUpper(),
                         nombres = (cp.nombres ?? "").ToUpper(),
                         apellidos = (cp.apellidos ?? "").ToUpper(),
                         activo = 1
@@ -325,7 +427,7 @@ namespace backend.Controllers
             }
 
             student.practicaInstructor = localProf != null
-                ? $"{localProf.apellidos} {localProf.nombres}"
+                ? $"{localProf.apellidos} {localProf.nombres}".Trim()
                 : (scheduled?.ProfesorNombre ?? $"{tutor?.apellidos} {tutor?.nombres}");
             student.idPracticaInstructor = profCedula;
             student.idPracticaCentral = scheduled?.idvehiculo;
@@ -432,10 +534,10 @@ namespace backend.Controllers
             }
             else
             {
-                existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre).ToUpper();
-                existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido).ToUpper();
-                existing.nombres = (centralData.nombres ?? existing.nombres).ToUpper();
-                existing.apellidos = (centralData.apellidos ?? existing.apellidos).ToUpper();
+                existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre ?? "S/N").ToUpper();
+                existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido ?? "S/N").ToUpper();
+                existing.nombres = (centralData.nombres ?? existing.nombres ?? "").ToUpper();
+                existing.apellidos = (centralData.apellidos ?? existing.apellidos ?? "").ToUpper();
                 existing.activo = centralData.activo;
             }
 

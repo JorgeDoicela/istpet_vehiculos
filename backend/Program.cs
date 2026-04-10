@@ -281,10 +281,16 @@ await using (var scope = app.Services.CreateAsyncScope())
             "CREATE TABLE IF NOT EXISTS secciones (idSeccion INT PRIMARY KEY, seccion VARCHAR(50))",
             "CREATE TABLE IF NOT EXISTS modalidades (idModalidad INT PRIMARY KEY, modalidad VARCHAR(50))",
             "CREATE TABLE IF NOT EXISTS instituciones (idInstitucion INT PRIMARY KEY, Institucion VARCHAR(150))",
-            "CREATE TABLE IF NOT EXISTS tipo_licencia (id_tipo INT PRIMARY KEY, codigo VARCHAR(5), descripcion VARCHAR(100), activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS tipo_licencia (id_tipo INT PRIMARY KEY, codigo VARCHAR(10) UNIQUE, descripcion VARCHAR(200), activo TINYINT DEFAULT 1, id_categoria_sigafi INT NULL)",
             "CREATE TABLE IF NOT EXISTS cursos (idNivel INT PRIMARY KEY, idCarrera INT, Nivel VARCHAR(50), jerarquia INT)",
             "CREATE TABLE IF NOT EXISTS categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR(100))",
             "CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (IdCategoria INT PRIMARY KEY, categoria VARCHAR(100), activa TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS subcategorias_vehiculos (idSubcategoria INT PRIMARY KEY, subcategoria VARCHAR(100), idCategoria INT)",
+            "CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(14), idVehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fechaAsignacion DATETIME DEFAULT CURRENT_TIMESTAMP, activa TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT NOT NULL, idFecha INT NOT NULL, idHora INT NOT NULL, asiste TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, observacion VARCHAR(100))",
+            "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
+            "CREATE TABLE IF NOT EXISTS matriculas_operacion (idMatricula INT PRIMARY KEY, horas_completadas DECIMAL(10,2) DEFAULT 0, estado VARCHAR(20) DEFAULT 'ACTIVO')",
+            "CREATE TABLE IF NOT EXISTS practicas_operacion (idPractica INT PRIMARY KEY, validada TINYINT DEFAULT 0, observacion_admin TEXT NULL)",
 
             // -------------------------------------------------------------------------
             // 2. HARDENING DE COLUMNAS (PROFESORES / ALUMNOS / MATRICULAS)
@@ -411,6 +417,23 @@ await using (var scope = app.Services.CreateAsyncScope())
             try { await db.Database.ExecuteSqlRawAsync(cmd); }
             catch { /* Ignorar errores de columnas/índices ya existentes */ }
         }
+
+        // -------------------------------------------------------------------------
+        // 5. SEEDING DE DATOS MAESTROS (BOOTSTRAP)
+        // -------------------------------------------------------------------------
+        try
+        {
+            // Admin Bootstrap
+            await db.Database.ExecuteSqlRawAsync(@"
+                INSERT IGNORE INTO usuarios_web (usuario, password, salida, ingreso, activo, asistencia, esRrhh)
+                VALUES ('admin', '$2a$11$qR7iXv2D1K5z5F.h39.SDe6D1O1E1O1O1O1O1O1O1O1O1O1O1O1O1O1O', 1, 1, 1, 0, 1)");
+            
+            // Tipos de Licencia
+            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (1, 'C', 'CONDUCCIÓN NO PROFESIONAL TIPO C', 1)");
+            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (2, 'D', 'CONDUCCIÓN PROFESIONAL TIPO D', 1)");
+            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (3, 'E', 'CONDUCCIÓN PROFESIONAL TIPO E', 1)");
+        }
+        catch { /* Ignorar fallos de seeding */ }
     }
     catch (Exception ex)
     {

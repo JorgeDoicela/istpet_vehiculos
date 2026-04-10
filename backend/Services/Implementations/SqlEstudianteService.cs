@@ -65,10 +65,10 @@ namespace backend.Services.Implementations
                 }
                 else
                 {
-                    // Actualizar con datos frescos de SIGAFI para que el espejo no quede desactualizado.
-                    local.primerNombre    = (central.primerNombre    ?? local.primerNombre).ToUpper();
+                    // Actualizar con datos frescos de SIGAFI
+                    local.primerNombre    = (central.primerNombre    ?? local.primerNombre ?? "S/N").ToUpper();
                     local.segundoNombre   = (central.segundoNombre   ?? "").ToUpper();
-                    local.apellidoPaterno = (central.apellidoPaterno ?? local.apellidoPaterno).ToUpper();
+                    local.apellidoPaterno = (central.apellidoPaterno ?? local.apellidoPaterno ?? "S/N").ToUpper();
                     local.apellidoMaterno = (central.apellidoMaterno ?? "").ToUpper();
                 }
 

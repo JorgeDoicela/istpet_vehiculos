@@ -28,11 +28,22 @@ namespace backend.Services.Implementations
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Validar que el vehículo exista y esté operativo
+                // 1. Validar que el vehículo exista y esté operativo (con JIT SYNC)
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
+                if (vehiculo == null)
+                {
+                    // [JIT RESILIENCE] Si el vehículo no está en el espejo local, lo traemos de SIGAFI al instante.
+                    var centralVehicles = await _central.GetAllVehiclesFromCentralAsync();
+                    await Helpers.SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
+                    vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
+                }
+
+                if (vehiculo == null || vehiculo.activo == 0)
+                    return "ERROR: Vehículo no disponible u operativo (no hallado localmente).";
+
                 var vehiculoOp = await _context.VehiculosOperaciones.FindAsync(idVehiculo);
-                if (vehiculo == null || vehiculo.activo == 0 || (vehiculoOp != null && vehiculoOp.estado_mecanico != "OPERATIVO"))
-                    return "ERROR: Vehículo no disponible u operativo.";
+                if (vehiculoOp != null && vehiculoOp.estado_mecanico != "OPERATIVO")
+                    return "ERROR: Vehículo no operativo mecánicamente.";
 
                 // 2. Validar que el vehículo no esté ya en uso (ensalida = 1)
                 var vehiculoOcupado = await _context.Practicas
@@ -52,31 +63,46 @@ namespace backend.Services.Implementations
                 if (estudianteOcupado)
                     return "ESTUDIANTE_EN_PISTA";
 
-                // 4.5 Asegurar que el instructor existe localmente para que el JOIN de la vista v_clases_activas no esconda el registro.
+                // 4.5 Asegurar que el instructor y el periodo existen localmente (JIT SYNC)
                 var instructorLocal = await _context.Instructores.AnyAsync(i => i.idProfesor == idInstructor);
                 if (!instructorLocal)
                 {
-                    try
+                    var cp = await _central.GetInstructorFromCentralAsync(idInstructor);
+                    if (cp != null)
                     {
-                        var cp = await _central.GetInstructorFromCentralAsync(idInstructor);
-                        if (cp != null)
+                        var ni = new Instructor
                         {
-                            _context.Instructores.Add(new Instructor
-                            {
-                                idProfesor = cp.idProfesor,
-                                primerNombre = (cp.primerNombre ?? cp.nombres).ToUpper(),
-                                primerApellido = (cp.primerApellido ?? cp.apellidos).ToUpper(),
-                                nombres = (cp.nombres ?? "").ToUpper(),
-                                apellidos = (cp.apellidos ?? "").ToUpper(),
-                                activo = 1
-                            });
-                            await _context.SaveChangesAsync();
-                        }
+                            idProfesor = cp.idProfesor,
+                            primerNombre = (cp.primerNombre ?? cp.nombres ?? "S/N").ToUpper(),
+                            primerApellido = (cp.primerApellido ?? cp.apellidos ?? "S/N").ToUpper(),
+                            nombres = (cp.nombres ?? "").ToUpper(),
+                            apellidos = (cp.apellidos ?? "").ToUpper(),
+                            activo = 1
+                        };
+                        _context.Instructores.Add(ni);
+                        await _context.SaveChangesAsync();
                     }
-                    catch
+                }
+
+                // Asegurar que el periodo existe para evitar violación de FK
+                if (matricula.idPeriodo != null && matricula.idPeriodo != "S/P")
+                {
+                    var periodoLocal = await _context.Periodos.AnyAsync(p => p.idPeriodo == matricula.idPeriodo);
+                    if (!periodoLocal)
                     {
-                        // Si falla la central, se permite continuar para no bloquear la operación de salida,
-                        // aunque no aparezca en la vista v_clases_activas (que usa INNER JOIN o LEFT JOIN sin datos).
+                        var periods = await _central.GetAllPeriodosFromCentralAsync();
+                        foreach (var p in periods)
+                        {
+                            if (!await _context.Periodos.AnyAsync(px => px.idPeriodo == p.idPeriodo))
+                            {
+                                _context.Periodos.Add(new Periodo { 
+                                    idPeriodo = p.idPeriodo, 
+                                    detalle = p.detalle, 
+                                    activo = p.activo == 1 
+                                });
+                            }
+                        }
+                        await _context.SaveChangesAsync();
                     }
                 }
 
