@@ -27,6 +27,9 @@ namespace backend.Data
         public DbSet<CategoriaExamenConduccion> CategoriasExamenes { get; set; }
         public DbSet<MatriculaExamenConduccion> MatriculasExamenesConduccion { get; set; }
         public DbSet<PracticaHorarioAlumno> PracticasHorarios { get; set; }
+        public DbSet<FechaHorario> FechasHorarios { get; set; }
+        public DbSet<HorarioProfesor> HorariosProfesores { get; set; }
+        public DbSet<Hora> Horas { get; set; }
 
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
         public DbSet<AlertaMantenimiento> AlertasMantenimiento { get; set; }
@@ -49,7 +52,7 @@ namespace backend.Data
             modelBuilder.Entity<Carrera>(entity => {
                 entity.ToTable("carreras");
                 entity.HasKey(e => e.idCarrera);
-                entity.Property(e => e.Carrera).HasColumnName("Carrera");
+                entity.Property(e => e.NombreCarrera).HasColumnName("Carrera");
             });
 
             modelBuilder.Entity<Modalidad>(entity => {
@@ -60,7 +63,7 @@ namespace backend.Data
             modelBuilder.Entity<Institucion>(entity => {
                 entity.ToTable("instituciones");
                 entity.HasKey(e => e.idInstitucion);
-                entity.Property(e => e.Institucion).HasColumnName("Institucion");
+                entity.Property(e => e.NombreInstitucion).HasColumnName("Institucion");
             });
 
             // 2. TIPO LICENCIA
@@ -223,6 +226,21 @@ namespace backend.Data
             modelBuilder.Entity<PracticaHorarioAlumno>(entity => {
                 entity.ToTable("cond_practicas_horarios_alumnos");
                 entity.HasKey(e => new { e.idPractica, e.idAsignacionHorario });
+            });
+
+            modelBuilder.Entity<FechaHorario>(entity => {
+                entity.ToTable("fechas_horarios");
+                entity.HasKey(e => e.idFecha);
+            });
+
+            modelBuilder.Entity<HorarioProfesor>(entity => {
+                entity.ToTable("horario_profesores");
+                entity.HasKey(e => e.idHorario);
+            });
+
+            modelBuilder.Entity<Hora>(entity => {
+                entity.ToTable("horas");
+                entity.HasKey(e => e.idHora);
             });
 
             // AUDITORÍA

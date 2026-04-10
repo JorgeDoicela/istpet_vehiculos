@@ -892,127 +892,52 @@ WHERE COALESCE(activo, 1) = 0";
                     instructor = ReadNullableString(reader, "instructor")
                 });
 
-        public Task<IEnumerable<CentralPeriodoDto>> GetAllPeriodosFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idPeriodo, detalle, fecha_inicial, fecha_final, 
-                         CAST(cerrado AS SIGNED) AS cerrado, fecha_maxima_autocierre, 
-                         CAST(COALESCE(activo, 1) AS SIGNED) AS activo, 
-                         CAST(creditos AS SIGNED) AS creditos, numero_pagos, 
-                         fecha_matrucla_extraordinaria, foliop, 
-                         CAST(permiteMatricula AS SIGNED) AS permiteMatricula, 
-                         CAST(ingresoCalificaciones AS SIGNED) AS ingresoCalificaciones, 
-                         CAST(permiteCalificacionesInstituto AS SIGNED) AS permiteCalificacionesInstituto, 
-                         CAST(periodoactivoinstituto AS SIGNED) AS periodoactivoinstituto, 
-                         CAST(visualizaPowerBi AS SIGNED) AS visualizaPowerBi, 
-                         CAST(esInstituto AS SIGNED) AS esInstituto, 
-                         CAST(periodoPlanificacion AS SIGNED) AS periodoPlanificacion
-                  FROM periodos",
-                reader => new CentralPeriodoDto
-                {
-                    idPeriodo = ReadString(reader, "idPeriodo"),
-                    detalle = ReadNullableString(reader, "detalle"),
-                    fecha_inicial = ReadNullableDate(reader, "fecha_inicial"),
-                    fecha_final = ReadNullableDate(reader, "fecha_final"),
-                    cerrado = ReadInt(reader, "cerrado"),
-                    fecha_maxima_autocierre = ReadNullableDate(reader, "fecha_maxima_autocierre"),
-                    activo = ReadInt(reader, "activo"),
-                    creditos = ReadInt(reader, "creditos"),
-                    numero_pagos = ReadInt(reader, "numero_pagos"),
-                    fecha_matrucla_extraordinaria = ReadNullableDate(reader, "fecha_matrucla_extraordinaria"),
-                    foliop = ReadNullableInt(reader, "foliop"),
-                    permiteMatricula = ReadInt(reader, "permiteMatricula"),
-                    ingresoCalificaciones = ReadInt(reader, "ingresoCalificaciones"),
-                    permiteCalificacionesInstituto = ReadInt(reader, "permiteCalificacionesInstituto"),
-                    periodoactivoinstituto = ReadInt(reader, "periodoactivoinstituto"),
-                    visualizaPowerBi = ReadInt(reader, "visualizaPowerBi"),
-                    esInstituto = ReadInt(reader, "esInstituto"),
-                    periodoPlanificacion = ReadInt(reader, "periodoPlanificacion")
-                });
+        public Task<IEnumerable<CentralInstitucionDto>> GetAllInstitucionesFromCentralAsync()
+            => QueryListAsync("SELECT * FROM instituciones", MapCentralInstitucion);
 
-        public Task<IEnumerable<CentralCarreraDto>> GetAllCarrerasFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idCarrera, Carrera, fechaCreacion, CAST(COALESCE(activa, 1) AS SIGNED) AS activa, 
-                         directorCarrera, numero_creditos, ordenCarrera, numero_alumnos, 
-                         CAST(revisaArrastres AS SIGNED) AS revisaArrastres, codigo_cases, 
-                         aliasCarrera, CAST(BolsaEmpleo AS SIGNED) AS BolsaEmpleo, 
-                         CAST(esInstituto AS SIGNED) AS esInstituto
-                  FROM carreras",
-                reader => new CentralCarreraDto
-                {
-                    idCarrera = ReadInt(reader, "idCarrera"),
-                    Carrera = ReadNullableString(reader, "Carrera"),
-                    fechaCreacion = ReadNullableDate(reader, "fechaCreacion"),
-                    activa = ReadInt(reader, "activa"),
-                    directorCarrera = ReadNullableString(reader, "directorCarrera"),
-                    numero_creditos = ReadNullableInt(reader, "numero_creditos"),
-                    ordenCarrera = ReadInt(reader, "ordenCarrera"),
-                    numero_alumnos = ReadNullableInt(reader, "numero_alumnos"),
-                    revisaArrastres = ReadInt(reader, "revisaArrastres"),
-                    codigo_cases = ReadNullableString(reader, "codigo_cases"),
-                    aliasCarrera = ReadNullableString(reader, "aliasCarrera"),
-                    BolsaEmpleo = ReadInt(reader, "BolsaEmpleo"),
-                    esInstituto = ReadInt(reader, "esInstituto")
-                });
+        public Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync()
+            => QueryListAsync("SELECT * FROM cond_alumnos_practicas", MapCentralPracticaSync);
 
-        public Task<IEnumerable<CentralSeccionDto>> GetAllSeccionesFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idSeccion, seccion, sufijo FROM secciones",
-                reader => new CentralSeccionDto
-                {
-                    idSeccion = ReadInt(reader, "idSeccion"),
-                    seccion = ReadNullableString(reader, "seccion"),
-                    sufijo = ReadNullableString(reader, "sufijo")
-                });
+        public Task<IEnumerable<CentralPeriodoDto>> GetAllPeriodosFromCentralAsync()
+            => QueryListAsync("SELECT * FROM periodos", MapCentralPeriodo);
 
-        public Task<IEnumerable<CentralModalidadDto>> GetAllModalidadesFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idModalidad, modalidad, sufijo FROM modalidades",
-                reader => new CentralModalidadDto
-                {
-                    idModalidad = ReadInt(reader, "idModalidad"),
-                    modalidad = ReadNullableString(reader, "modalidad"),
-                    sufijo = ReadNullableString(reader, "sufijo")
-                });
+        public Task<IEnumerable<CentralCarreraDto>> GetAllCarrerasFromCentralAsync()
+            => QueryListAsync("SELECT * FROM carreras", MapCentralCarrera);
 
-        public Task<IEnumerable<CentralInstitucionDto>> GetAllInstitucionesFromCentralAsync() =>
-            QueryListAsync(
-                @"SELECT idInstitucion, Institucion, ciudad, provincia FROM instituciones",
-                reader => new CentralInstitucionDto
-                {
-                    idInstitucion = ReadInt(reader, "idInstitucion"),
-                    Institucion = ReadNullableString(reader, "Institucion"),
-                    ciudad = ReadNullableString(reader, "ciudad"),
-                    provincia = ReadNullableString(reader, "provincia")
-                });
+        public Task<IEnumerable<CentralSeccionDto>> GetAllSeccionesFromCentralAsync()
+            => QueryListAsync("SELECT * FROM secciones", MapCentralSeccion);
 
-        public Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync() =>
-            QueryListAsync(
-                // SIGAFI: cond_alumnos_practicas no incluye observaciones; NULL mantiene paridad con origen.
-                @"SELECT idPractica, idalumno, idvehiculo, idProfesor, idPeriodo, dia, fecha,
-                         hora_salida, hora_llegada, tiempo,
-                         CAST(ensalida AS SIGNED) AS ensalida, CAST(verificada AS SIGNED) AS verificada,
-                         user_asigna, user_llegada, CAST(cancelado AS SIGNED) AS cancelado,
-                         NULL AS observaciones
-                  FROM cond_alumnos_practicas",
-                reader => new CentralPracticaSyncDto
-                {
-                    idPractica = ReadInt(reader, "idPractica"),
-                    idalumno = ReadString(reader, "idalumno"),
-                    idvehiculo = ReadInt(reader, "idvehiculo"),
-                    idProfesor = ReadString(reader, "idProfesor"),
-                    idPeriodo = ReadNullableString(reader, "idPeriodo"),
-                    dia = ReadNullableString(reader, "dia"),
-                    fecha = ReadDate(reader, "fecha"),
-                    hora_salida = ReadNullableTime(reader, "hora_salida"),
-                    hora_llegada = ReadNullableTime(reader, "hora_llegada"),
-                    tiempo = ReadNullableTime(reader, "tiempo"),
-                    ensalida = ReadInt(reader, "ensalida"),
-                    verificada = ReadInt(reader, "verificada"),
-                    user_asigna = ReadNullableString(reader, "user_asigna"),
-                    user_llegada = ReadNullableString(reader, "user_llegada"),
-                    cancelado = ReadInt(reader, "cancelado"),
-                    observaciones = ReadNullableString(reader, "observaciones")
-                });
+        public Task<IEnumerable<CentralModalidadDto>> GetAllModalidadesFromCentralAsync()
+            => QueryListAsync("SELECT * FROM modalidades", MapCentralModalidad);
+
+        public Task<IEnumerable<CentralFechaHorarioDto>> GetAllFechasHorariosFromCentralAsync()
+            => QueryListAsync("SELECT * FROM fechas_horarios", MapCentralFechaHorario);
+
+        public Task<IEnumerable<CentralHorarioProfesorDto>> GetAllHorariosProfesoresFromCentralAsync()
+            => QueryListAsync("SELECT * FROM horario_profesores", MapCentralHorarioProfesor);
+
+        public Task<IEnumerable<CentralHoraDto>> GetAllHorasFromCentralAsync()
+            => QueryListAsync("SELECT * FROM horas", MapCentralHora);
+
+        private static CentralPracticaSyncDto MapCentralPracticaSync(MySqlDataReader reader) => new()
+        {
+            idPractica = ReadInt(reader, "idPractica"),
+            idalumno = ReadString(reader, "idalumno"),
+            idvehiculo = ReadInt(reader, "idvehiculo"),
+            idProfesor = ReadString(reader, "idProfesor"),
+            idPeriodo = ReadNullableString(reader, "idPeriodo"),
+            dia = ReadNullableString(reader, "dia"),
+            fecha = ReadDate(reader, "fecha"),
+            hora_salida = ReadNullableTime(reader, "hora_salida"),
+            hora_llegada = ReadNullableTime(reader, "hora_llegada"),
+            tiempo = ReadNullableTime(reader, "tiempo"),
+            ensalida = ReadInt(reader, "ensalida"),
+            verificada = ReadInt(reader, "verificada"),
+            user_asigna = ReadNullableString(reader, "user_asigna"),
+            user_llegada = ReadNullableString(reader, "user_llegada"),
+            cancelado = ReadInt(reader, "cancelado"),
+            observaciones = ReadNullableString(reader, "observaciones")
+        };
 
         public async Task<bool> PingSigafiAsync()
         {
@@ -1136,6 +1061,91 @@ WHERE COALESCE(activo, 1) = 0";
             NombreCompleto = ReadNullableString(reader, "NombreCompleto"),
             DetalleRaw = ReadNullableString(reader, "DetalleRaw"),
             Nivel = ReadNullableString(reader, "Nivel")
+        };
+
+        private static CentralPeriodoDto MapCentralPeriodo(MySqlDataReader reader) => new()
+        {
+            idPeriodo = ReadString(reader, "idPeriodo"),
+            detalle = ReadNullableString(reader, "detalle"),
+            fecha_inicial = ReadNullableDate(reader, "fecha_inicial"),
+            fecha_final = ReadNullableDate(reader, "fecha_final"),
+            cerrado = ReadInt(reader, "cerrado"),
+            fecha_maxima_autocierre = ReadNullableDate(reader, "fecha_maxima_autocierre"),
+            activo = ReadInt(reader, "activo"),
+            creditos = ReadInt(reader, "creditos"),
+            numero_pagos = ReadInt(reader, "numero_pagos"),
+            fecha_matrucla_extraordinaria = ReadNullableDate(reader, "fecha_matrucla_extraordinaria"),
+            foliop = ReadNullableInt(reader, "foliop"),
+            permiteMatricula = ReadInt(reader, "permiteMatricula"),
+            ingresoCalificaciones = ReadInt(reader, "ingresoCalificaciones"),
+            permiteCalificacionesInstituto = ReadInt(reader, "permiteCalificacionesInstituto"),
+            periodoactivoinstituto = ReadInt(reader, "periodoactivoinstituto"),
+            visualizaPowerBi = ReadInt(reader, "visualizaPowerBi"),
+            esInstituto = ReadInt(reader, "esInstituto"),
+            periodoPlanificacion = ReadInt(reader, "periodoPlanificacion")
+        };
+
+        private static CentralCarreraDto MapCentralCarrera(MySqlDataReader reader) => new()
+        {
+            idCarrera = ReadInt(reader, "idCarrera"),
+            Carrera = ReadNullableString(reader, "Carrera"),
+            fechaCreacion = ReadNullableDate(reader, "fechaCreacion"),
+            activa = ReadInt(reader, "activa"),
+            directorCarrera = ReadNullableString(reader, "directorCarrera"),
+            numero_creditos = ReadNullableInt(reader, "numero_creditos"),
+            ordenCarrera = ReadInt(reader, "ordenCarrera"),
+            numero_alumnos = ReadNullableInt(reader, "numero_alumnos"),
+            revisaArrastres = ReadInt(reader, "revisaArrastres"),
+            codigo_cases = ReadNullableString(reader, "codigo_cases"),
+            aliasCarrera = ReadNullableString(reader, "aliasCarrera"),
+            BolsaEmpleo = ReadInt(reader, "BolsoEmpleo"),
+            esInstituto = ReadInt(reader, "esInstituto")
+        };
+
+        private static CentralSeccionDto MapCentralSeccion(MySqlDataReader reader) => new()
+        {
+            idSeccion = ReadInt(reader, "idSeccion"),
+            seccion = ReadNullableString(reader, "seccion"),
+            sufijo = ReadNullableString(reader, "sufijo")
+        };
+
+        private static CentralModalidadDto MapCentralModalidad(MySqlDataReader reader) => new()
+        {
+            idModalidad = ReadInt(reader, "idModalidad"),
+            modalidad = ReadNullableString(reader, "modalidad"),
+            sufijo = ReadNullableString(reader, "sufijo")
+        };
+
+        private static CentralInstitucionDto MapCentralInstitucion(MySqlDataReader reader) => new()
+        {
+            idInstitucion = ReadInt(reader, "idInstitucion"),
+            Institucion = ReadNullableString(reader, "Institucion"),
+            ciudad = ReadNullableString(reader, "ciudad"),
+            provincia = ReadNullableString(reader, "provincia")
+        };
+
+        private static CentralFechaHorarioDto MapCentralFechaHorario(MySqlDataReader reader) => new()
+        {
+            idFecha = ReadInt(reader, "idFecha"),
+            fecha = ReadDate(reader, "fecha"),
+            finsemana = ReadInt(reader, "finsemana"),
+            dia = ReadNullableString(reader, "dia")
+        };
+
+        private static CentralHorarioProfesorDto MapCentralHorarioProfesor(MySqlDataReader reader) => new()
+        {
+            idHorario = ReadInt(reader, "idHorario"),
+            idAsignacion = ReadInt(reader, "idAsignacion"),
+            idHora = ReadInt(reader, "idHora"),
+            idFecha = ReadInt(reader, "idFecha"),
+            asiste = ReadInt(reader, "asiste"),
+            activo = ReadInt(reader, "activo")
+        };
+
+        private static CentralHoraDto MapCentralHora(MySqlDataReader reader) => new()
+        {
+            idHora = ReadInt(reader, "idHora"),
+            detalle = ReadNullableString(reader, "detalle")
         };
 
         /// <summary>

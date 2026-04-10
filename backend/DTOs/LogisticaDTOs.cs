@@ -165,4 +165,28 @@ namespace backend.DTOs
         public string? ciudad { get; set; }
         public string? provincia { get; set; }
     }
+
+    public class CentralFechaHorarioDto
+    {
+        public int idFecha { get; set; }
+        public DateTime fecha { get; set; }
+        public int finsemana { get; set; }
+        public string? dia { get; set; }
+    }
+
+    public class CentralHorarioProfesorDto
+    {
+        public int idHorario { get; set; }
+        public int idAsignacion { get; set; }
+        public int idHora { get; set; }
+        public int idFecha { get; set; }
+        public int asiste { get; set; }
+        public int activo { get; set; }
+    }
+
+    public class CentralHoraDto
+    {
+        public int idHora { get; set; }
+        public string? detalle { get; set; }
+    }
 }

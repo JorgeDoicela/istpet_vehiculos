@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
@@ -12,7 +13,8 @@ namespace backend.Models
         public int idInstitucion { get; set; }
 
         [MaxLength(200)]
-        public string? Institucion { get; set; }
+        [Column("Institucion")]
+        public string? NombreInstitucion { get; set; }
 
         [MaxLength(100)]
         public string? ciudad { get; set; }

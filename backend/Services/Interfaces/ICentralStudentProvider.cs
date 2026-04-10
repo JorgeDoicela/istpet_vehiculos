@@ -388,6 +388,10 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralSeccionDto>> GetAllSeccionesFromCentralAsync();
         Task<IEnumerable<CentralModalidadDto>> GetAllModalidadesFromCentralAsync();
         Task<IEnumerable<CentralInstitucionDto>> GetAllInstitucionesFromCentralAsync();
+        
+        Task<IEnumerable<CentralFechaHorarioDto>> GetAllFechasHorariosFromCentralAsync();
+        Task<IEnumerable<CentralHorarioProfesorDto>> GetAllHorariosProfesoresFromCentralAsync();
+        Task<IEnumerable<CentralHoraDto>> GetAllHorasFromCentralAsync();
 
         Task<bool> PingSigafiAsync();
 

@@ -211,6 +211,9 @@ namespace backend.Services.Implementations
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_vehiculos", SyncStudentVehicleAssignmentsAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_horarios", SyncSchedulesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_practicas_horarios_alumnos", SyncPracticeScheduleLinksAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("fechas_horarios", SyncFechasHorariosAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("horario_profesores", SyncHorariosProfesoresAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("horas", SyncHorasAsync, warnings, log);
 
             if (warnings.Count == 0)
             {
@@ -1116,7 +1119,7 @@ namespace backend.Services.Implementations
                     _context.Carreras.Add(new Carrera
                     {
                         idCarrera = item.idCarrera,
-                        Carrera = item.Carrera,
+                        NombreCarrera = item.Carrera,
                         fechaCreacion = item.fechaCreacion,
                         activa = item.activa == 1,
                         directorCarrera = item.directorCarrera,
@@ -1132,7 +1135,7 @@ namespace backend.Services.Implementations
                 }
                 else
                 {
-                    existing.Carrera = item.Carrera;
+                    existing.NombreCarrera = item.Carrera;
                     existing.fechaCreacion = item.fechaCreacion;
                     existing.activa = item.activa == 1;
                     existing.directorCarrera = item.directorCarrera;
@@ -1217,14 +1220,14 @@ namespace backend.Services.Implementations
                     _context.Instituciones.Add(new Institucion
                     {
                         idInstitucion = item.idInstitucion,
-                        Institucion = item.Institucion,
+                        NombreInstitucion = item.Institucion,
                         ciudad = item.ciudad,
                         provincia = item.provincia
                     });
                 }
                 else
                 {
-                    existing.Institucion = item.Institucion;
+                    existing.NombreInstitucion = item.Institucion;
                     existing.ciudad = item.ciudad;
                     existing.provincia = item.provincia;
                 }
@@ -1426,6 +1429,98 @@ namespace backend.Services.Implementations
                     keySet.Add(key);
                     processed++;
                 }
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncFechasHorariosAsync()
+        {
+            var rows = await _centralProvider.GetAllFechasHorariosFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.FechasHorarios.FirstOrDefaultAsync(x => x.idFecha == item.idFecha);
+                if (existing == null)
+                {
+                    _context.FechasHorarios.Add(new FechaHorario
+                    {
+                        idFecha = item.idFecha,
+                        fecha = item.fecha,
+                        finsemana = (byte)item.finsemana,
+                        dia = item.dia
+                    });
+                }
+                else
+                {
+                    existing.fecha = item.fecha;
+                    existing.finsemana = (byte)item.finsemana;
+                    existing.dia = item.dia;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncHorariosProfesoresAsync()
+        {
+            var rows = await _centralProvider.GetAllHorariosProfesoresFromCentralAsync();
+            var processed = 0;
+            var existingIds = (await _context.HorariosProfesores.Select(x => x.idHorario).ToListAsync()).ToHashSet();
+            
+            foreach (var item in rows)
+            {
+                if (existingIds.Contains(item.idHorario))
+                {
+                    _context.HorariosProfesores.Update(new HorarioProfesor
+                    {
+                        idHorario = item.idHorario,
+                        idAsignacion = item.idAsignacion,
+                        idHora = item.idHora,
+                        idFecha = item.idFecha,
+                        asiste = (byte)item.asiste,
+                        activo = (byte)item.activo
+                    });
+                }
+                else
+                {
+                    _context.HorariosProfesores.Add(new HorarioProfesor
+                    {
+                        idHorario = item.idHorario,
+                        idAsignacion = item.idAsignacion,
+                        idHora = item.idHora,
+                        idFecha = item.idFecha,
+                        asiste = (byte)item.asiste,
+                        activo = (byte)item.activo
+                    });
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncHorasAsync()
+        {
+            var rows = await _centralProvider.GetAllHorasFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Horas.FirstOrDefaultAsync(x => x.idHora == item.idHora);
+                if (existing == null)
+                {
+                    _context.Horas.Add(new Hora
+                    {
+                        idHora = item.idHora,
+                        detalle = item.detalle
+                    });
+                }
+                else
+                {
+                    existing.detalle = item.detalle;
+                }
+                processed++;
             }
             await _context.SaveChangesAsync();
             return processed;

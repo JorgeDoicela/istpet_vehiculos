@@ -19,5 +19,6 @@ namespace backend.DTOs
         public int? RowCount { get; set; }
         public bool Ok { get; set; }
         public string? Error { get; set; }
+        public object? Sample { get; set; }
     }
 }
