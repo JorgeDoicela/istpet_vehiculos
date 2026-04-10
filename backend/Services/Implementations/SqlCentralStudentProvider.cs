@@ -254,6 +254,7 @@ namespace backend.Services.Implementations
                         p.idvehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor,
+                        p.idPeriodo AS idPeriodo,
                         p.fecha,
                         p.hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
@@ -290,6 +291,7 @@ namespace backend.Services.Implementations
                         p.idvehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor,
+                        p.idPeriodo AS idPeriodo,
                         p.fecha,
                         p.hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
@@ -336,6 +338,7 @@ namespace backend.Services.Implementations
                         p.idvehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
                         p.idProfesor,
+                        p.idPeriodo AS idPeriodo,
                         p.fecha,
                         p.hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
@@ -1014,14 +1017,19 @@ WHERE COALESCE(activo, 1) = 0";
             var cancelado = ReadInt(reader, "SigafiCancelado");
             var ensalida = ReadInt(reader, "SigafiEnsalida");
             var llegada = ReadNullableTime(reader, "SigafiHoraLlegada");
+            var idPer = ReadNullableString(reader, "idPeriodo")?.Trim();
             return new ScheduledPracticeDto
             {
                 idPractica = ReadInt(reader, "idPractica"),
                 idalumno = ReadString(reader, "idalumno"),
                 idvehiculo = ReadInt(reader, "idvehiculo"),
                 idProfesor = ReadString(reader, "idProfesor"),
+                idPeriodo = string.IsNullOrEmpty(idPer) ? null : idPer,
                 fecha = ReadDate(reader, "fecha"),
                 hora_salida = ReadNullableTime(reader, "hora_salida"),
+                SigafiCancelado = cancelado,
+                SigafiEnsalida = ensalida,
+                SigafiHoraLlegada = llegada,
                 AlumnoNombre = ReadString(reader, "AlumnoNombre"),
                 VehiculoDetalle = ReadString(reader, "VehiculoDetalle"),
                 ProfesorNombre = ReadString(reader, "ProfesorNombre"),

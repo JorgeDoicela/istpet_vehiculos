@@ -63,12 +63,21 @@ namespace backend.Services.Interfaces
     public class ScheduledPracticeDto
     {
         public int idPractica { get; set; }
-        public string idalumno { get; set; } = string.Empty; 
-        public int idvehiculo { get; set; } 
+        public string idalumno { get; set; } = string.Empty;
+        public int idvehiculo { get; set; }
         public string idProfesor { get; set; } = string.Empty;
+
+        /// <summary>Desde <c>cond_alumnos_practicas.idPeriodo</c> (SIGAFI).</summary>
+        public string? idPeriodo { get; set; }
+
         public DateTime fecha { get; set; }
         public TimeSpan? hora_salida { get; set; }
-        
+
+        /// <summary>Campos SIGAFI para persistir el espejo local (tras enriquecer pueden reflejar también estado operativo local).</summary>
+        public int SigafiCancelado { get; set; }
+        public int SigafiEnsalida { get; set; }
+        public TimeSpan? SigafiHoraLlegada { get; set; }
+
         public string AlumnoNombre { get; set; } = string.Empty;
         public string VehiculoDetalle { get; set; } = string.Empty;
         public string ProfesorNombre { get; set; } = string.Empty;

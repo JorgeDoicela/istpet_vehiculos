@@ -35,6 +35,7 @@ namespace backend.Controllers
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
         private readonly IAuditService _audit;
+        private readonly ISigafiMirrorPersistenceService _mirrorPersist;
         private readonly ILogger<LogisticaController> _logger;
 
         public LogisticaController(
@@ -42,12 +43,14 @@ namespace backend.Controllers
             ILogisticaService logisticaService,
             ICentralStudentProvider centralProvider,
             IAuditService audit,
+            ISigafiMirrorPersistenceService mirrorPersist,
             ILogger<LogisticaController> logger)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
             _audit = audit;
+            _mirrorPersist = mirrorPersist;
             _logger = logger;
         }
 
@@ -276,6 +279,9 @@ namespace backend.Controllers
         private async Task EnrichEstudianteLogisticaDesdeSigafiAsync(EstudianteLogisticaResponse student)
         {
             var scheduled = await _centralProvider.GetScheduledPracticeAsync(student.idAlumno);
+            if (scheduled != null)
+                await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(new[] { scheduled });
+
             CentralInstructorDto? tutor = null;
             if (scheduled == null)
                 tutor = await _centralProvider.GetAssignedTutorAsync(student.idAlumno);
@@ -500,6 +506,8 @@ namespace backend.Controllers
             var list = localTask.Result;
             var sigafiRaw = sigafiTask.Result;
 
+            await _mirrorPersist.PersistEstudiantesFromLitesAsync(sigafiRaw);
+
             // Fusionar: agregar los que SIGAFI devolvió pero que no están aún en el espejo local.
             var knownIds = list.Select(x => x.idAlumno).ToHashSet(StringComparer.Ordinal);
             foreach (var s in sigafiRaw)
@@ -521,6 +529,9 @@ namespace backend.Controllers
                 try
                 {
                     var porSigafi = await _centralProvider.GetNextOpenPracticesForAlumnosAsync(list.Select(x => x.idAlumno));
+                    if (porSigafi.Count > 0)
+                        await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(porSigafi.Values);
+
                     foreach (var item in list)
                     {
                         if (!porSigafi.TryGetValue(item.idAlumno, out var pr))

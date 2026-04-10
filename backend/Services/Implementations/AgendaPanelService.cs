@@ -12,11 +12,16 @@ namespace backend.Services.Implementations
     {
         private readonly AppDbContext _context;
         private readonly ICentralStudentProvider _central;
+        private readonly ISigafiMirrorPersistenceService _mirrorPersist;
 
-        public AgendaPanelService(AppDbContext context, ICentralStudentProvider central)
+        public AgendaPanelService(
+            AppDbContext context,
+            ICentralStudentProvider central,
+            ISigafiMirrorPersistenceService mirrorPersist)
         {
             _context = context;
             _central = central;
+            _mirrorPersist = mirrorPersist;
         }
 
         public async Task<AgendaLogisticaResponseDto> GetAgendaAsync(int limit = 100)
@@ -31,6 +36,9 @@ namespace backend.Services.Implementations
             }
 
             await EnrichAgendaEstadoOperativoAsync(list);
+
+            if (fromSigafi && list.Count > 0)
+                await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(list);
 
             return new AgendaLogisticaResponseDto
             {
@@ -65,8 +73,12 @@ namespace backend.Services.Implementations
             var byId = states.ToDictionary(x => x.idPractica, x => x);
             foreach (var row in list)
             {
-                if (byId.TryGetValue(row.idPractica, out var st))
-                    row.EstadoOperativo = ResolverEstadoOperativoPractica(st.cancelado, st.ensalida, st.hora_llegada);
+                if (!byId.TryGetValue(row.idPractica, out var st))
+                    continue;
+                row.EstadoOperativo = ResolverEstadoOperativoPractica(st.cancelado, st.ensalida, st.hora_llegada);
+                row.SigafiCancelado = (st.cancelado ?? 0) != 0 ? 1 : 0;
+                row.SigafiEnsalida = (st.ensalida ?? 0) != 0 ? 1 : 0;
+                row.SigafiHoraLlegada = st.hora_llegada;
             }
         }
 
@@ -88,8 +100,12 @@ namespace backend.Services.Implementations
                 idalumno = r.p.idalumno,
                 idvehiculo = r.p.idvehiculo,
                 idProfesor = r.p.idProfesor,
+                idPeriodo = r.p.idPeriodo,
                 fecha = r.p.fecha,
                 hora_salida = r.p.hora_salida,
+                SigafiCancelado = (r.p.cancelado ?? 0) != 0 ? 1 : 0,
+                SigafiEnsalida = (r.p.ensalida ?? 0) != 0 ? 1 : 0,
+                SigafiHoraLlegada = r.p.hora_llegada,
                 AlumnoNombre = $"{r.e.apellidoPaterno} {r.e.apellidoMaterno} {r.e.primerNombre} {r.e.segundoNombre}".Trim(),
                 VehiculoDetalle = $"#{(r.v.numero_vehiculo ?? "?")} ({(r.v.placa ?? "")})",
                 ProfesorNombre = $"{r.i.apellidos} {r.i.nombres}".Trim(),

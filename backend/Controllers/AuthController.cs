@@ -46,25 +46,76 @@ namespace backend.Controllers
             if (req == null || string.IsNullOrEmpty(req.usuario))
                 return BadRequest(ApiResponse<LoginResponse>.Fail("El usuario es requerido."));
 
-            // SIGAFI es la única fuente de verdad para autenticación.
-            // Si no responde no se acepta la copia local: un usuario desactivado en SIGAFI
-            // no debe poder entrar aunque el espejo local aún lo tenga como activo.
-            CentralUserDto? sigafiUser;
+            // Prioridad: validar en SIGAFI. Si SIGAFI no responde, usar espejo local (Master Sync / último login)
+            // para que el sistema siga operativo; si SIGAFI responde y el usuario no existe, no se usa local.
+            CentralUserDto? sigafiUser = null;
+            var sigafiNoDisponible = false;
             try
             {
                 sigafiUser = await _central.GetWebUserFromSigafiAsync(req.usuario);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "SIGAFI usuarios_web no accesible al intentar login de {usuario}.", req.usuario);
-                await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
-                    detalles: "SIGAFI no disponible; login bloqueado por seguridad.",
-                    ipOrigen: ip);
-                return StatusCode(503, ApiResponse<LoginResponse>.Fail(
-                    "El servicio de autenticación (SIGAFI) no está disponible. Intente nuevamente en unos segundos."));
+                sigafiNoDisponible = true;
+                _logger.LogWarning(ex, "SIGAFI usuarios_web no accesible; se intentará login con espejo local.");
             }
 
-            if (sigafiUser == null)
+            Usuario user;
+            string mensajeExito;
+
+            if (sigafiUser != null)
+            {
+                if (sigafiUser.activo == 0)
+                {
+                    await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
+                        detalles: "Usuario inactivo en SIGAFI.",
+                        ipOrigen: ip);
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Usuario inactivo. Contacte al administrador."));
+                }
+
+                if (!PasswordHelper.TryValidate(sigafiUser.password, req.password, out var needsRehash))
+                {
+                    await Task.Delay(400);
+                    await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
+                        detalles: "Credenciales inválidas (SIGAFI).",
+                        ipOrigen: ip);
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
+                }
+
+                user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password, needsRehash);
+                mensajeExito = "Ingreso exitoso (validado en SIGAFI).";
+            }
+            else if (sigafiNoDisponible)
+            {
+                var localUser = await _context.Usuarios.FirstOrDefaultAsync(u => u.usuario == req.usuario && u.activo);
+                if (localUser == null)
+                {
+                    await Task.Delay(500);
+                    await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
+                        detalles: "SIGAFI caído y sin usuario activo en espejo local.",
+                        ipOrigen: ip);
+                    return StatusCode(503, ApiResponse<LoginResponse>.Fail(
+                        "SIGAFI no responde y no hay copia local de este usuario. Intente más tarde o sincronice cuando haya conexión."));
+                }
+
+                if (!PasswordHelper.TryValidate(localUser.password ?? string.Empty, req.password, out var needsRehashLocal))
+                {
+                    await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
+                        detalles: "Credenciales inválidas (espejo local).",
+                        ipOrigen: ip);
+                    return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
+                }
+
+                if (needsRehashLocal)
+                {
+                    localUser.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? string.Empty);
+                    await _context.SaveChangesAsync();
+                }
+
+                user = localUser;
+                mensajeExito = "Ingreso en modo respaldo (última copia local). Cuando SIGAFI vuelva, los datos se actualizarán al sincronizar.";
+            }
+            else
             {
                 await Task.Delay(500);
                 await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
@@ -72,25 +123,6 @@ namespace backend.Controllers
                     ipOrigen: ip);
                 return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
             }
-
-            if (sigafiUser.activo == 0)
-            {
-                await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
-                    detalles: "Usuario inactivo en SIGAFI.",
-                    ipOrigen: ip);
-                return Unauthorized(ApiResponse<LoginResponse>.Fail("Usuario inactivo. Contacte al administrador."));
-            }
-
-            if (!PasswordHelper.TryValidate(sigafiUser.password, req.password, out var needsRehash))
-            {
-                await Task.Delay(400);
-                await _audit.LogAsync(req.usuario, "LOGIN_FAIL",
-                    detalles: "Credenciales inválidas (SIGAFI).",
-                    ipOrigen: ip);
-                return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
-            }
-
-            var user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password, needsRehash);
 
             user.rol = "guardia";
             if (user.salida && user.ingreso) user.rol = "admin";
@@ -101,7 +133,7 @@ namespace backend.Controllers
             var token = CreateToken(user);
 
             await _audit.LogAsync(user.usuario, "LOGIN",
-                detalles: $"Ingreso exitoso vía SIGAFI. Rol: {user.rol}",
+                detalles: $"{mensajeExito} Rol: {user.rol}",
                 ipOrigen: ip);
 
             return Ok(ApiResponse<LoginResponse>.Ok(new LoginResponse
@@ -110,7 +142,7 @@ namespace backend.Controllers
                 usuario = user.usuario,
                 nombre = user.nombre_completo ?? "Usuario ISTPET",
                 rol = user.rol
-            }, "Ingreso exitoso (validado en SIGAFI)."));
+            }, mensajeExito));
         }
 
         private async Task<Usuario> UpsertLocalUsuarioFromSigafiAsync(CentralUserDto src, string? plainPassword, bool rehashToBcrypt)

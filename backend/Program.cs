@@ -231,6 +231,7 @@ builder.Services.AddScoped<IVehiculoService, SqlVehiculoService>();
 builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
 builder.Services.AddScoped<IDataSyncService, DataSyncService>();
+builder.Services.AddScoped<ISigafiMirrorPersistenceService, SigafiMirrorPersistenceService>();
 builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
 builder.Services.AddScoped<IAgendaPanelService, AgendaPanelService>();
 builder.Services.AddScoped<SigafiExtractionProbe>();
