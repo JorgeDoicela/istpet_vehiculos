@@ -128,7 +128,9 @@ namespace backend.Controllers
             if (user.salida && user.ingreso) user.rol = "admin";
             else if (user.salida) user.rol = "logistica";
 
-            user.nombre_completo = await ResolveDisplayNameAsync(user.usuario);
+            // Nombre para el JWT: espejo local primero. SIGAFI puede tardar mucho (timeouts TCP)
+            // desde Docker y dejaba el login colgado si se consultaba antes que el espejo.
+            user.nombre_completo = await ResolveDisplayNameAsync(user.usuario, sigafiNoDisponible);
 
             var token = CreateToken(user);
 
@@ -180,7 +182,71 @@ namespace backend.Controllers
             return local;
         }
 
-        private async Task<string> ResolveDisplayNameAsync(string usuario)
+        private static string? FormatoNombreInstructor(Instructor? p)
+        {
+            if (p == null) return null;
+            var full = $"{p.apellidos} {p.nombres}".Trim();
+            if (string.IsNullOrWhiteSpace(full)) full = $"{p.primerApellido} {p.primerNombre}".Trim();
+            return string.IsNullOrWhiteSpace(full) ? null : full;
+        }
+
+        private static string? FormatoNombreAlumno(Estudiante? a)
+        {
+            if (a == null) return null;
+            var s = $"{a.apellidoPaterno} {a.apellidoMaterno} {a.primerNombre}".Trim();
+            return string.IsNullOrWhiteSpace(s) ? null : s;
+        }
+
+        /// <param name="sigafiNoDisponibleEnLogin">
+        /// Si ya falló <see cref="ICentralStudentProvider.GetWebUserFromSigafiAsync"/> con excepción,
+        /// no volvemos a llamar a SIGAFI aquí (evita esperas largas en cadena).
+        /// </param>
+        private async Task<string> ResolveDisplayNameAsync(string usuario, bool sigafiNoDisponibleEnLogin)
+        {
+            var prof = await _context.Instructores.AsNoTracking()
+                .FirstOrDefaultAsync(p => p.idProfesor == usuario);
+            var localName = FormatoNombreInstructor(prof);
+            if (!string.IsNullOrWhiteSpace(localName))
+                return localName!;
+
+            var alum = await _context.Estudiantes.AsNoTracking()
+                .FirstOrDefaultAsync(a => a.idAlumno == usuario);
+            localName = FormatoNombreAlumno(alum);
+            if (!string.IsNullOrWhiteSpace(localName))
+                return localName!;
+
+            if (sigafiNoDisponibleEnLogin)
+                return string.IsNullOrWhiteSpace(usuario) ? "Usuario ISTPET" : usuario.Trim();
+
+            var desdeSigafi = await TryResolveDisplayNameFromSigafiWithTimeoutAsync(usuario, TimeSpan.FromSeconds(2.5));
+            if (!string.IsNullOrWhiteSpace(desdeSigafi))
+                return desdeSigafi!;
+
+            return string.IsNullOrWhiteSpace(usuario) ? "Usuario ISTPET" : usuario.Trim();
+        }
+
+        private async Task<string?> TryResolveDisplayNameFromSigafiWithTimeoutAsync(string usuario, TimeSpan maxWait)
+        {
+            var lookup = ResolveDisplayNameFromSigafiOnlyAsync(usuario);
+            var completed = await Task.WhenAny(lookup, Task.Delay(maxWait));
+            if (completed != lookup)
+            {
+                _logger.LogDebug("Nombre para login: SIGAFI no respondió en {Ms} ms; se usa login como etiqueta.", maxWait.TotalMilliseconds);
+                return null;
+            }
+
+            try
+            {
+                return await lookup;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Nombre SIGAFI no resuelto para {u}", usuario);
+                return null;
+            }
+        }
+
+        private async Task<string?> ResolveDisplayNameFromSigafiOnlyAsync(string usuario)
         {
             try
             {
@@ -192,29 +258,23 @@ namespace backend.Controllers
                     if (!string.IsNullOrWhiteSpace(n)) return n;
                 }
             }
-            catch (Exception ex) { _logger.LogDebug(ex, "Nombre instructor SIGAFI no disponible para {u}", usuario); }
+            catch (Exception ex)
+            {
+                _logger.LogDebug(ex, "Nombre instructor SIGAFI no disponible para {u}", usuario);
+            }
 
             try
             {
                 var alumnoCentral = await _central.GetFromCentralAsync(usuario);
                 if (!string.IsNullOrWhiteSpace(alumnoCentral?.NombreCompleto))
-                    return alumnoCentral.NombreCompleto.Trim();
+                    return alumnoCentral!.NombreCompleto.Trim();
             }
-            catch (Exception ex) { _logger.LogDebug(ex, "Nombre alumno SIGAFI no disponible para {u}", usuario); }
-
-            var profesor = await _context.Instructores.FirstOrDefaultAsync(p => p.idProfesor == usuario);
-            if (profesor != null)
+            catch (Exception ex)
             {
-                var full = $"{profesor.apellidos} {profesor.nombres}".Trim();
-                if (string.IsNullOrWhiteSpace(full)) full = $"{profesor.primerApellido} {profesor.primerNombre}".Trim();
-                if (!string.IsNullOrWhiteSpace(full)) return full;
+                _logger.LogDebug(ex, "Nombre alumno SIGAFI no disponible para {u}", usuario);
             }
 
-            var alumno = await _context.Estudiantes.FirstOrDefaultAsync(a => a.idAlumno == usuario);
-            if (alumno != null)
-                return $"{alumno.apellidoPaterno} {alumno.apellidoMaterno} {alumno.primerNombre}".Trim();
-
-            return "Usuario ISTPET";
+            return null;
         }
 
         private string CreateToken(Usuario user)

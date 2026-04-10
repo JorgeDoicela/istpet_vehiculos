@@ -6,11 +6,18 @@ import { normalizeAgendaPractica } from '../utils/agendaUi';
  */
 function unwrap(response) {
   const body = response?.data;
-  if (body && typeof body === 'object' && Object.prototype.hasOwnProperty.call(body, 'success')) {
-    if (body.success === false) {
-      throw new Error(body.message || 'Operación rechazada');
+  if (!body || typeof body !== 'object') return body;
+
+  const hasSuccess =
+    Object.prototype.hasOwnProperty.call(body, 'success') ||
+    Object.prototype.hasOwnProperty.call(body, 'Success');
+
+  if (hasSuccess) {
+    const ok = body.success ?? body.Success;
+    if (ok === false) {
+      throw new Error(body.message ?? body.Message ?? 'Operación rechazada');
     }
-    return body.data;
+    return body.data ?? body.Data;
   }
   return body;
 }
@@ -66,12 +73,15 @@ export const logisticaService = {
   getAgendadosHoy: async () => {
     const response = await api.get('/Dashboard/agenda-reciente?limit=100');
     const data = unwrap(response);
-    if (data && typeof data === 'object' && Array.isArray(data.practicas)) {
-      return {
-        practicas: data.practicas.map(normalizeAgendaPractica),
-        fuenteDatos: data.fuenteDatos || 'sigafi',
-        obtenidoEn: data.obtenidoEn ?? null
-      };
+    if (data && typeof data === 'object') {
+      const practicas = data.practicas ?? data.Practicas;
+      if (Array.isArray(practicas)) {
+        return {
+          practicas: practicas.map(normalizeAgendaPractica),
+          fuenteDatos: data.fuenteDatos ?? data.FuenteDatos ?? 'sigafi',
+          obtenidoEn: data.obtenidoEn ?? data.ObtenidoEn ?? null
+        };
+      }
     }
     return {
       practicas: Array.isArray(data) ? data.map(normalizeAgendaPractica) : [],

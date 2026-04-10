@@ -257,6 +257,28 @@ if (!string.IsNullOrEmpty(port))
 // ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
+// Compatibilidad con instalaciones existentes:
+// si la BD fue creada antes de incluir audit_logs en el schema principal,
+// esta creación idempotente evita que el login falle por auditoría.
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await db.Database.ExecuteSqlRawAsync(@"
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id          INT          NOT NULL AUTO_INCREMENT,
+    usuario     VARCHAR(50)  NOT NULL,
+    accion      VARCHAR(50)  NOT NULL,
+    entidad_id  VARCHAR(100) NULL,
+    detalles    TEXT         NULL,
+    ip_origen   VARCHAR(45)  NULL,
+    fecha_hora  DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_audit_usuario (usuario),
+    INDEX idx_audit_accion  (accion),
+    INDEX idx_audit_fecha   (fecha_hora)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci;");
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();

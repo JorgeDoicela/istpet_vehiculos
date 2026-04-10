@@ -25,8 +25,12 @@ export const AuthProvider = ({ children }) => {
                 password: password
             });
 
-            if (response.data.success) {
-                const { token, ...userData } = response.data.data;
+            // La API usa nombres PascalCase (Success, Data) por configuración JSON del backend.
+            const payload = response.data;
+            const ok = payload.success === true || payload.Success === true;
+            const data = payload.data ?? payload.Data;
+            if (ok && data) {
+                const { token, ...userData } = data;
                 
                 // Guardar en Storage para persistencia
                 localStorage.setItem('istpet_token', token);
@@ -35,7 +39,7 @@ export const AuthProvider = ({ children }) => {
                 setUser(userData);
                 return { success: true };
             }
-            return { success: false, message: response.data.message };
+            return { success: false, message: payload.message ?? payload.Message ?? 'No se pudo iniciar sesión.' };
         } catch (error) {
             return { 
                 success: false, 

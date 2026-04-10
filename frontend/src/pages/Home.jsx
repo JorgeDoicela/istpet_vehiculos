@@ -44,11 +44,13 @@ const Home = () => {
         setSyncing(true);
         try {
             const response = await api.post('/Sync/master');
-            if (response.data.success) {
+            const ok = response?.data?.success ?? response?.data?.Success;
+            const msg = response?.data?.message ?? response?.data?.Message;
+            if (ok) {
                 toastSuccess('Sincronización SIGAFI completada con éxito');
                 fetchInitialData();
             } else {
-                toastError(response.data.message || 'Error en sincronización');
+                toastError(msg || 'Error en sincronización');
             }
         } catch (err) {
             toastError('Fallo de conexión con el servicio de sincronización');

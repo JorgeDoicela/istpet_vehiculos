@@ -7,32 +7,36 @@ import { normalizeAgendaPractica } from '../utils/agendaUi';
 const dashboardService = {
   getClasesActivas: async () => {
     const response = await api.get('/Dashboard/clases-activas');
-    // Desempaquetamos ApiResponse.Data
-    return response.data?.data || [];
+    const body = response?.data;
+    return body?.data ?? body?.Data ?? [];
   },
   
   getAlertasMantenimiento: async () => {
     const response = await api.get('/Dashboard/alertas-mantenimiento');
-    return response.data?.data || [];
+    const body = response?.data;
+    return body?.data ?? body?.Data ?? [];
   },
 
   getAgendaReciente: async (limit = 12) => {
     const response = await api.get(`/Dashboard/agenda-reciente?limit=${encodeURIComponent(limit)}`);
     const body = response?.data;
-    if (body && body.success === false) {
-      throw new Error(body.message || 'Agenda no disponible');
+    const ok = body?.success ?? body?.Success;
+    if (ok === false) {
+      throw new Error(body?.message ?? body?.Message ?? 'Agenda no disponible');
     }
-    const data = body?.data;
+    const data = body?.data ?? body?.Data;
+    const practicas = data?.practicas ?? data?.Practicas;
     return {
-      practicas: Array.isArray(data?.practicas) ? data.practicas.map(normalizeAgendaPractica) : [],
-      fuenteDatos: data?.fuenteDatos || 'sigafi',
-      obtenidoEn: data?.obtenidoEn ?? null
+      practicas: Array.isArray(practicas) ? practicas.map(normalizeAgendaPractica) : [],
+      fuenteDatos: data?.fuenteDatos ?? data?.FuenteDatos ?? 'sigafi',
+      obtenidoEn: data?.obtenidoEn ?? data?.ObtenidoEn ?? null
     };
   },
   
   syncStudents: async () => {
     const response = await api.post('/Sync/students');
-    return response.data?.data || null;
+    const body = response?.data;
+    return body?.data ?? body?.Data ?? null;
   }
 };
 
