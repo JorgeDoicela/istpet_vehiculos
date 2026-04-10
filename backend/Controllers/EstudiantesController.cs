@@ -14,6 +14,7 @@ namespace backend.Controllers
      */
     [ApiController]
     [Route("api/[controller]")]
+    [Microsoft.AspNetCore.Authorization.Authorize(Roles = "admin,logistica,guardia")]
     public class EstudiantesController : ControllerBase
     {
         private readonly IEstudianteService _estudianteService;

@@ -115,6 +115,11 @@ namespace backend.Services.Implementations
         public async Task<SyncLog> MasterSyncAsync()
         {
             _logger.LogInformation("Iniciando Master Sync SIGAFI integral...");
+
+            // Invalida el caché antes de leer para que todos los módulos
+            // obtengan datos frescos de SIGAFI, no entradas expiradas.
+            _centralProvider.InvalidateSigafiCatalogCache();
+
             var log = new SyncLog
             {
                 Modulo = "MasterSyncSIGAFI",

@@ -34,17 +34,20 @@ namespace backend.Controllers
         private readonly AppDbContext _context;
         private readonly ILogisticaService _logisticaService;
         private readonly ICentralStudentProvider _centralProvider;
+        private readonly IAuditService _audit;
         private readonly ILogger<LogisticaController> _logger;
 
         public LogisticaController(
             AppDbContext context,
             ILogisticaService logisticaService,
             ICentralStudentProvider centralProvider,
+            IAuditService audit,
             ILogger<LogisticaController> logger)
         {
             _context = context;
             _logisticaService = logisticaService;
             _centralProvider = centralProvider;
+            _audit = audit;
             _logger = logger;
         }
 
@@ -424,17 +427,41 @@ namespace backend.Controllers
         [HttpPost("salida")]
         public async Task<ActionResult<ApiResponse<string>>> RegistrarSalida([FromBody] SalidaRequest req)
         {
-            // Note: Service expects integer IDs for local tracking, conversion handled inside service
-            var result = await _logisticaService.RegistrarSalidaAsync(req.idMatricula, req.idVehiculo, req.idInstructor, req.observaciones ?? "Ninguna", req.registradoPor, req.idAsignacionHorario);
-            if (result == "EXITO") return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var result = await _logisticaService.RegistrarSalidaAsync(
+                req.idMatricula, req.idVehiculo, req.idInstructor,
+                req.observaciones ?? "Ninguna", req.registradoPor, req.idAsignacionHorario);
+
+            if (result == "EXITO")
+            {
+                await _audit.LogAsync(
+                    req.registradoPor.ToString(), "SALIDA",
+                    entidadId: $"mat:{req.idMatricula}/veh:{req.idVehiculo}",
+                    detalles: $"Instructor: {req.idInstructor}. Obs: {req.observaciones}",
+                    ipOrigen: ip);
+                return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
+            }
+
             return BadRequest(ApiResponse<string>.Fail($"Error: {result}"));
         }
 
         [HttpPost("llegada")]
         public async Task<ActionResult<ApiResponse<string>>> RegistrarLlegada([FromBody] LlegadaRequest req)
         {
-            var result = await _logisticaService.RegistrarLlegadaAsync(req.idPractica, req.observaciones ?? "Ninguna", req.registradoPor);
-            if (result == "EXITO") return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var result = await _logisticaService.RegistrarLlegadaAsync(
+                req.idPractica, req.observaciones ?? "Ninguna", req.registradoPor);
+
+            if (result == "EXITO")
+            {
+                await _audit.LogAsync(
+                    req.registradoPor.ToString(), "LLEGADA",
+                    entidadId: $"practica:{req.idPractica}",
+                    detalles: $"Obs: {req.observaciones}",
+                    ipOrigen: ip);
+                return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
+            }
+
             return BadRequest(ApiResponse<string>.Fail($"Alerta: {result}"));
         }
 
@@ -445,23 +472,49 @@ namespace backend.Controllers
             if (q.Length < 3)
                 return Ok(ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>.Ok(Array.Empty<AlumnoSugerenciaLogisticaDto>()));
 
-            var list = await _context.Estudiantes.AsNoTracking()
+            // Buscar en local y en SIGAFI en paralelo para no penalizar al usuario.
+            // SIGAFI es la fuente de verdad: sus resultados se agregan aunque el alumno
+            // aún no exista en el espejo local (p. ej. recién matriculado hoy).
+            var localTask = _context.Estudiantes.AsNoTracking()
                 .Where(e => e.activo && (
                     e.idAlumno.StartsWith(q)
-                    || (e.primerNombre != null && e.primerNombre.Contains(q))
-                    || (e.segundoNombre != null && e.segundoNombre.Contains(q))
+                    || (e.primerNombre   != null && e.primerNombre.Contains(q))
+                    || (e.segundoNombre  != null && e.segundoNombre.Contains(q))
                     || (e.apellidoPaterno != null && e.apellidoPaterno.Contains(q))
                     || (e.apellidoMaterno != null && e.apellidoMaterno.Contains(q))))
                 .OrderBy(e => e.idAlumno)
                 .Take(15)
                 .Select(e => new AlumnoSugerenciaLogisticaDto
                 {
-                    idAlumno = e.idAlumno,
+                    idAlumno      = e.idAlumno,
                     nombreCompleto = $"{e.apellidoPaterno} {e.apellidoMaterno} {e.primerNombre} {e.segundoNombre}".Trim(),
                     esAgendado = false,
-                    isBusy = false
+                    isBusy     = false
                 })
                 .ToListAsync();
+
+            var sigafiTask = _centralProvider.SearchStudentsFromCentralAsync(q);
+
+            await Task.WhenAll(localTask, sigafiTask);
+
+            var list = localTask.Result;
+            var sigafiRaw = sigafiTask.Result;
+
+            // Fusionar: agregar los que SIGAFI devolvió pero que no están aún en el espejo local.
+            var knownIds = list.Select(x => x.idAlumno).ToHashSet(StringComparer.Ordinal);
+            foreach (var s in sigafiRaw)
+            {
+                if (knownIds.Contains(s.idAlumno))
+                    continue;
+                list.Add(new AlumnoSugerenciaLogisticaDto
+                {
+                    idAlumno      = s.idAlumno,
+                    nombreCompleto = $"{s.apellidoPaterno} {s.apellidoMaterno} {s.primerNombre} {s.segundoNombre}".Trim(),
+                    esAgendado = false,
+                    isBusy     = false
+                });
+                knownIds.Add(s.idAlumno);
+            }
 
             if (list.Count > 0)
             {
@@ -472,11 +525,11 @@ namespace backend.Controllers
                     {
                         if (!porSigafi.TryGetValue(item.idAlumno, out var pr))
                             continue;
-                        item.esAgendado = true;
-                        item.horaAgenda = pr.hora_salida.HasValue
+                        item.esAgendado      = true;
+                        item.horaAgenda      = pr.hora_salida.HasValue
                             ? pr.hora_salida.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture)
                             : null;
-                        item.vehiculoAgenda = string.IsNullOrWhiteSpace(pr.VehiculoDetalle) ? null : pr.VehiculoDetalle;
+                        item.vehiculoAgenda  = string.IsNullOrWhiteSpace(pr.VehiculoDetalle) ? null : pr.VehiculoDetalle;
                         item.instructorAgenda = string.IsNullOrWhiteSpace(pr.ProfesorNombre) ? null : pr.ProfesorNombre;
                     }
                 }

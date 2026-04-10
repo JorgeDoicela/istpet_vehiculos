@@ -6,15 +6,16 @@ import SkeletonLoader from '../components/features/SkeletonLoader';
 import dashboardService from '../services/dashboardService';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { fmtFechaAgenda, fmtUltimaCargaAgenda, estadoAgendaChip } from '../utils/agendaUi';
 
 const Home = () => {
     const { isAuthorized } = useAuth();
+    const { success: toastSuccess, error: toastError } = useToast();
     const [activeClasses, setActiveClasses] = useState([]);
     const [agendaPack, setAgendaPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
-    const [notification, setNotification] = useState(null);
 
     useEffect(() => {
         fetchInitialData();
@@ -42,23 +43,18 @@ const Home = () => {
     const handleSync = async () => {
         setSyncing(true);
         try {
-            const response = await api.post('/sync/all');
+            const response = await api.post('/Sync/master');
             if (response.data.success) {
-                showNotification('Sincronización SIGAFI completada con éxito');
+                toastSuccess('Sincronización SIGAFI completada con éxito');
                 fetchInitialData();
             } else {
-                showNotification(response.data.message || 'Error en sincronización', 'error');
+                toastError(response.data.message || 'Error en sincronización');
             }
         } catch (err) {
-            showNotification('Fallo de conexión con servicio de sincronización', 'error');
+            toastError('Fallo de conexión con el servicio de sincronización');
         } finally {
             setSyncing(false);
         }
-    };
-
-    const showNotification = (message, type = 'success') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 4000);
     };
 
     const CircularKPI = ({ value, max, label, color = 'blue' }) => {
@@ -85,13 +81,6 @@ const Home = () => {
 
     return (
         <Layout>
-            {/* Sistema de Notificaciones Zenith */}
-            {notification && (
-                <div className="apple-toast border border-white/10 animate-apple-in" style={{ zIndex: 1000 }}>
-                    <div className={`w-3 h-12 rounded-full ${notification.type === 'error' ? 'bg-rose-500' : 'bg-[var(--apple-primary)]'}`}></div>
-                    <p className="text-sm font-bold text-[var(--apple-text-main)]">{notification.message}</p>
-                </div>
-            )}
 
             <div className="space-y-8">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">

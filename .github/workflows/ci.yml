@@ -1,0 +1,68 @@
+name: CI — Build & Lint
+
+on:
+  push:
+    branches: [main, develop, "feature/**"]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # Backend — Build .NET 8
+  # ─────────────────────────────────────────────────────────────
+  backend-build:
+    name: Backend (.NET 8) — Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore dependencies
+        run: dotnet restore backend/backend.csproj
+
+      - name: Build (Release)
+        run: dotnet build backend/backend.csproj --configuration Release --no-restore
+
+      - name: Run tests (if exist)
+        run: |
+          if [ -f "backend.Tests/backend.Tests.csproj" ]; then
+            dotnet test backend.Tests/backend.Tests.csproj --no-build --verbosity normal
+          else
+            echo "No test project found — skipping."
+          fi
+
+  # ─────────────────────────────────────────────────────────────
+  # Frontend — Lint + Build (Vite)
+  # ─────────────────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend (React/Vite) — Lint & Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint
+        run: npm run lint
+        working-directory: frontend
+
+      - name: Build
+        run: npm run build
+        working-directory: frontend
+        env:
+          VITE_API_URL: http://localhost:5112/api

@@ -269,6 +269,13 @@ namespace backend.Services.Interfaces
         Task<IEnumerable<CentralCategoriaVehiculoDto>> GetAllVehicleCategoriesFromCentralAsync();
         Task<IEnumerable<CentralCategoriaExamenDto>> GetAllExamCategoriesFromCentralAsync();
         Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync();
+
+        /// <summary>
+        /// Busca directamente en SIGAFI por cédula (prefijo) o por apellido/nombre (prefijo).
+        /// Usado como fuente primaria en el autocomplete del Control Operativo para encontrar
+        /// estudiantes que aún no han sido sincronizados al espejo local.
+        /// </summary>
+        Task<IEnumerable<CentralAlumnoLiteDto>> SearchStudentsFromCentralAsync(string query);
         Task<IEnumerable<CentralMatriculaDto>> GetActiveEnrollmentsFromCentralAsync();
         Task<IEnumerable<CentralAsignacionInstructorVehiculoDto>> GetInstructorVehicleAssignmentsFromCentralAsync();
         Task<IEnumerable<CentralAsignacionAlumnoVehiculoDto>> GetStudentVehicleAssignmentsFromCentralAsync();
@@ -281,5 +288,11 @@ namespace backend.Services.Interfaces
         /// <summary>Vehículos inactivos en SIGAFI (p. ej. alerta operativa).</summary>
         Task<IReadOnlyList<AlertaMantenimiento>> GetAlertasVehiculoDesdeCentralAsync();
         Task<bool> PingSigafiAsync();
+
+        /// <summary>
+        /// Invalida todas las entradas de caché de catálogos SIGAFI.
+        /// Llamar antes de un MasterSync para garantizar datos frescos.
+        /// </summary>
+        void InvalidateSigafiCatalogCache();
     }
 }

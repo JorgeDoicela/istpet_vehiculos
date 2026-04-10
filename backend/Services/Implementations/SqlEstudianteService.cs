@@ -27,10 +27,8 @@ namespace backend.Services.Implementations
 
         public async Task<Estudiante?> GetByIdAlumnoAsync(string idAlumno)
         {
-            var local = await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
-            if (local != null)
-                return local;
-
+            // SIGAFI es fuente de verdad: siempre consultar primero para tener datos frescos
+            // (nombre, carrera, periodo pueden cambiar en SIGAFI sin que el espejo local lo sepa aún).
             CentralStudentDto? central;
             try
             {
@@ -38,31 +36,50 @@ namespace backend.Services.Implementations
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "SIGAFI no disponible al resolver alumno {Id}", idAlumno);
-                return null;
+                _logger.LogWarning(ex, "SIGAFI no disponible al resolver alumno {Id}; usando espejo local.", idAlumno);
+                return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
             }
 
             if (central == null)
-                return null;
+            {
+                // Puede que exista solo en el espejo local (dato histórico).
+                return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
+            }
 
             try
             {
-                local = new Estudiante
+                var local = await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
+                if (local == null)
                 {
-                    idAlumno = central.idAlumno,
-                    primerNombre = (central.primerNombre ?? "S/N").ToUpper(),
-                    segundoNombre = (central.segundoNombre ?? "").ToUpper(),
-                    apellidoPaterno = (central.apellidoPaterno ?? "S/N").ToUpper(),
-                    apellidoMaterno = (central.apellidoMaterno ?? "").ToUpper()
-                };
-                _context.Estudiantes.Add(local);
+                    local = new Estudiante
+                    {
+                        idAlumno        = central.idAlumno,
+                        primerNombre    = (central.primerNombre    ?? "S/N").ToUpper(),
+                        segundoNombre   = (central.segundoNombre   ?? "").ToUpper(),
+                        apellidoPaterno = (central.apellidoPaterno ?? "S/N").ToUpper(),
+                        apellidoMaterno = (central.apellidoMaterno ?? "").ToUpper(),
+                        celular         = null,
+                        email           = null,
+                        activo          = true
+                    };
+                    _context.Estudiantes.Add(local);
+                }
+                else
+                {
+                    // Actualizar con datos frescos de SIGAFI para que el espejo no quede desactualizado.
+                    local.primerNombre    = (central.primerNombre    ?? local.primerNombre).ToUpper();
+                    local.segundoNombre   = (central.segundoNombre   ?? "").ToUpper();
+                    local.apellidoPaterno = (central.apellidoPaterno ?? local.apellidoPaterno).ToUpper();
+                    local.apellidoMaterno = (central.apellidoMaterno ?? "").ToUpper();
+                }
+
                 await _context.SaveChangesAsync();
                 return local;
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "No se pudo persistir alumno {Id} desde SIGAFI; se devuelve null.", idAlumno);
-                return null;
+                _logger.LogWarning(ex, "No se pudo persistir alumno {Id} desde SIGAFI.", idAlumno);
+                return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
             }
         }
 

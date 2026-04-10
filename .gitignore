@@ -19,6 +19,12 @@ logs/
 *.db
 *.mysql
 
+# Secretos y entorno — NUNCA commitear
+.env
+appsettings.Development.json
+appsettings.Production.json
+**/secrets.json
+
 # Editor (VS Code / Visual Studio)
 .vscode/
 .vs/

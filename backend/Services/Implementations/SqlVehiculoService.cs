@@ -30,18 +30,26 @@ namespace backend.Services.Implementations
         public async Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa)
         {
             var key = placa.Trim();
-            var local = await _context.Vehiculos
-                .Include(v => v.TipoLicencia)
-                .Include(v => v.InstructorFijo)
-                .FirstOrDefaultAsync(v => v.placa == key);
-            if (local != null)
-                return local;
 
-            var cv = await _central.GetVehicleByPlacaFromCentralAsync(key);
-            if (cv == null)
-                return null;
+            // SIGAFI es fuente de verdad: siempre intentar actualizar desde allí primero.
+            // Si SIGAFI no responde se devuelve el espejo local como fallback.
+            try
+            {
+                var cv = await _central.GetVehicleByPlacaFromCentralAsync(key);
+                if (cv != null)
+                {
+                    await SigafiVehicleUpsert.MergeFromCentralAsync(_context, new[] { cv });
+                    return await _context.Vehiculos
+                        .Include(v => v.TipoLicencia)
+                        .Include(v => v.InstructorFijo)
+                        .FirstOrDefaultAsync(v => v.placa == key);
+                }
+            }
+            catch (Exception)
+            {
+                // SIGAFI no disponible: continúa con espejo local.
+            }
 
-            await SigafiVehicleUpsert.MergeFromCentralAsync(_context, new[] { cv });
             return await _context.Vehiculos
                 .Include(v => v.TipoLicencia)
                 .Include(v => v.InstructorFijo)

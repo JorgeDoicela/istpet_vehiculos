@@ -1,21 +1,60 @@
-//Deploy
+using backend.Data;
 using backend.Hosting;
+using backend.Services.Helpers;
 using backend.Services.Implementations;
 using backend.Services.Interfaces;
-using backend.Data;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using MySqlConnector;
 using System.Text;
+using System.Text.Json;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-builder.Services.AddControllers();
+// ─────────────────────────────────────────────────────────────────────────────
+// CADENAS DE CONEXIÓN
+// Prioridad: variable de entorno > appsettings (Development / Production)
+// ─────────────────────────────────────────────────────────────────────────────
+var connectionString =
+    Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-// 🛡️ CONFIGURACIÓN DE SEGURIDAD JWT
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Key"] ?? "SUPER_SECRET_KEY_PROD_2026_DEFAULT");
+var sigafiConnectionString =
+    Environment.GetEnvironmentVariable("SIGAFI_CONNECTION_STRING")
+    ?? builder.Configuration.GetConnectionString("SigafiConnection");
+
+if (string.IsNullOrWhiteSpace(connectionString))
+    throw new InvalidOperationException(
+        "❌ No se encontró la cadena de conexión local. " +
+        "Define DATABASE_URL o ConnectionStrings:DefaultConnection.");
+
+if (string.IsNullOrWhiteSpace(sigafiConnectionString))
+    throw new InvalidOperationException(
+        "❌ No se encontró la cadena de conexión SIGAFI. " +
+        "Define SIGAFI_CONNECTION_STRING o ConnectionStrings:SigafiConnection.");
+
+// TiDB Cloud: SSL obligatorio
+if (connectionString.Contains("tidbcloud.com", StringComparison.OrdinalIgnoreCase)
+    && !connectionString.Contains("SslMode", StringComparison.OrdinalIgnoreCase))
+    connectionString += ";SslMode=Required;";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// JWT
+// ─────────────────────────────────────────────────────────────────────────────
+var jwtSection = builder.Configuration.GetSection("JwtSettings");
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+             ?? jwtSection["Key"]
+             ?? throw new InvalidOperationException("❌ JwtSettings:Key no configurada.");
+
+if (jwtKey.Length < 32)
+    throw new InvalidOperationException("❌ JWT Key debe tener al menos 32 caracteres.");
+
+var keyBytes = Encoding.ASCII.GetBytes(jwtKey);
 
 builder.Services.AddAuthentication(x =>
 {
@@ -29,24 +68,119 @@ builder.Services.AddAuthentication(x =>
     x.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(key),
+        IssuerSigningKey = new SymmetricSecurityKey(keyBytes),
         ValidateIssuer = true,
-        ValidIssuer = jwtSettings["Issuer"],
+        ValidIssuer = jwtSection["Issuer"],
         ValidateAudience = true,
-        ValidAudience = jwtSettings["Audience"],
+        ValidAudience = jwtSection["Audience"],
         ValidateLifetime = true,
         ClockSkew = TimeSpan.Zero
     };
 });
 
-// Habilitar Swagger con Soporte para JWT
+// ─────────────────────────────────────────────────────────────────────────────
+// CORS
+// Desarrollo → cualquier origen (dev friendly).
+// Producción → solo los orígenes de Cors:AllowedOrigins.
+// ─────────────────────────────────────────────────────────────────────────────
+var allowedOrigins = (Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
+                        ?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                     ?? builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
+                     ?? Array.Empty<string>();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentPolicy",
+        p => p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
+    options.AddPolicy("ProductionPolicy", p =>
+    {
+        if (allowedOrigins.Length > 0)
+            p.WithOrigins(allowedOrigins).AllowAnyMethod().AllowAnyHeader();
+        else
+            p.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// RATE LIMITING  — ventana fija por IP en el endpoint de login
+// ─────────────────────────────────────────────────────────────────────────────
+var rlSection = builder.Configuration.GetSection("RateLimiting");
+int loginPermitLimit = rlSection.GetValue("LoginPermitLimit", 10);
+int loginWindowSeconds = rlSection.GetValue("LoginWindowSeconds", 30);
+
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = 429;
+    options.AddPolicy("login", httpContext =>
+        RateLimitPartition.GetFixedWindowLimiter(
+            partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anon",
+            factory: _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = loginPermitLimit,
+                Window = TimeSpan.FromSeconds(loginWindowSeconds),
+                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                QueueLimit = 0
+            }));
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HEALTH CHECKS
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks()
+    .AddCheck("bd_local", () =>
+    {
+        try
+        {
+            using var conn = new MySqlConnection(connectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT 1";
+            cmd.ExecuteScalar();
+            return HealthCheckResult.Healthy("BD local istpet_vehiculos responde.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Unhealthy("BD local no responde.", ex);
+        }
+    }, tags: ["db", "local"])
+    .AddCheck("bd_sigafi", () =>
+    {
+        try
+        {
+            using var conn = new MySqlConnection(sigafiConnectionString);
+            conn.Open();
+            using var cmd = conn.CreateCommand();
+            cmd.CommandText = "SELECT 1";
+            cmd.ExecuteScalar();
+            return HealthCheckResult.Healthy("BD SIGAFI responde.");
+        }
+        catch (Exception ex)
+        {
+            return HealthCheckResult.Degraded("BD SIGAFI no disponible (modo espejo activo).", ex);
+        }
+    }, tags: ["db", "sigafi"]);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// CACHÉ EN MEMORIA
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddMemoryCache();
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SWAGGER (solo Development)
+// ─────────────────────────────────────────────────────────────────────────────
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "ISTPET Logistics API", Version = "v1" });
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "ISTPET Logistics API",
+        Version = "v1",
+        Description = "API de control logístico de vehículos — ISTPET 2026"
+    });
     c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Description = "JWT Authorization: 'Bearer {token}'",
         Name = "Authorization",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Type = Microsoft.OpenApi.Models.SecuritySchemeType.ApiKey,
@@ -63,23 +197,36 @@ builder.Services.AddSwaggerGen(c =>
                     Id = "Bearer"
                 }
             },
-            new string[] {}
+            Array.Empty<string>()
         }
     });
 });
 
-/**
- * 🛠️ CONFIGURACIÓN DE CORS (DESARROLLO)
- */
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowAll",
-        policy => policy.AllowAnyOrigin()
-                        .AllowAnyMethod()
-                        .AllowAnyHeader());
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// BASE DE DATOS LOCAL
+// ─────────────────────────────────────────────────────────────────────────────
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
 
-// Inyectar servicios (Arquitectura Escalable)
+// ─────────────────────────────────────────────────────────────────────────────
+// SERVICIOS DE DOMINIO
+// ─────────────────────────────────────────────────────────────────────────────
+// Política explícita: las propiedades ya están en camelCase en todos los DTOs.
+// Sin esta configuración, .NET 8 System.Text.Json lanza "property name collides"
+// cuando el nombre ya es camelCase y el serializador intenta transformarlo.
+builder.Services.AddControllers()
+    .AddJsonOptions(opts =>
+    {
+        opts.JsonSerializerOptions.PropertyNamingPolicy = null;           // usar nombres tal como están
+        opts.JsonSerializerOptions.PropertyNameCaseInsensitive = true;    // deserializar sin distinción de mayúsculas
+        opts.JsonSerializerOptions.DictionaryKeyPolicy = null;
+    });
+
+builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
+
+// Circuit breaker SIGAFI — singleton compartido por todas las solicitudes
+builder.Services.AddSingleton<ISigafiResiliencePipeline, SigafiResiliencePipeline>();
+
 builder.Services.AddScoped<IVehiculoService, SqlVehiculoService>();
 builder.Services.AddScoped<IEstudianteService, SqlEstudianteService>();
 builder.Services.AddScoped<ILogisticaService, SqlLogisticaService>();
@@ -87,65 +234,68 @@ builder.Services.AddScoped<IDataSyncService, DataSyncService>();
 builder.Services.AddScoped<ICentralStudentProvider, SqlCentralStudentProvider>();
 builder.Services.AddScoped<IAgendaPanelService, AgendaPanelService>();
 builder.Services.AddScoped<SigafiExtractionProbe>();
-builder.Services.AddScoped<backend.Services.Interfaces.ISigafiReportService, backend.Services.Implementations.SigafiReportService>();
+builder.Services.AddScoped<ISigafiReportService, SigafiReportService>();
 
+// Auditoría — singleton porque usa IServiceScopeFactory internamente
+builder.Services.AddSingleton<IAuditService, SqlAuditService>();
 
-// AUTOMATIZACIÓN: Registrar AutoMapper
-builder.Services.AddAutoMapper(typeof(backend.Mappings.MappingProfile));
-
-// Arquitectura de datos:
-// - SigafiConnection → BD remota sigafi_es (fuente de verdad; solo lectura vía SqlCentralStudentProvider + login).
-// - DefaultConnection → BD local istpet_vehiculos (espejo operativo; Master Sync desde SIGAFI, también en segundo plano vía SigafiMirrorSync).
-var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
-                    ?? builder.Configuration.GetConnectionString("DefaultConnection");
-var sigafiConnectionString = builder.Configuration.GetConnectionString("SigafiConnection");
-
-if (string.IsNullOrEmpty(connectionString))
-{
-    throw new InvalidOperationException("❌ Error: No se encontró la cadena de conexión (DATABASE_URL).");
-}
-if (string.IsNullOrWhiteSpace(sigafiConnectionString))
-{
-    throw new InvalidOperationException("❌ Error: No se encontró ConnectionStrings:SigafiConnection para el puente de lectura SIGAFI.");
-}
-
-// 🛡️ ADAPTADOR PARA TiDB CLOUD (SSL es obligatorio)
-if (connectionString.Contains("tidbcloud.com") && !connectionString.Contains("SslMode"))
-{
-    connectionString += ";SslMode=Required;";
-}
-
-builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)));
-
+// Sincronización automática SIGAFI → local
 builder.Services.Configure<SigafiMirrorSyncOptions>(
     builder.Configuration.GetSection(SigafiMirrorSyncOptions.SectionName));
 builder.Services.AddHostedService<SigafiMirrorBackgroundService>();
 
-// 🛡️ CONFIGURACION DE PUERTO PARA RENDER (Solo si existe la variable PORT)
+// ─────────────────────────────────────────────────────────────────────────────
+// PUERTO (Render / Docker)
+// ─────────────────────────────────────────────────────────────────────────────
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrEmpty(port))
-{
     builder.WebHost.UseUrls($"http://*:{port}");
-}
 
+// ─────────────────────────────────────────────────────────────────────────────
+// PIPELINE HTTP
+// ─────────────────────────────────────────────────────────────────────────────
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "ISTPET API v1"));
 }
 
-// 🛡️ Middleware de Manejo de Errores Profesional
 app.UseMiddleware<backend.Middleware.ErrorHandlingMiddleware>();
 
-app.UseCors("AllowAll");
+// CORS: permisivo en desarrollo, restrictivo en producción
+if (app.Environment.IsDevelopment())
+    app.UseCors("DevelopmentPolicy");
+else
+    app.UseCors("ProductionPolicy");
+
+app.UseRateLimiter();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllers();
+// Health checks con respuesta JSON detallada
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    ResponseWriter = async (ctx, report) =>
+    {
+        ctx.Response.ContentType = "application/json";
+        var result = new
+        {
+            status = report.Status.ToString(),
+            timestamp = DateTime.UtcNow,
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description,
+                duration_ms = e.Value.Duration.TotalMilliseconds
+            })
+        };
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(result));
+    }
+});
 
+app.MapControllers();
 app.Run();

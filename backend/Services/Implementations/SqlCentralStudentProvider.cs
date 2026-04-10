@@ -1,5 +1,6 @@
 using backend.Data;
 using backend.Models;
+using backend.Services.Helpers;
 using backend.Services.Interfaces;
 using backend.DTOs;
 using System.Threading.Tasks;
@@ -7,6 +8,7 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using MySqlConnector;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -20,13 +22,31 @@ namespace backend.Services.Implementations
     public class SqlCentralStudentProvider : ICentralStudentProvider
     {
         private readonly string _connectionString;
+        private readonly IMemoryCache _cache;
+        private readonly ISigafiResiliencePipeline _pipeline;
         private readonly ILogger<SqlCentralStudentProvider> _logger;
 
-        public SqlCentralStudentProvider(AppDbContext context, IConfiguration configuration, ILogger<SqlCentralStudentProvider> logger)
+        // Tiempos de caché para catálogos que no cambian en tiempo real
+        private static readonly TimeSpan CacheInstructores = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan CacheVehiculos    = TimeSpan.FromMinutes(5);
+        private static readonly TimeSpan CacheCursos       = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan CacheLicencias    = TimeSpan.FromMinutes(15);
+        private static readonly TimeSpan CacheCategorias   = TimeSpan.FromMinutes(15);
+
+        public SqlCentralStudentProvider(
+            AppDbContext context,
+            IConfiguration configuration,
+            IMemoryCache cache,
+            ISigafiResiliencePipeline pipeline,
+            ILogger<SqlCentralStudentProvider> logger)
         {
+            _cache = cache;
+            _pipeline = pipeline;
             _logger = logger;
-            _connectionString = configuration.GetConnectionString("SigafiConnection")
-                ?? throw new InvalidOperationException("Falta ConnectionStrings:SigafiConnection para leer SIGAFI.");
+            _connectionString =
+                Environment.GetEnvironmentVariable("SIGAFI_CONNECTION_STRING")
+                ?? configuration.GetConnectionString("SigafiConnection")
+                ?? throw new InvalidOperationException("Falta SigafiConnection para leer SIGAFI.");
         }
 
         public async Task<CentralStudentDto?> GetFromCentralAsync(string idAlumno)
@@ -175,22 +195,17 @@ namespace backend.Services.Implementations
 
         public async Task<IEnumerable<CentralInstructorDto>> GetAllInstructorsFromCentralAsync()
         {
+            if (_cache.TryGetValue("sigafi:instructores", out IEnumerable<CentralInstructorDto>? cached) && cached != null)
+                return cached;
             try
             {
                 const string sql = @"
-                    SELECT
-                        idProfesor,
-                        nombres,
-                        apellidos,
-                        primerApellido,
-                        segundoApellido,
-                        primerNombre,
-                        segundoNombre,
-                        celular,
-                        email,
-                        CAST(activo AS SIGNED) AS activo
+                    SELECT idProfesor, nombres, apellidos, primerApellido, segundoApellido,
+                           primerNombre, segundoNombre, celular, email, CAST(activo AS SIGNED) AS activo
                     FROM profesores";
-                return await QueryListAsync(sql, MapCentralInstructor);
+                var result = (await QueryListAsync(sql, MapCentralInstructor)).ToList();
+                _cache.Set("sigafi:instructores", (IEnumerable<CentralInstructorDto>)result, CacheInstructores);
+                return result;
             }
             catch (Exception ex)
             {
@@ -451,8 +466,14 @@ namespace backend.Services.Implementations
             modelo = ReadNullableString(reader, "modelo")
         };
 
-        public Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync() =>
-            QueryListAsync(SqlVehiculosSelect, MapCentralVehiculo);
+        public async Task<IEnumerable<CentralVehiculoDto>> GetAllVehiclesFromCentralAsync()
+        {
+            if (_cache.TryGetValue("sigafi:vehiculos", out IEnumerable<CentralVehiculoDto>? cached) && cached != null)
+                return cached;
+            var result = (await QueryListAsync(SqlVehiculosSelect, MapCentralVehiculo)).ToList();
+            _cache.Set("sigafi:vehiculos", (IEnumerable<CentralVehiculoDto>)result, CacheVehiculos);
+            return result;
+        }
 
         public Task<CentralVehiculoDto?> GetVehicleByPlacaFromCentralAsync(string placa) =>
             QuerySingleAsync(
@@ -549,8 +570,11 @@ WHERE COALESCE(activo, 1) = 0";
             return list;
         }
 
-        public Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync() =>
-            QueryListAsync(
+        public async Task<IEnumerable<CentralCursoDto>> GetAllCoursesFromCentralAsync()
+        {
+            if (_cache.TryGetValue("sigafi:cursos", out IEnumerable<CentralCursoDto>? cached) && cached != null)
+                return cached;
+            var result = (await QueryListAsync(
                 @"SELECT idNivel, idCarrera, Nivel, jerarquia, orden, CAST(esRecuperacion AS SIGNED) AS esRecuperacion, aliasCurso FROM cursos",
                 reader => new CentralCursoDto
                 {
@@ -561,14 +585,20 @@ WHERE COALESCE(activo, 1) = 0";
                     orden = ReadNullableInt(reader, "orden"),
                     esRecuperacion = ReadNullableInt(reader, "esRecuperacion"),
                     aliasCurso = ReadNullableString(reader, "aliasCurso")
-                });
+                })).ToList();
+            _cache.Set("sigafi:cursos", (IEnumerable<CentralCursoDto>)result, CacheCursos);
+            return result;
+        }
 
         /// <summary>
         /// SIGAFI no expone tipo_licencia; se deriva de categoria_vehiculos para poblar tipo_licencia local.
         /// Para categorías "LICENCIA TIPO X" se normaliza el código como X (C/D/E...).
         /// </summary>
-        public Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync() =>
-            QueryListAsync(
+        public async Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync()
+        {
+            if (_cache.TryGetValue("sigafi:licencias", out IEnumerable<CentralTipoLicenciaDto>? cached) && cached != null)
+                return cached;
+            var result = (await QueryListAsync(
                 @"SELECT idCategoria, categoria FROM categoria_vehiculos",
                 reader =>
                 {
@@ -598,7 +628,10 @@ WHERE COALESCE(activo, 1) = 0";
                         descripcion = descripcion,
                         activo = 1
                     };
-                });
+                })).ToList();
+            _cache.Set("sigafi:licencias", (IEnumerable<CentralTipoLicenciaDto>)result, CacheLicencias);
+            return result;
+        }
 
         public Task<IEnumerable<CentralCategoriaVehiculoDto>> GetAllVehicleCategoriesFromCentralAsync() =>
             QueryListAsync(
@@ -619,6 +652,77 @@ WHERE COALESCE(activo, 1) = 0";
                     tieneNota = ReadInt(reader, "tieneNota"),
                     activa = ReadInt(reader, "activa")
                 });
+
+        public async Task<IEnumerable<CentralAlumnoLiteDto>> SearchStudentsFromCentralAsync(string query)
+        {
+            // Si parece cédula (solo dígitos) busca por prefijo de idAlumno (PK indexada → muy rápido).
+            // Si parece nombre busca por prefijo en apellidoPaterno y primerNombre (sin LIKE '%x' para usar índices).
+            var q = query.Trim();
+            var isCedula = q.All(char.IsDigit);
+
+            const string cols = @"idAlumno, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno,
+                                  celular, email, idPeriodo, idNivel, idSeccion, idModalidad";
+            try
+            {
+                if (isCedula)
+                {
+                    return await _pipeline.ExecuteAsync(async () =>
+                    {
+                        var list = new List<CentralAlumnoLiteDto>();
+                        await using var conn = new MySqlConnection(_connectionString);
+                        await conn.OpenAsync();
+                        var sql = $"SELECT {cols} FROM alumnos WHERE idAlumno LIKE CONCAT(@p0,'%') LIMIT 15";
+                        await using var cmd = new MySqlCommand(sql, conn);
+                        cmd.Parameters.AddWithValue("@p0", q);
+                        await using var reader = await cmd.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                            list.Add(MapAlumnoLite(reader));
+                        return (IEnumerable<CentralAlumnoLiteDto>)list;
+                    });
+                }
+                else
+                {
+                    // Búsqueda por apellido o primer nombre (prefijo).
+                    return await _pipeline.ExecuteAsync(async () =>
+                    {
+                        var list = new List<CentralAlumnoLiteDto>();
+                        await using var conn = new MySqlConnection(_connectionString);
+                        await conn.OpenAsync();
+                        var sql = $@"SELECT {cols} FROM alumnos
+                                     WHERE apellidoPaterno LIKE CONCAT(@p0,'%')
+                                        OR apellidoMaterno LIKE CONCAT(@p0,'%')
+                                        OR primerNombre    LIKE CONCAT(@p0,'%')
+                                     LIMIT 15";
+                        await using var cmd = new MySqlCommand(sql, conn);
+                        cmd.Parameters.AddWithValue("@p0", q.ToUpperInvariant());
+                        await using var reader = await cmd.ExecuteReaderAsync();
+                        while (await reader.ReadAsync())
+                            list.Add(MapAlumnoLite(reader));
+                        return (IEnumerable<CentralAlumnoLiteDto>)list;
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Búsqueda de alumnos en SIGAFI no disponible para query '{q}'.", q);
+                return Enumerable.Empty<CentralAlumnoLiteDto>();
+            }
+        }
+
+        private static CentralAlumnoLiteDto MapAlumnoLite(MySqlDataReader reader) => new()
+        {
+            idAlumno       = ReadString(reader, "idAlumno"),
+            primerNombre   = ReadNullableString(reader, "primerNombre"),
+            segundoNombre  = ReadNullableString(reader, "segundoNombre"),
+            apellidoPaterno = ReadNullableString(reader, "apellidoPaterno"),
+            apellidoMaterno = ReadNullableString(reader, "apellidoMaterno"),
+            celular        = ReadNullableString(reader, "celular"),
+            email          = ReadNullableString(reader, "email"),
+            idPeriodo      = ReadNullableString(reader, "idPeriodo"),
+            idNivel        = ReadNullableInt(reader, "idNivel"),
+            idSeccion      = ReadNullableInt(reader, "idSeccion"),
+            idModalidad    = ReadNullableInt(reader, "idModalidad")
+        };
 
         public Task<IEnumerable<CentralAlumnoLiteDto>> GetAllStudentsFromCentralAsync() =>
             QueryListAsync(
@@ -781,49 +885,52 @@ WHERE COALESCE(activo, 1) = 0";
             }
         }
 
-        private async Task<IEnumerable<T>> QueryListAsync<T>(string sql, Func<MySqlDataReader, T> mapper)
+        public void InvalidateSigafiCatalogCache()
         {
-            var list = new List<T>();
-            await using var conn = new MySqlConnection(_connectionString);
-            await conn.OpenAsync();
-            await using var cmd = new MySqlCommand(sql, conn);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
-            {
-                list.Add(mapper(reader));
-            }
-            return list;
+            _cache.Remove("sigafi:instructores");
+            _cache.Remove("sigafi:vehiculos");
+            _cache.Remove("sigafi:cursos");
+            _cache.Remove("sigafi:licencias");
+            _cache.Remove("sigafi:categorias");
+            _logger.LogInformation("Caché de catálogos SIGAFI invalidado (pre-sync).");
         }
 
-        private async Task<IEnumerable<T>> QueryListAsync<T>(string sql, IReadOnlyList<string> paramValues, Func<MySqlDataReader, T> mapper)
-        {
-            var list = new List<T>();
-            await using var conn = new MySqlConnection(_connectionString);
-            await conn.OpenAsync();
-            await using var cmd = new MySqlCommand(sql, conn);
-            for (var i = 0; i < paramValues.Count; i++)
-                cmd.Parameters.AddWithValue($"@p{i}", paramValues[i]);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+        private Task<IEnumerable<T>> QueryListAsync<T>(string sql, Func<MySqlDataReader, T> mapper)
+            => _pipeline.ExecuteAsync(async () =>
             {
-                list.Add(mapper(reader));
-            }
-            return list;
-        }
+                var list = new List<T>();
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand(sql, conn);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync()) list.Add(mapper(reader));
+                return (IEnumerable<T>)list;
+            });
 
-        private async Task<T?> QuerySingleAsync<T>(string sql, string parameterValue, Func<MySqlDataReader, T> mapper) where T : class
-        {
-            await using var conn = new MySqlConnection(_connectionString);
-            await conn.OpenAsync();
-            await using var cmd = new MySqlCommand(sql, conn);
-            cmd.Parameters.AddWithValue("@p0", parameterValue);
-            await using var reader = await cmd.ExecuteReaderAsync();
-            if (await reader.ReadAsync())
+        private Task<IEnumerable<T>> QueryListAsync<T>(string sql, IReadOnlyList<string> paramValues, Func<MySqlDataReader, T> mapper)
+            => _pipeline.ExecuteAsync(async () =>
             {
-                return mapper(reader);
-            }
-            return null;
-        }
+                var list = new List<T>();
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand(sql, conn);
+                for (var i = 0; i < paramValues.Count; i++)
+                    cmd.Parameters.AddWithValue($"@p{i}", paramValues[i]);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                while (await reader.ReadAsync()) list.Add(mapper(reader));
+                return (IEnumerable<T>)list;
+            });
+
+        private Task<T?> QuerySingleAsync<T>(string sql, string parameterValue, Func<MySqlDataReader, T> mapper) where T : class
+            => _pipeline.ExecuteAsync(async () =>
+            {
+                await using var conn = new MySqlConnection(_connectionString);
+                await conn.OpenAsync();
+                await using var cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@p0", parameterValue);
+                await using var reader = await cmd.ExecuteReaderAsync();
+                return await reader.ReadAsync() ? mapper(reader) : (T?)null;
+            });
 
         private static int ReadNumeroVehiculoFlexible(MySqlDataReader reader, string column)
         {

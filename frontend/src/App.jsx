@@ -6,10 +6,10 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import ControlOperativo from './pages/ControlOperativo';
 import Reports from './pages/Reports';
+import Students from './pages/Students';
+import Vehicles from './pages/Vehicles';
 
 function App() {
-    console.log('[APP] Inicializando sistema de seguridad Zenith ISTPET 2026...');
-
     return (
         <AuthProvider>
             <BrowserRouter>
@@ -34,8 +34,16 @@ function App() {
                                 <Home />
                             </ProtectedRoute>
                         } />
-                        <Route path="/estudiantes" element={<Navigate to="/control-operativo" replace />} />
-                        <Route path="/vehiculos" element={<Navigate to="/control-operativo" replace />} />
+                        <Route path="/estudiantes" element={
+                            <ProtectedRoute allowedRoles={['admin', 'logistica', 'guardia']}>
+                                <Students />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/vehiculos" element={
+                            <ProtectedRoute allowedRoles={['admin', 'logistica', 'guardia']}>
+                                <Vehicles />
+                            </ProtectedRoute>
+                        } />
                         <Route path="/reportes" element={
                             <ProtectedRoute allowedRoles={['admin']}>
                                 <Reports />

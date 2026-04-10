@@ -10,6 +10,7 @@ services:
       - "3307:3306"
     volumes:
       - ./docs/Scripts/01_ISTPET_LOGISTICS_SCHEMA.sql:/docker-entrypoint-initdb.d/01_ISTPET_LOGISTICS_SCHEMA.sql:ro
+      - ./docs/Scripts/03_AUDIT_LOG.sql:/docker-entrypoint-initdb.d/03_AUDIT_LOG.sql:ro
       - db_data:/var/lib/mysql
 
   backend:

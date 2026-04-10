@@ -8,6 +8,7 @@ namespace backend.Data
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
         public DbSet<Usuario> Usuarios { get; set; }
+        public DbSet<AuditLog> AuditLogs { get; set; }
         public DbSet<TipoLicencia> TipoLicencias { get; set; }
         public DbSet<Instructor> Instructores { get; set; }
         public DbSet<Vehiculo> Vehiculos { get; set; }
@@ -183,6 +184,12 @@ namespace backend.Data
             modelBuilder.Entity<PracticaHorarioAlumno>(entity => {
                 entity.ToTable("cond_practicas_horarios_alumnos");
                 entity.HasKey(e => new { e.idPractica, e.idAsignacionHorario });
+            });
+
+            // AUDITORÍA
+            modelBuilder.Entity<AuditLog>(entity => {
+                entity.ToTable("audit_logs");
+                entity.HasKey(e => e.id);
             });
 
             // VIEWS

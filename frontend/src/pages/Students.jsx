@@ -3,16 +3,12 @@ import Layout from '../components/layout/Layout';
 import StudentSearch from '../components/features/StudentSearch';
 import SkeletonLoader from '../components/features/SkeletonLoader';
 import { studentService } from '../services/studentService';
+import { useToast } from '../context/ToastContext';
 
 const Students = () => {
+    const { success: toastSuccess, error: toastError } = useToast();
     const [student, setStudent] = useState(null);
     const [loading, setLoading] = useState(false);
-    const [notification, setNotification] = useState(null);
-
-    const showNotification = (message, type = 'success') => {
-        setNotification({ message, type });
-        setTimeout(() => setNotification(null), 4000);
-    };
 
     const handleSearchStudent = async (idAlumno) => {
         setLoading(true);
@@ -20,9 +16,9 @@ const Students = () => {
         try {
             const data = await studentService.getByIdAlumno(idAlumno);
             setStudent(data);
-            showNotification('Estudiante localizado con éxito');
+            toastSuccess('Estudiante localizado con éxito');
         } catch (err) {
-            showNotification('No se encontró ningún estudiante con esa identificación', 'error');
+            toastError('No se encontró ningún estudiante con esa identificación');
         } finally {
             setLoading(false);
         }
@@ -30,13 +26,6 @@ const Students = () => {
 
     return (
         <Layout>
-            {/* Sistema de Notificaciones Zenith */}
-            {notification && (
-                <div className="apple-toast border border-white/10 animate-apple-in">
-                    <div className={`w-3 h-12 rounded-full ${notification.type === 'error' ? 'bg-rose-500' : 'bg-[var(--apple-primary)]'}`}></div>
-                    <p className="text-sm font-bold text-[var(--apple-text-main)]">{notification.message}</p>
-                </div>
-            )}
 
             <div className="space-y-12 max-w-5xl">
                 <div className="animate-apple-in">
