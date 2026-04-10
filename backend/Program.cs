@@ -273,9 +273,25 @@ await using (var scope = app.Services.CreateAsyncScope())
     {
         var schemaCommands = new List<string>
         {
-            "ALTER TABLE tipo_licencia ADD COLUMN id_categoria_sigafi INT NULL UNIQUE",
-            
-            // Hardening de Metadatos y Paridad (Unblock Sync & Auth)
+            // -------------------------------------------------------------------------
+            // 1. TABLAS DE CATÁLOGO (SI NO EXISTEN)
+            // -------------------------------------------------------------------------
+            "CREATE TABLE IF NOT EXISTS periodos (idPeriodo CHAR(7) PRIMARY KEY, detalle VARCHAR(100), fecha_inicial DATE, fecha_final DATE, activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS carreras (idCarrera INT PRIMARY KEY, Carrera VARCHAR(100), activa TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS secciones (idSeccion INT PRIMARY KEY, seccion VARCHAR(50))",
+            "CREATE TABLE IF NOT EXISTS modalidades (idModalidad INT PRIMARY KEY, modalidad VARCHAR(50))",
+            "CREATE TABLE IF NOT EXISTS instituciones (idInstitucion INT PRIMARY KEY, Institucion VARCHAR(150))",
+            "CREATE TABLE IF NOT EXISTS tipo_licencia (id_tipo INT PRIMARY KEY, codigo VARCHAR(5), descripcion VARCHAR(100), activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS cursos (idNivel INT PRIMARY KEY, idCarrera INT, Nivel VARCHAR(50), jerarquia INT)",
+            "CREATE TABLE IF NOT EXISTS categoria_vehiculos (idCategoria INT PRIMARY KEY, categoria VARCHAR(100))",
+            "CREATE TABLE IF NOT EXISTS categorias_examenes_conduccion (IdCategoria INT PRIMARY KEY, categoria VARCHAR(100), activa TINYINT DEFAULT 1)",
+
+            // -------------------------------------------------------------------------
+            // 2. HARDENING DE COLUMNAS (PROFESORES / ALUMNOS / MATRICULAS)
+            // -------------------------------------------------------------------------
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS callePrincipal VARCHAR(100) NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS calleSecundaria VARCHAR(100) NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS numeroCasa VARCHAR(50) NULL",
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS abreviatura VARCHAR(5) NULL",
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS abreviatura_post VARCHAR(5) NULL",
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idParroquiaNacimiento INT NULL",
@@ -284,16 +300,35 @@ await using (var scope = app.Services.CreateAsyncScope())
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idNacionalidad INT NULL",
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idDiscapacidad INT NULL",
             "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS emailInstitucional VARCHAR(255) NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS tipoSangre VARCHAR(5) NULL",
             
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS primerIngreso TINYINT DEFAULT 1",
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idEtnia INT NULL",
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idNacionalidad INT NULL",
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idDiscapacidad INT NULL",
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS email_institucional VARCHAR(255) NULL",
+            
+            "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_colegiatura DECIMAL(10,2) DEFAULT 0",
+            "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_matricula DECIMAL(10,2) DEFAULT 0",
 
-            // Saneamiento de constraints
+            "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salidad DATE NULL",
+
+            // -------------------------------------------------------------------------
+            // 3. SANEAMIENTO DE CONSTRAINTS (NULLABILITY)
+            // -------------------------------------------------------------------------
             "ALTER TABLE profesores MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idParroquiaNacimiento INT NULL, MODIFY idParroquiaResidencia INT NULL, MODIFY idDiscapacidad INT NULL, MODIFY tipoSangre VARCHAR(5) NULL",
             "ALTER TABLE alumnos MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idDiscapacidad INT NULL",
-            
+
+            // -------------------------------------------------------------------------
+            // 4. TABLAS OPERATIVAS Y NUEVAS
+            // -------------------------------------------------------------------------
+            @"CREATE TABLE IF NOT EXISTS vehiculos_operacion (
+                idVehiculo INT PRIMARY KEY,
+                id_tipo_licencia INT,
+                id_instructor_fijo VARCHAR(14),
+                estado_mecanico VARCHAR(30) DEFAULT 'OPERATIVO'
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
+
             @"CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
                 idMatricula INT NOT NULL,
                 idCategoria INT NOT NULL,
@@ -338,10 +373,10 @@ await using (var scope = app.Services.CreateAsyncScope())
                 INDEX idx_audit_fecha   (fecha_hora)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
 
-            "CREATE INDEX idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)",
-            "CREATE INDEX idx_practicas_alumno ON cond_alumnos_practicas (idalumno)",
-            "CREATE INDEX idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)",
-            "CREATE INDEX idx_practicas_fecha ON cond_alumnos_practicas (fecha)",
+            "CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)",
+            "CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno)",
+            "CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)",
+            "CREATE INDEX IF NOT EXISTS idx_practicas_fecha ON cond_alumnos_practicas (fecha)",
 
             @"CREATE OR REPLACE VIEW v_clases_activas AS
             SELECT
