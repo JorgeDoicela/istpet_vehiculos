@@ -45,10 +45,28 @@ namespace backend.Models
         public decimal? beca_matricula { get; set; }
 
         public bool? retirado { get; set; }
+        
+        public DateTime? fechaRetiro { get; set; }
+
+        [MaxLength(100)]
+        public string? observacion { get; set; }
+
+        public bool? convalidacion { get; set; }
+
+        [MaxLength(200)]
+        public string? carrera_convalidada { get; set; }
+
+        public int? numero_permiso { get; set; }
+
+        [MaxLength(20)]
+        public string? user_matricula { get; set; }
 
         public int valida { get; set; } = 1;
 
         public bool esOyente { get; set; } = false;
+
+        [MaxLength(14)]
+        public string? documentoFactura { get; set; }
 
         // --- Logistics Operational Status ---
         [Column(TypeName = "decimal(10,2)")]

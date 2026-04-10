@@ -9,42 +9,48 @@ namespace backend.Models
     public class Instructor
     {
         [Key]
-        [MaxLength(15)]
+        [MaxLength(14)]
         public string idProfesor { get; set; } = string.Empty;
 
         [MaxLength(1)]
         public string? tipodocumento { get; set; } = "C";
 
-        [Required]
-        [MaxLength(80)]
-        public string primerApellido { get; set; } = string.Empty;
+        [MaxLength(60)]
+        public string? apellidos { get; set; }
 
-        [MaxLength(80)]
+        [MaxLength(60)]
+        public string? nombres { get; set; }
+
+        [MaxLength(60)]
+        public string? primerApellido { get; set; }
+
+        [MaxLength(60)]
         public string? segundoApellido { get; set; }
 
-        [Required]
-        [MaxLength(80)]
-        public string primerNombre { get; set; } = string.Empty;
+        [MaxLength(60)]
+        public string? primerNombre { get; set; }
 
-        [MaxLength(80)]
+        [MaxLength(60)]
         public string? segundoNombre { get; set; }
-
-        // Combined fields (Legacy / Search compatibility)
-        [MaxLength(160)]
-        public string nombres { get; set; } = string.Empty;
-
-        [MaxLength(160)]
-        public string apellidos { get; set; } = string.Empty;
 
         public int estadoCivil { get; set; } = 1;
 
         [MaxLength(100)]
         public string? direccion { get; set; }
 
+        [MaxLength(125)]
+        public string? callePrincipal { get; set; }
+
+        [MaxLength(125)]
+        public string? calleSecundaria { get; set; }
+
+        [MaxLength(45)]
+        public string? numeroCasa { get; set; }
+
         [MaxLength(30)]
         public string? telefono { get; set; }
 
-        [MaxLength(50)]
+        [MaxLength(20)]
         public string? celular { get; set; }
 
         [MaxLength(100)]
@@ -63,24 +69,53 @@ namespace backend.Models
         [MaxLength(1)]
         public string? tipo { get; set; } = "P";
 
+        [MaxLength(40)]
+        public string? nacionalidad { get; set; }
+
         [MaxLength(200)]
         public string? titulo { get; set; }
 
         [MaxLength(5)]
         public string? abreviatura { get; set; }
 
+        [MaxLength(5)]
+        public string? abreviatura_post { get; set; }
+
+        public int activo { get; set; } = 1;
+
+        public int idEtnia { get; set; }
+
+        public int idNacionalidad { get; set; }
+
+        public int idParroquiaNacimiento { get; set; }
+
         [MaxLength(255)]
         public string? emailInstitucional { get; set; }
+
+        public DateTime? fecha_ingreso { get; set; }
+
+        public DateTime? fechaIngresoIess { get; set; }
+
+        public DateTime? fecha_retiro { get; set; }
+
+        public int idParroquiaResidencia { get; set; }
 
         [MaxLength(5)]
         public string? tipoSangre { get; set; }
 
+        [MaxLength(20)]
+        public string? codigoPostal { get; set; }
+
+        public int idDiscapacidad { get; set; }
+
+        public int? porcentajeDiscapacidad { get; set; }
+
+        [MaxLength(45)]
+        public string? numeroConadis { get; set; }
+
         [MaxLength(255)]
         public string? foto { get; set; }
 
-        public bool activo { get; set; } = true;
-
-        [MaxLength(50)]
-        public string? nacionalidad { get; set; }
+        public int esReal { get; set; } = 1;
     }
 }

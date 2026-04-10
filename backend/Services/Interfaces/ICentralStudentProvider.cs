@@ -13,32 +13,54 @@ namespace backend.Services.Interfaces
     public class CentralStudentDto
     {
         public string idAlumno { get; set; } = string.Empty;
+        public string? tipoDocumento { get; set; }
         public string? primerNombre { get; set; }
+        public string? segundoNombre { get; set; }
         public string? apellidoPaterno { get; set; }
         public string? apellidoMaterno { get; set; }
-        public string? segundoNombre { get; set; }
-        public string? paralelo { get; set; }
-
-        /// <summary>Texto de jornada desde SIGAFI: <c>secciones.seccion</c> (MATUTINA, VESPERTINA, etc.).</summary>
-        public string? seccion { get; set; }
-
-        public string? Nivel { get; set; }
-        public string idPeriodo { get; set; } = string.Empty;
-        public byte[]? foto { get; set; }
-
-        /// <summary>idNivel de la matrícula SIGAFI (cursos.idNivel).</summary>
+        public DateTime? fecha_Nacimiento { get; set; }
+        public string? direccion { get; set; }
+        public string? telefono { get; set; }
+        public string? celular { get; set; }
+        public string? email { get; set; }
+        public string? ciudad_Nacimiento { get; set; }
+        public string? provincia_Nacimiento { get; set; }
+        public string? sexo { get; set; }
+        public string? nacionalidad { get; set; }
         public int idNivel { get; set; }
-
-        /// <summary>idModalidad en <c>matriculas</c>; respaldo si no hay texto en <see cref="seccion"/>.</summary>
-        public int idModalidad { get; set; }
-
-        /// <summary>Etiqueta desde tabla modalidades solo si <see cref="seccion"/> viene vacía (respaldo).</summary>
-        public string? JornadaSigafi { get; set; }
-
-        /// <summary><c>matriculas.idSeccion</c> → <c>secciones</c>.</summary>
+        public string idPeriodo { get; set; } = string.Empty;
         public int idSeccion { get; set; }
+        public int idModalidad { get; set; }
+        public int? idInstitucion { get; set; }
+        public string? tituloColegio { get; set; }
+        public DateTime? fecha_Inscripcion { get; set; }
+        public string? parroquia_nacimiento { get; set; }
+        public string? nombre_padre { get; set; }
+        public string? ocupacion_padre { get; set; }
+        public string? nacionalidad_padre { get; set; }
+        public string? nombre_madre { get; set; }
+        public string? ocupacion_madre { get; set; }
+        public string? nacionalidad_madre { get; set; }
+        public string? barrio_residencia { get; set; }
+        public string? parroquia_residencia { get; set; }
+        public string? ciudad_residencia { get; set; }
+        public string? tipo_sangre { get; set; }
+        public string? user_alumno { get; set; }
+        public string? password { get; set; }
+        public int? idDiscapacidad { get; set; }
+        public int? idEtnia { get; set; }
+        public int? idNacionalidad { get; set; }
+        public int? porcentaje_discapacidad { get; set; }
+        public string? carnet_conadis { get; set; }
+        public string? email_institucional { get; set; }
+        public int? primerIngreso { get; set; }
+        public string? archivofoto { get; set; }
 
-        // --- Helper for UI Compatibility ---
+        public byte[]? foto { get; set; }
+        public string? paralelo { get; set; }
+        public string? seccion { get; set; }
+        public string? Nivel { get; set; }
+        public string? JornadaSigafi { get; set; }
         public string? NombreCompleto { get; set; } 
         public string? DetalleRaw { get; set; }   
         public string? FotoBase64 { get; set; }
@@ -47,17 +69,46 @@ namespace backend.Services.Interfaces
     public class CentralInstructorDto
     {
         public string idProfesor { get; set; } = string.Empty;
-        public string nombres { get; set; } = string.Empty;
-        public string apellidos { get; set; } = string.Empty;
-        
+        public string? tipodocumento { get; set; }
+        public string? apellidos { get; set; }
+        public string? nombres { get; set; }
         public string? primerApellido { get; set; }
         public string? segundoApellido { get; set; }
         public string? primerNombre { get; set; }
         public string? segundoNombre { get; set; }
-
+        public int estadoCivil { get; set; }
+        public string? direccion { get; set; }
+        public string? callePrincipal { get; set; }
+        public string? calleSecundaria { get; set; }
+        public string? numeroCasa { get; set; }
+        public string? telefono { get; set; }
         public string? celular { get; set; }
         public string? email { get; set; }
-        public int activo { get; set; } 
+        public DateTime? fecha_nacimiento { get; set; }
+        public string? sexo { get; set; }
+        public string? clave { get; set; }
+        public int? practicas { get; set; }
+        public string? tipo { get; set; }
+        public string? nacionalidad { get; set; }
+        public string? titulo { get; set; }
+        public string? abreviatura { get; set; }
+        public string? abreviatura_post { get; set; }
+        public int activo { get; set; }
+        public int idEtnia { get; set; }
+        public int idNacionalidad { get; set; }
+        public int idParroquiaNacimiento { get; set; }
+        public string? emailInstitucional { get; set; }
+        public DateTime? fecha_ingreso { get; set; }
+        public DateTime? fechaIngresoIess { get; set; }
+        public DateTime? fecha_retiro { get; set; }
+        public int idParroquiaResidencia { get; set; }
+        public string? tipoSangre { get; set; }
+        public string? codigoPostal { get; set; }
+        public int idDiscapacidad { get; set; }
+        public int? porcentajeDiscapacidad { get; set; }
+        public string? numeroConadis { get; set; }
+        public string? foto { get; set; }
+        public int? esReal { get; set; }
     }
 
     public class ScheduledPracticeDto
@@ -146,7 +197,7 @@ namespace backend.Services.Interfaces
     {
         public int idMatricula { get; set; }
         public int IdCategoria { get; set; }
-        public decimal? nota { get; set; }
+        public int? nota { get; set; }
         public string? observacion { get; set; }
         public string? usuario { get; set; }
         public DateTime? fechaExamen { get; set; }
@@ -181,9 +232,17 @@ namespace backend.Services.Interfaces
         public int? arrastres { get; set; }
         public int? folio { get; set; }
         public decimal? beca_matricula { get; set; }
+        public decimal? beca_colegiatura { get; set; }
         public int? retirado { get; set; }
-        public int? esOyente { get; set; }
+        public DateTime? fechaRetiro { get; set; }
+        public string? observacion { get; set; }
+        public int? convalidacion { get; set; }
+        public string? carrera_convalidada { get; set; }
+        public int? numero_permiso { get; set; }
+        public string? user_matricula { get; set; }
         public int valida { get; set; }
+        public int? esOyente { get; set; }
+        public string? documentoFactura { get; set; }
     }
 
     public class CentralAsignacionInstructorVehiculoDto
@@ -192,7 +251,7 @@ namespace backend.Services.Interfaces
         public int idVehiculo { get; set; }
         public string idProfesor { get; set; } = string.Empty;
         public DateTime? fecha_asignacion { get; set; }
-        public DateTime? fecha_salida { get; set; }
+        public DateTime? fecha_salidad { get; set; }
         public int activo { get; set; }
         public string? usuario_asigna { get; set; }
         public string? usuario_desactiva { get; set; }
@@ -242,18 +301,48 @@ namespace backend.Services.Interfaces
     public class CentralAlumnoLiteDto
     {
         public string idAlumno { get; set; } = string.Empty;
-        public string? primerNombre { get; set; }
-        public string? segundoNombre { get; set; }
+        public string? tipoDocumento { get; set; }
         public string? apellidoPaterno { get; set; }
         public string? apellidoMaterno { get; set; }
+        public string? primerNombre { get; set; }
+        public string? segundoNombre { get; set; }
+        public DateTime? fecha_Nacimiento { get; set; }
+        public string? direccion { get; set; }
+        public string? telefono { get; set; }
         public string? celular { get; set; }
         public string? email { get; set; }
-
-        /// <summary>Campos de ficha en <c>alumnos</c> (SIGAFI); alinean espejo local con matrícula vigente.</summary>
+        public string? ciudad_Nacimiento { get; set; }
+        public string? provincia_Nacimiento { get; set; }
+        public string? sexo { get; set; }
+        public string? nacionalidad { get; set; }
+        public int idNivel { get; set; } = 1;
         public string? idPeriodo { get; set; }
-        public int? idNivel { get; set; }
         public int? idSeccion { get; set; }
         public int? idModalidad { get; set; }
+        public int? idInstitucion { get; set; }
+        public string? tituloColegio { get; set; }
+        public DateTime? fecha_Inscripcion { get; set; }
+        public string? parroquia_nacimiento { get; set; }
+        public string? nombre_padre { get; set; }
+        public string? ocupacion_padre { get; set; }
+        public string? nacionalidad_padre { get; set; }
+        public string? nombre_madre { get; set; }
+        public string? ocupacion_madre { get; set; }
+        public string? nacionalidad_madre { get; set; }
+        public string? barrio_residencia { get; set; }
+        public string? parroquia_residencia { get; set; }
+        public string? ciudad_residencia { get; set; }
+        public string? tipo_sangre { get; set; }
+        public string? user_alumno { get; set; }
+        public string? password { get; set; }
+        public int? idDiscapacidad { get; set; }
+        public int? idEtnia { get; set; }
+        public int? idNacionalidad { get; set; }
+        public int? porcentaje_discapacidad { get; set; }
+        public string? carnet_conadis { get; set; }
+        public string? email_institucional { get; set; }
+        public int? primerIngreso { get; set; }
+        public string? archivofoto { get; set; }
     }
 
     public interface ICentralStudentProvider

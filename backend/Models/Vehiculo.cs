@@ -14,10 +14,10 @@ namespace backend.Models
 
         public int? idSubcategoria { get; set; }
 
-        [MaxLength(10)]
+        [MaxLength(3)]
         public string? numero_vehiculo { get; set; }
 
-        [MaxLength(15)]
+        [MaxLength(10)]
         public string? placa { get; set; }
 
         [MaxLength(100)]
@@ -27,19 +27,19 @@ namespace backend.Models
 
         public int? idCategoria { get; set; }
 
+        public int activo { get; set; } = 1;
+
         [MaxLength(200)]
         public string? observacion { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(50)]
         public string? chasis { get; set; }
 
-        [MaxLength(100)]
+        [MaxLength(50)]
         public string? motor { get; set; }
 
         [MaxLength(100)]
         public string? modelo { get; set; }
-
-        public bool activo { get; set; } = true;
 
         // Logistics / Operational Fields (Local Augmentation)
         public int id_tipo_licencia { get; set; } = 1; // Default to Type C

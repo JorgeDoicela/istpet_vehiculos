@@ -13,12 +13,12 @@ namespace backend.Models
         [Column("idCategoria")]
         public int IdCategoria { get; set; }
 
-        [Column(TypeName = "decimal(6,2)")]
-        public decimal? nota { get; set; }
+        public int? nota { get; set; }
 
+        [MaxLength(100)]
         public string? observacion { get; set; }
 
-        [MaxLength(50)]
+        [MaxLength(20)]
         public string? usuario { get; set; }
 
         [Column(TypeName = "date")]
@@ -26,7 +26,7 @@ namespace backend.Models
 
         public DateTime? fechaIngreso { get; set; }
 
-        [MaxLength(80)]
+        [MaxLength(100)]
         public string? instructor { get; set; }
     }
 }

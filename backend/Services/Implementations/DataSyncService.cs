@@ -65,29 +65,91 @@ namespace backend.Services.Implementations
                             _context.Instructores.Add(new Instructor
                             {
                                 idProfesor = ci.idProfesor,
-                                primerNombre = ci.primerNombre ?? "",
-                                segundoNombre = ci.segundoNombre,
-                                primerApellido = ci.primerApellido ?? "",
-                                segundoApellido = ci.segundoApellido,
+                                tipodocumento = ci.tipodocumento,
                                 nombres = (ci.nombres ?? "").ToUpper(),
                                 apellidos = (ci.apellidos ?? "").ToUpper(),
-                                celular = ci.celular?.Length > 50 ? ci.celular.Substring(0, 50) : ci.celular,
+                                primerApellido = ci.primerApellido,
+                                segundoApellido = ci.segundoApellido,
+                                primerNombre = ci.primerNombre,
+                                segundoNombre = ci.segundoNombre,
+                                estadoCivil = ci.estadoCivil,
+                                direccion = ci.direccion,
+                                callePrincipal = ci.callePrincipal,
+                                calleSecundaria = ci.calleSecundaria,
+                                numeroCasa = ci.numeroCasa,
+                                telefono = ci.telefono,
+                                celular = ci.celular?.Length > 50 ? ci.celular[..50] : ci.celular,
                                 email = ci.email,
-                                activo = ci.activo == 1
+                                fecha_nacimiento = ci.fecha_nacimiento,
+                                sexo = ci.sexo,
+                                clave = ci.clave,
+                                practicas = ci.practicas,
+                                tipo = ci.tipo,
+                                nacionalidad = ci.nacionalidad,
+                                titulo = ci.titulo,
+                                abreviatura = ci.abreviatura,
+                                abreviatura_post = ci.abreviatura_post,
+                                activo = ci.activo == 1,
+                                idEtnia = ci.idEtnia,
+                                idNacionalidad = ci.idNacionalidad,
+                                idParroquiaNacimiento = ci.idParroquiaNacimiento,
+                                emailInstitucional = ci.emailInstitucional,
+                                fecha_ingreso = ci.fecha_ingreso,
+                                fechaIngresoIess = ci.fechaIngresoIess,
+                                fecha_retiro = ci.fecha_retiro,
+                                idParroquiaResidencia = ci.idParroquiaResidencia,
+                                tipoSangre = ci.tipoSangre,
+                                codigoPostal = ci.codigoPostal,
+                                idDiscapacidad = ci.idDiscapacidad,
+                                porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
+                                numeroConadis = ci.numeroConadis,
+                                foto = ci.foto,
+                                esReal = ci.esReal
                             });
                             log.RegistrosProcesados++;
                         }
                         else
                         {
-                            existing.primerNombre = ci.primerNombre ?? "";
-                            existing.segundoNombre = ci.segundoNombre;
-                            existing.primerApellido = ci.primerApellido ?? "";
-                            existing.segundoApellido = ci.segundoApellido;
+                            existing.tipodocumento = ci.tipodocumento;
                             existing.nombres = (ci.nombres ?? "").ToUpper();
                             existing.apellidos = (ci.apellidos ?? "").ToUpper();
-                            existing.celular = ci.celular?.Length > 50 ? ci.celular.Substring(0, 50) : ci.celular;
+                            existing.primerApellido = ci.primerApellido;
+                            existing.segundoApellido = ci.segundoApellido;
+                            existing.primerNombre = ci.primerNombre;
+                            existing.segundoNombre = ci.segundoNombre;
+                            existing.estadoCivil = ci.estadoCivil;
+                            existing.direccion = ci.direccion;
+                            existing.callePrincipal = ci.callePrincipal;
+                            existing.calleSecundaria = ci.calleSecundaria;
+                            existing.numeroCasa = ci.numeroCasa;
+                            existing.telefono = ci.telefono;
+                            existing.celular = ci.celular?.Length > 50 ? ci.celular[..50] : ci.celular;
                             existing.email = ci.email;
+                            existing.fecha_nacimiento = ci.fecha_nacimiento;
+                            existing.sexo = ci.sexo;
+                            existing.clave = ci.clave;
+                            existing.practicas = ci.practicas;
+                            existing.tipo = ci.tipo;
+                            existing.nacionalidad = ci.nacionalidad;
+                            existing.titulo = ci.titulo;
+                            existing.abreviatura = ci.abreviatura;
+                            existing.abreviatura_post = ci.abreviatura_post;
                             existing.activo = ci.activo == 1;
+                            existing.idEtnia = ci.idEtnia;
+                            existing.idNacionalidad = ci.idNacionalidad;
+                            existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
+                            existing.emailInstitucional = ci.emailInstitucional;
+                            existing.fecha_ingreso = ci.fecha_ingreso;
+                            existing.fechaIngresoIess = ci.fechaIngresoIess;
+                            existing.fecha_retiro = ci.fecha_retiro;
+                            existing.idParroquiaResidencia = ci.idParroquiaResidencia;
+                            existing.tipoSangre = ci.tipoSangre;
+                            existing.codigoPostal = ci.codigoPostal;
+                            existing.idDiscapacidad = ci.idDiscapacidad;
+                            existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
+                            existing.numeroConadis = ci.numeroConadis;
+                            existing.foto = ci.foto;
+                            existing.esReal = ci.esReal;
                             log.RegistrosProcesados++;
                         }
                     }
@@ -283,7 +345,11 @@ namespace backend.Services.Implementations
                                 password = eu.password,
                                 rol = role,
                                 nombre_completo = eu.usuario.ToUpper(),
+                                salida = eu.salida == 1,
+                                ingreso = eu.ingreso == 1,
                                 activo = eu.activo == 1,
+                                asistencia = eu.asistencia == 1,
+                                esRrhh = eu.esRrhh == 1,
                                 creado_en = DateTime.Now
                             });
                         }
@@ -291,6 +357,10 @@ namespace backend.Services.Implementations
                         {
                             existing.activo = eu.activo == 1;
                             existing.rol = role;
+                            existing.salida = eu.salida == 1;
+                            existing.ingreso = eu.ingreso == 1;
+                            existing.asistencia = eu.asistencia == 1;
+                            existing.esRrhh = eu.esRrhh == 1;
                             if (!existing.password.StartsWith("$2a$") && !existing.password.StartsWith("$2b$"))
                             {
                                 existing.password = eu.password;
@@ -463,30 +533,92 @@ namespace backend.Services.Implementations
                     var nuevo = new Instructor
                     {
                         idProfesor = ci.idProfesor,
-                        primerNombre = ci.primerNombre ?? "",
-                        segundoNombre = ci.segundoNombre,
-                        primerApellido = ci.primerApellido ?? "",
-                        segundoApellido = ci.segundoApellido,
+                        tipodocumento = ci.tipodocumento,
                         nombres = (ci.nombres ?? "").ToUpper(),
                         apellidos = (ci.apellidos ?? "").ToUpper(),
+                        primerApellido = ci.primerApellido,
+                        segundoApellido = ci.segundoApellido,
+                        primerNombre = ci.primerNombre,
+                        segundoNombre = ci.segundoNombre,
+                        estadoCivil = ci.estadoCivil,
+                        direccion = ci.direccion,
+                        callePrincipal = ci.callePrincipal,
+                        calleSecundaria = ci.calleSecundaria,
+                        numeroCasa = ci.numeroCasa,
+                        telefono = ci.telefono,
                         celular = ci.celular?.Length > 50 ? ci.celular[..50] : ci.celular,
                         email = ci.email,
-                        activo = ci.activo == 1
+                        fecha_nacimiento = ci.fecha_nacimiento,
+                        sexo = ci.sexo,
+                        clave = ci.clave,
+                        practicas = ci.practicas,
+                        tipo = ci.tipo,
+                        nacionalidad = ci.nacionalidad,
+                        titulo = ci.titulo,
+                        abreviatura = ci.abreviatura,
+                        abreviatura_post = ci.abreviatura_post,
+                        activo = ci.activo == 1,
+                        idEtnia = ci.idEtnia,
+                        idNacionalidad = ci.idNacionalidad,
+                        idParroquiaNacimiento = ci.idParroquiaNacimiento,
+                        emailInstitucional = ci.emailInstitucional,
+                        fecha_ingreso = ci.fecha_ingreso,
+                        fechaIngresoIess = ci.fechaIngresoIess,
+                        fecha_retiro = ci.fecha_retiro,
+                        idParroquiaResidencia = ci.idParroquiaResidencia,
+                        tipoSangre = ci.tipoSangre,
+                        codigoPostal = ci.codigoPostal,
+                        idDiscapacidad = ci.idDiscapacidad,
+                        porcentajeDiscapacidad = ci.porcentajeDiscapacidad,
+                        numeroConadis = ci.numeroConadis,
+                        foto = ci.foto,
+                        esReal = ci.esReal
                     };
                     _context.Instructores.Add(nuevo);
                     byId[ci.idProfesor] = nuevo;
                 }
                 else
                 {
-                    existing.primerNombre = ci.primerNombre ?? "";
-                    existing.segundoNombre = ci.segundoNombre;
-                    existing.primerApellido = ci.primerApellido ?? "";
-                    existing.segundoApellido = ci.segundoApellido;
+                    existing.tipodocumento = ci.tipodocumento;
                     existing.nombres = (ci.nombres ?? "").ToUpper();
                     existing.apellidos = (ci.apellidos ?? "").ToUpper();
+                    existing.primerApellido = ci.primerApellido;
+                    existing.segundoApellido = ci.segundoApellido;
+                    existing.primerNombre = ci.primerNombre;
+                    existing.segundoNombre = ci.segundoNombre;
+                    existing.estadoCivil = ci.estadoCivil;
+                    existing.direccion = ci.direccion;
+                    existing.callePrincipal = ci.callePrincipal;
+                    existing.calleSecundaria = ci.calleSecundaria;
+                    existing.numeroCasa = ci.numeroCasa;
+                    existing.telefono = ci.telefono;
                     existing.celular = ci.celular?.Length > 50 ? ci.celular[..50] : ci.celular;
                     existing.email = ci.email;
+                    existing.fecha_nacimiento = ci.fecha_nacimiento;
+                    existing.sexo = ci.sexo;
+                    existing.clave = ci.clave;
+                    existing.practicas = ci.practicas;
+                    existing.tipo = ci.tipo;
+                    existing.nacionalidad = ci.nacionalidad;
+                    existing.titulo = ci.titulo;
+                    existing.abreviatura = ci.abreviatura;
+                    existing.abreviatura_post = ci.abreviatura_post;
                     existing.activo = ci.activo == 1;
+                    existing.idEtnia = ci.idEtnia;
+                    existing.idNacionalidad = ci.idNacionalidad;
+                    existing.idParroquiaNacimiento = ci.idParroquiaNacimiento;
+                    existing.emailInstitucional = ci.emailInstitucional;
+                    existing.fecha_ingreso = ci.fecha_ingreso;
+                    existing.fechaIngresoIess = ci.fechaIngresoIess;
+                    existing.fecha_retiro = ci.fecha_retiro;
+                    existing.idParroquiaResidencia = ci.idParroquiaResidencia;
+                    existing.tipoSangre = ci.tipoSangre;
+                    existing.codigoPostal = ci.codigoPostal;
+                    existing.idDiscapacidad = ci.idDiscapacidad;
+                    existing.porcentajeDiscapacidad = ci.porcentajeDiscapacidad;
+                    existing.numeroConadis = ci.numeroConadis;
+                    existing.foto = ci.foto;
+                    existing.esReal = ci.esReal;
                 }
                 processed++;
             }
@@ -535,7 +667,6 @@ namespace backend.Services.Implementations
         private async Task<int> SyncStudentsFromSigafiAsync()
         {
             var rows = await _centralProvider.GetAllStudentsFromCentralAsync();
-            // Una sola carga: evita N consultas SELECT por idAlumno durante el espejo automático / Master Sync.
             var byId = await _context.Estudiantes.ToDictionaryAsync(e => e.idAlumno);
             var processed = 0;
             foreach (var item in rows)
@@ -545,16 +676,48 @@ namespace backend.Services.Implementations
                     var nuevo = new Estudiante
                     {
                         idAlumno = item.idAlumno,
+                        tipoDocumento = item.tipoDocumento,
                         primerNombre = item.primerNombre ?? "",
                         segundoNombre = item.segundoNombre,
                         apellidoPaterno = item.apellidoPaterno ?? "",
                         apellidoMaterno = item.apellidoMaterno,
+                        fecha_Nacimiento = item.fecha_Nacimiento,
+                        direccion = item.direccion,
+                        telefono = item.telefono,
                         celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular,
                         email = item.email?.Length > 100 ? item.email[..100] : item.email,
-                        idPeriodo = item.idPeriodo,
+                        ciudad_Nacimiento = item.ciudad_Nacimiento,
+                        provincia_Nacimiento = item.provincia_Nacimiento,
+                        sexo = item.sexo,
+                        nacionalidad = item.nacionalidad,
                         idNivel = item.idNivel,
+                        idPeriodo = item.idPeriodo,
                         idSeccion = item.idSeccion,
                         idModalidad = item.idModalidad,
+                        idInstitucion = item.idInstitucion,
+                        tituloColegio = item.tituloColegio,
+                        fecha_Inscripcion = item.fecha_Inscripcion,
+                        parroquia_nacimiento = item.parroquia_nacimiento,
+                        nombre_padre = item.nombre_padre,
+                        ocupacion_padre = item.ocupacion_padre,
+                        nacionalidad_padre = item.nacionalidad_padre,
+                        nombre_madre = item.nombre_madre,
+                        ocupacion_madre = item.ocupacion_madre,
+                        nacionalidad_madre = item.nacionalidad_madre,
+                        barrio_residencia = item.barrio_residencia,
+                        parroquia_residencia = item.parroquia_residencia,
+                        ciudad_residencia = item.ciudad_residencia,
+                        tipo_sangre = item.tipo_sangre,
+                        user_alumno = item.user_alumno,
+                        password = item.password,
+                        idDiscapacidad = item.idDiscapacidad,
+                        idEtnia = item.idEtnia,
+                        idNacionalidad = item.idNacionalidad,
+                        porcentaje_discapacidad = item.porcentaje_discapacidad,
+                        carnet_conadis = item.carnet_conadis,
+                        email_institucional = item.email_institucional,
+                        primerIngreso = item.primerIngreso,
+                        archivofoto = item.archivofoto,
                         activo = true
                     };
                     _context.Estudiantes.Add(nuevo);
@@ -562,16 +725,48 @@ namespace backend.Services.Implementations
                 }
                 else
                 {
+                    existing.tipoDocumento = item.tipoDocumento;
                     existing.primerNombre = item.primerNombre ?? existing.primerNombre;
                     existing.segundoNombre = item.segundoNombre;
                     existing.apellidoPaterno = item.apellidoPaterno ?? existing.apellidoPaterno;
                     existing.apellidoMaterno = item.apellidoMaterno;
+                    existing.fecha_Nacimiento = item.fecha_Nacimiento;
+                    existing.direccion = item.direccion;
+                    existing.telefono = item.telefono;
                     existing.celular = item.celular?.Length > 50 ? item.celular[..50] : item.celular;
                     existing.email = item.email?.Length > 100 ? item.email[..100] : item.email;
+                    existing.ciudad_Nacimiento = item.ciudad_Nacimiento;
+                    existing.provincia_Nacimiento = item.provincia_Nacimiento;
+                    existing.sexo = item.sexo;
+                    existing.nacionalidad = item.nacionalidad;
+                    existing.idNivel = item.idNivel;
                     existing.idPeriodo = item.idPeriodo ?? existing.idPeriodo;
-                    existing.idNivel = item.idNivel ?? existing.idNivel;
                     existing.idSeccion = item.idSeccion ?? existing.idSeccion;
                     existing.idModalidad = item.idModalidad ?? existing.idModalidad;
+                    existing.idInstitucion = item.idInstitucion;
+                    existing.tituloColegio = item.tituloColegio;
+                    existing.fecha_Inscripcion = item.fecha_Inscripcion;
+                    existing.parroquia_nacimiento = item.parroquia_nacimiento;
+                    existing.nombre_padre = item.nombre_padre;
+                    existing.ocupacion_padre = item.ocupacion_padre;
+                    existing.nacionalidad_padre = item.nacionalidad_padre;
+                    existing.nombre_madre = item.nombre_madre;
+                    existing.ocupacion_madre = item.ocupacion_madre;
+                    existing.nacionalidad_madre = item.nacionalidad_madre;
+                    existing.barrio_residencia = item.barrio_residencia;
+                    existing.parroquia_residencia = item.parroquia_residencia;
+                    existing.ciudad_residencia = item.ciudad_residencia;
+                    existing.tipo_sangre = item.tipo_sangre;
+                    existing.user_alumno = item.user_alumno;
+                    existing.password = item.password;
+                    existing.idDiscapacidad = item.idDiscapacidad;
+                    existing.idEtnia = item.idEtnia;
+                    existing.idNacionalidad = item.idNacionalidad;
+                    existing.porcentaje_discapacidad = item.porcentaje_discapacidad;
+                    existing.carnet_conadis = item.carnet_conadis;
+                    existing.email_institucional = item.email_institucional;
+                    existing.primerIngreso = item.primerIngreso;
+                    existing.archivofoto = item.archivofoto;
                 }
                 processed++;
             }
@@ -601,9 +796,17 @@ namespace backend.Services.Implementations
                         arrastres = item.arrastres == 1,
                         folio = item.folio,
                         beca_matricula = item.beca_matricula,
+                        beca_colegiatura = item.beca_colegiatura,
                         retirado = item.retirado == 1,
-                        esOyente = item.esOyente == 1,
+                        fechaRetiro = item.fechaRetiro,
+                        observacion = item.observacion,
+                        convalidacion = item.convalidacion == 1,
+                        carrera_convalidada = item.carrera_convalidada,
+                        numero_permiso = item.numero_permiso,
+                        user_matricula = item.user_matricula,
                         valida = item.valida,
+                        esOyente = item.esOyente == 1,
+                        documentoFactura = item.documentoFactura,
                         estado = "ACTIVO"
                     };
                     _context.Matriculas.Add(nuevo);
@@ -621,9 +824,17 @@ namespace backend.Services.Implementations
                     existing.arrastres = item.arrastres == 1;
                     existing.folio = item.folio;
                     existing.beca_matricula = item.beca_matricula;
+                    existing.beca_colegiatura = item.beca_colegiatura;
                     existing.retirado = item.retirado == 1;
-                    existing.esOyente = item.esOyente == 1;
+                    existing.fechaRetiro = item.fechaRetiro;
+                    existing.observacion = item.observacion;
+                    existing.convalidacion = item.convalidacion == 1;
+                    existing.carrera_convalidada = item.carrera_convalidada;
+                    existing.numero_permiso = item.numero_permiso;
+                    existing.user_matricula = item.user_matricula;
                     existing.valida = item.valida;
+                    existing.esOyente = item.esOyente == 1;
+                    existing.documentoFactura = item.documentoFactura;
                 }
                 processed++;
             }
@@ -775,7 +986,7 @@ namespace backend.Services.Implementations
                     || (!string.IsNullOrEmpty(item.placa) && x.placa == item.placa));
                 if (existing == null)
                 {
-                    _context.Vehiculos.Add(new Vehiculo
+                    _context.Set<Vehiculo>().Add(new Vehiculo
                     {
                         idVehiculo = item.idVehiculo,
                         idSubcategoria = item.idSubcategoria,
@@ -827,13 +1038,43 @@ namespace backend.Services.Implementations
                     {
                         idPeriodo = item.idPeriodo,
                         detalle = item.detalle,
-                        activo = item.activo == 1
+                        fecha_inicial = item.fecha_inicial,
+                        fecha_final = item.fecha_final,
+                        cerrado = item.cerrado == 1,
+                        fecha_maxima_autocierre = item.fecha_maxima_autocierre,
+                        activo = item.activo == 1,
+                        creditos = item.creditos == 1,
+                        numero_pagos = item.numero_pagos,
+                        fecha_matrucla_extraordinaria = item.fecha_matrucla_extraordinaria,
+                        foliop = item.foliop,
+                        permiteMatricula = item.permiteMatricula == 1,
+                        ingresoCalificaciones = item.ingresoCalificaciones == 1,
+                        permiteCalificacionesInstituto = item.permiteCalificacionesInstituto == 1,
+                        periodoactivoinstituto = item.periodoactivoinstituto == 1,
+                        visualizaPowerBi = item.visualizaPowerBi == 1,
+                        esInstituto = item.esInstituto == 1,
+                        periodoPlanificacion = item.periodoPlanificacion == 1
                     });
                 }
                 else
                 {
                     existing.detalle = item.detalle;
+                    existing.fecha_inicial = item.fecha_inicial;
+                    existing.fecha_final = item.fecha_final;
+                    existing.cerrado = item.cerrado == 1;
+                    existing.fecha_maxima_autocierre = item.fecha_maxima_autocierre;
                     existing.activo = item.activo == 1;
+                    existing.creditos = item.creditos == 1;
+                    existing.numero_pagos = item.numero_pagos;
+                    existing.fecha_matrucla_extraordinaria = item.fecha_matrucla_extraordinaria;
+                    existing.foliop = item.foliop;
+                    existing.permiteMatricula = item.permiteMatricula == 1;
+                    existing.ingresoCalificaciones = item.ingresoCalificaciones == 1;
+                    existing.permiteCalificacionesInstituto = item.permiteCalificacionesInstituto == 1;
+                    existing.periodoactivoinstituto = item.periodoactivoinstituto == 1;
+                    existing.visualizaPowerBi = item.visualizaPowerBi == 1;
+                    existing.esInstituto = item.esInstituto == 1;
+                    existing.periodoPlanificacion = item.periodoPlanificacion == 1;
                 }
                 processed++;
             }
@@ -854,13 +1095,33 @@ namespace backend.Services.Implementations
                     {
                         idCarrera = item.idCarrera,
                         CarreraNombre = item.Carrera,
-                        activa = item.activa == 1
+                        fechaCreacion = item.fechaCreacion,
+                        activa = item.activa == 1,
+                        directorCarrera = item.directorCarrera,
+                        numero_creditos = item.numero_creditos,
+                        ordenCarrera = item.ordenCarrera,
+                        numero_alumnos = item.numero_alumnos,
+                        revisaArrastres = item.revisaArrastres == 1,
+                        codigo_cases = item.codigo_cases,
+                        aliasCarrera = item.aliasCarrera,
+                        BolsaEmpleo = item.BolsaEmpleo == 1,
+                        esInstituto = item.esInstituto == 1
                     });
                 }
                 else
                 {
                     existing.CarreraNombre = item.Carrera;
+                    existing.fechaCreacion = item.fechaCreacion;
                     existing.activa = item.activa == 1;
+                    existing.directorCarrera = item.directorCarrera;
+                    existing.numero_creditos = item.numero_creditos;
+                    existing.ordenCarrera = item.ordenCarrera;
+                    existing.numero_alumnos = item.numero_alumnos;
+                    existing.revisaArrastres = item.revisaArrastres == 1;
+                    existing.codigo_cases = item.codigo_cases;
+                    existing.aliasCarrera = item.aliasCarrera;
+                    existing.BolsaEmpleo = item.BolsaEmpleo == 1;
+                    existing.esInstituto = item.esInstituto == 1;
                 }
                 processed++;
             }
@@ -880,12 +1141,14 @@ namespace backend.Services.Implementations
                     _context.Set<Seccion>().Add(new Seccion
                     {
                         idSeccion = item.idSeccion,
-                        seccion = item.seccion
+                        seccion = item.seccion,
+                        sufijo = item.sufijo
                     });
                 }
                 else
                 {
                     existing.seccion = item.seccion;
+                    existing.sufijo = item.sufijo;
                 }
                 processed++;
             }
@@ -905,12 +1168,14 @@ namespace backend.Services.Implementations
                     _context.Modalidades.Add(new Modalidad
                     {
                         idModalidad = item.idModalidad,
-                        modalidad = item.modalidad
+                        modalidad = item.modalidad,
+                        sufijo = item.sufijo
                     });
                 }
                 else
                 {
                     existing.modalidad = item.modalidad;
+                    existing.sufijo = item.sufijo;
                 }
                 processed++;
             }
@@ -930,12 +1195,16 @@ namespace backend.Services.Implementations
                     _context.Instituciones.Add(new Institucion
                     {
                         idInstitucion = item.idInstitucion,
-                        InstitucionNombre = item.Institucion
+                        InstitucionNombre = item.Institucion,
+                        ciudad = item.ciudad,
+                        provincia = item.provincia
                     });
                 }
                 else
                 {
                     existing.InstitucionNombre = item.Institucion;
+                    existing.ciudad = item.ciudad;
+                    existing.provincia = item.provincia;
                 }
                 processed++;
             }
@@ -967,7 +1236,7 @@ namespace backend.Services.Implementations
                         idVehiculo = item.idVehiculo,
                         idProfesor = item.idProfesor,
                         fecha_asignacion = item.fecha_asignacion,
-                        fecha_salida = item.fecha_salida,
+                        fecha_salidad = item.fecha_salidad,
                         activo = item.activo == 1,
                         usuario_asigna = item.usuario_asigna,
                         usuario_desactiva = item.usuario_desactiva,
@@ -982,7 +1251,7 @@ namespace backend.Services.Implementations
                         idVehiculo = item.idVehiculo,
                         idProfesor = item.idProfesor,
                         fecha_asignacion = item.fecha_asignacion,
-                        fecha_salida = item.fecha_salida,
+                        fecha_salidad = item.fecha_salidad,
                         activo = item.activo == 1,
                         usuario_asigna = item.usuario_asigna,
                         usuario_desactiva = item.usuario_desactiva,
