@@ -131,6 +131,11 @@ namespace backend.Services.Implementations
 
             var warnings = new List<string>();
 
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("periodos", SyncPeriodosAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("carreras", SyncCarrerasAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("secciones", SyncSeccionesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("modalidades", SyncModalidadesAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("instituciones", SyncInstitucionesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("tipo_licencia", SyncLicenseTypesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cursos", SyncCoursesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("categoria_vehiculos", SyncVehicleCategoriesAsync, warnings, log);
@@ -802,6 +807,135 @@ namespace backend.Services.Implementations
                     existing.modelo = item.modelo?.Length > 100 ? item.modelo[..100] : item.modelo;
                     if (tipoLicenciaId.HasValue)
                         existing.id_tipo_licencia = tipoLicenciaId.Value;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncPeriodosAsync()
+        {
+            var rows = await _centralProvider.GetAllPeriodosFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Set<Periodo>().FirstOrDefaultAsync(x => x.idPeriodo == item.idPeriodo);
+                if (existing == null)
+                {
+                    _context.Set<Periodo>().Add(new Periodo
+                    {
+                        idPeriodo = item.idPeriodo,
+                        detalle = item.detalle,
+                        activo = item.activo == 1
+                    });
+                }
+                else
+                {
+                    existing.detalle = item.detalle;
+                    existing.activo = item.activo == 1;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncCarrerasAsync()
+        {
+            var rows = await _centralProvider.GetAllCarrerasFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Carreras.FirstOrDefaultAsync(x => x.idCarrera == item.idCarrera);
+                if (existing == null)
+                {
+                    _context.Carreras.Add(new Carrera
+                    {
+                        idCarrera = item.idCarrera,
+                        CarreraNombre = item.Carrera,
+                        activa = item.activa == 1
+                    });
+                }
+                else
+                {
+                    existing.CarreraNombre = item.Carrera;
+                    existing.activa = item.activa == 1;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncSeccionesAsync()
+        {
+            var rows = await _centralProvider.GetAllSeccionesFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Set<Seccion>().FirstOrDefaultAsync(x => x.idSeccion == item.idSeccion);
+                if (existing == null)
+                {
+                    _context.Set<Seccion>().Add(new Seccion
+                    {
+                        idSeccion = item.idSeccion,
+                        seccion = item.seccion
+                    });
+                }
+                else
+                {
+                    existing.seccion = item.seccion;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncModalidadesAsync()
+        {
+            var rows = await _centralProvider.GetAllModalidadesFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Modalidades.FirstOrDefaultAsync(x => x.idModalidad == item.idModalidad);
+                if (existing == null)
+                {
+                    _context.Modalidades.Add(new Modalidad
+                    {
+                        idModalidad = item.idModalidad,
+                        modalidad = item.modalidad
+                    });
+                }
+                else
+                {
+                    existing.modalidad = item.modalidad;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncInstitucionesAsync()
+        {
+            var rows = await _centralProvider.GetAllInstitucionesFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.Instituciones.FirstOrDefaultAsync(x => x.idInstitucion == item.idInstitucion);
+                if (existing == null)
+                {
+                    _context.Instituciones.Add(new Institucion
+                    {
+                        idInstitucion = item.idInstitucion,
+                        InstitucionNombre = item.Institucion
+                    });
+                }
+                else
+                {
+                    existing.InstitucionNombre = item.Institucion;
                 }
                 processed++;
             }

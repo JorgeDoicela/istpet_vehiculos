@@ -22,6 +22,62 @@ CREATE TABLE IF NOT EXISTS tipo_licencia (
 -- 2. Espejos de SIGAFI (Solo se crean en istpet_vehiculos)
 -- Almacenamos copias locales para evitar latencia y reportes offline.
 
+CREATE TABLE IF NOT EXISTS periodos (
+    idPeriodo CHAR(7) PRIMARY KEY,
+    detalle VARCHAR(100),
+    fecha_inicial DATE,
+    fecha_final DATE,
+    cerrado TINYINT(1) DEFAULT 0,
+    fecha_maxima_autocierre DATE,
+    activo TINYINT(1) DEFAULT 1,
+    creditos TINYINT(1) DEFAULT 0,
+    numero_pagos INT UNSIGNED DEFAULT 1,
+    fecha_matrucla_extraordinaria DATE,
+    foliop INT,
+    permiteMatricula TINYINT DEFAULT 0,
+    ingresoCalificaciones TINYINT DEFAULT 0,
+    permiteCalificacionesInstituto TINYINT DEFAULT 0,
+    periodoactivoinstituto TINYINT DEFAULT 0,
+    visualizaPowerBi TINYINT DEFAULT 0,
+    esInstituto TINYINT DEFAULT 0,
+    periodoPlanificacion TINYINT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS carreras (
+    idCarrera INT PRIMARY KEY,
+    Carrera VARCHAR(100),
+    fechaCreacion DATE,
+    activa TINYINT(1) DEFAULT 1,
+    directorCarrera VARCHAR(100),
+    numero_creditos INT,
+    ordenCarrera INT DEFAULT 0,
+    numero_alumnos INT,
+    revisaArrastres TINYINT DEFAULT 1,
+    codigo_cases VARCHAR(20),
+    aliasCarrera VARCHAR(5),
+    BolsaEmpleo TINYINT(1) DEFAULT 0,
+    esInstituto TINYINT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS secciones (
+    idSeccion INT PRIMARY KEY,
+    seccion VARCHAR(30),
+    sufijo CHAR(1)
+);
+
+CREATE TABLE IF NOT EXISTS modalidades (
+    idModalidad INT PRIMARY KEY,
+    modalidad VARCHAR(100),
+    sufijo CHAR(1)
+);
+
+CREATE TABLE IF NOT EXISTS instituciones (
+    idInstitucion INT PRIMARY KEY,
+    Institucion VARCHAR(200),
+    ciudad VARCHAR(100),
+    provincia VARCHAR(100)
+);
+
 CREATE TABLE IF NOT EXISTS profesores (
     idProfesor VARCHAR(15) PRIMARY KEY,
     tipodocumento VARCHAR(1) DEFAULT 'C',

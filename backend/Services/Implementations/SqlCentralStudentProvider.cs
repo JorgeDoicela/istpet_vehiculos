@@ -840,6 +840,53 @@ WHERE COALESCE(activo, 1) = 0";
                     instructor = ReadNullableString(reader, "instructor")
                 });
 
+        public Task<IEnumerable<CentralPeriodoDto>> GetAllPeriodosFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idPeriodo, detalle, CAST(COALESCE(activo, 1) AS SIGNED) AS activo FROM periodos",
+                reader => new CentralPeriodoDto
+                {
+                    idPeriodo = ReadString(reader, "idPeriodo"),
+                    detalle = ReadNullableString(reader, "detalle"),
+                    activo = ReadInt(reader, "activo")
+                });
+
+        public Task<IEnumerable<CentralCarreraDto>> GetAllCarrerasFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idCarrera, Carrera, CAST(COALESCE(activa, 1) AS SIGNED) AS activa FROM carreras",
+                reader => new CentralCarreraDto
+                {
+                    idCarrera = ReadInt(reader, "idCarrera"),
+                    Carrera = ReadNullableString(reader, "Carrera"),
+                    activa = ReadInt(reader, "activa")
+                });
+
+        public Task<IEnumerable<CentralSeccionDto>> GetAllSeccionesFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idSeccion, seccion FROM secciones",
+                reader => new CentralSeccionDto
+                {
+                    idSeccion = ReadInt(reader, "idSeccion"),
+                    seccion = ReadNullableString(reader, "seccion")
+                });
+
+        public Task<IEnumerable<CentralModalidadDto>> GetAllModalidadesFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idModalidad, modalidad FROM modalidades",
+                reader => new CentralModalidadDto
+                {
+                    idModalidad = ReadInt(reader, "idModalidad"),
+                    modalidad = ReadNullableString(reader, "modalidad")
+                });
+
+        public Task<IEnumerable<CentralInstitucionDto>> GetAllInstitucionesFromCentralAsync() =>
+            QueryListAsync(
+                @"SELECT idInstitucion, Institucion FROM instituciones",
+                reader => new CentralInstitucionDto
+                {
+                    idInstitucion = ReadInt(reader, "idInstitucion"),
+                    Institucion = ReadNullableString(reader, "Institucion")
+                });
+
         public Task<IEnumerable<CentralPracticaSyncDto>> GetAllPracticesFromCentralAsync() =>
             QueryListAsync(
                 // SIGAFI: cond_alumnos_practicas no incluye observaciones; NULL mantiene paridad con origen.

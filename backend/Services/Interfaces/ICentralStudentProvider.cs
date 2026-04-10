@@ -296,6 +296,13 @@ namespace backend.Services.Interfaces
         Task<IReadOnlyList<ClaseActiva>> GetClasesActivasEnRutaFromCentralAsync();
         /// <summary>Vehículos inactivos en SIGAFI (p. ej. alerta operativa).</summary>
         Task<IReadOnlyList<AlertaMantenimiento>> GetAlertasVehiculoDesdeCentralAsync();
+        
+        Task<IEnumerable<CentralPeriodoDto>> GetAllPeriodosFromCentralAsync();
+        Task<IEnumerable<CentralCarreraDto>> GetAllCarrerasFromCentralAsync();
+        Task<IEnumerable<CentralSeccionDto>> GetAllSeccionesFromCentralAsync();
+        Task<IEnumerable<CentralModalidadDto>> GetAllModalidadesFromCentralAsync();
+        Task<IEnumerable<CentralInstitucionDto>> GetAllInstitucionesFromCentralAsync();
+
         Task<bool> PingSigafiAsync();
 
         /// <summary>

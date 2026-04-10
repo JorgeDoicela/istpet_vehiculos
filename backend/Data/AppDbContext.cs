@@ -28,6 +28,10 @@ namespace backend.Data
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
         public DbSet<AlertaMantenimiento> AlertasMantenimiento { get; set; }
 
+        public DbSet<Carrera> Carreras { get; set; }
+        public DbSet<Modalidad> Modalidades { get; set; }
+        public DbSet<Institucion> Instituciones { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -36,6 +40,24 @@ namespace backend.Data
             modelBuilder.Entity<Usuario>(entity => {
                 entity.ToTable("usuarios_web");
                 entity.HasKey(e => e.usuario);
+            });
+
+            // Mirrors de SIGAFI (Master Data)
+            modelBuilder.Entity<Carrera>(entity => {
+                entity.ToTable("carreras");
+                entity.HasKey(e => e.idCarrera);
+                entity.Property(e => e.CarreraNombre).HasColumnName("Carrera");
+            });
+
+            modelBuilder.Entity<Modalidad>(entity => {
+                entity.ToTable("modalidades");
+                entity.HasKey(e => e.idModalidad);
+            });
+
+            modelBuilder.Entity<Institucion>(entity => {
+                entity.ToTable("instituciones");
+                entity.HasKey(e => e.idInstitucion);
+                entity.Property(e => e.InstitucionNombre).HasColumnName("Institucion");
             });
 
             // 2. TIPO LICENCIA

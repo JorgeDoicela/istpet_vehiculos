@@ -104,4 +104,65 @@ namespace backend.DTOs
         public int asistencia { get; set; }
         public int esRrhh { get; set; }
     }
+
+    public class CentralPeriodoDto
+    {
+        public string idPeriodo { get; set; } = string.Empty;
+        public string? detalle { get; set; }
+        public DateTime? fecha_inicial { get; set; }
+        public DateTime? fecha_final { get; set; }
+        public int cerrado { get; set; }
+        public DateTime? fecha_maxima_autocierre { get; set; }
+        public int activo { get; set; }
+        public int creditos { get; set; }
+        public int numero_pagos { get; set; }
+        public DateTime? fecha_matrucla_extraordinaria { get; set; }
+        public int? foliop { get; set; }
+        public int permiteMatricula { get; set; }
+        public int ingresoCalificaciones { get; set; }
+        public int permiteCalificacionesInstituto { get; set; }
+        public int periodoactivoinstituto { get; set; }
+        public int visualizaPowerBi { get; set; }
+        public int esInstituto { get; set; }
+        public int periodoPlanificacion { get; set; }
+    }
+
+    public class CentralCarreraDto
+    {
+        public int idCarrera { get; set; }
+        public string? Carrera { get; set; }
+        public DateTime? fechaCreacion { get; set; }
+        public int activa { get; set; }
+        public string? directorCarrera { get; set; }
+        public int? numero_creditos { get; set; }
+        public int ordenCarrera { get; set; }
+        public int? numero_alumnos { get; set; }
+        public int revisaArrastres { get; set; }
+        public string? codigo_cases { get; set; }
+        public string? aliasCarrera { get; set; }
+        public int BolsaEmpleo { get; set; }
+        public int esInstituto { get; set; }
+    }
+
+    public class CentralSeccionDto
+    {
+        public int idSeccion { get; set; }
+        public string? seccion { get; set; }
+        public string? sufijo { get; set; }
+    }
+
+    public class CentralModalidadDto
+    {
+        public int idModalidad { get; set; }
+        public string? modalidad { get; set; }
+        public string? sufijo { get; set; }
+    }
+
+    public class CentralInstitucionDto
+    {
+        public int idInstitucion { get; set; }
+        public string? Institucion { get; set; }
+        public string? ciudad { get; set; }
+        public string? provincia { get; set; }
+    }
 }
