@@ -275,6 +275,10 @@ await using (var scope = app.Services.CreateAsyncScope())
         {
             "ALTER TABLE tipo_licencia ADD COLUMN id_categoria_sigafi INT NULL UNIQUE",
             
+            // Hardening de Metadatos (Unblock Sync)
+            "ALTER TABLE profesores MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idParroquiaNacimiento INT NULL, MODIFY idParroquiaResidencia INT NULL, MODIFY idDiscapacidad INT NULL, MODIFY tipoSangre VARCHAR(5) NULL",
+            "ALTER TABLE alumnos MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idDiscapacidad INT NULL",
+            
             @"CREATE TABLE IF NOT EXISTS matriculas_examen_conduccion (
                 idMatricula INT NOT NULL,
                 idCategoria INT NOT NULL,
