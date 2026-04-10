@@ -170,5 +170,20 @@ namespace backend.Controllers
             var res = await _syncService.InspectVehicleParityAsync(placa);
             return Ok(ApiResponse<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>>.Ok(res));
         }
+
+        [HttpGet("db-diag")]
+        [AllowAnonymous]
+        public async Task<IActionResult> DbDiag()
+        {
+            try
+            {
+                var conn = _syncService.GetDebugConnectionInfo();
+                return Ok(conn);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 }

@@ -18,6 +18,7 @@ namespace backend.Services.Interfaces
         Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralStudentDto, backend.Models.Estudiante>> InspectStudentParityAsync(string idAlumno);
         Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralInstructorDto, backend.Models.Instructor>> InspectInstructorParityAsync(string idProfesor);
         Task<backend.DTOs.ParityInspectionResult<backend.Services.Interfaces.CentralVehiculoDto, backend.Models.Vehiculo>> InspectVehicleParityAsync(string placa);
+        object GetDebugConnectionInfo();
     }
 }
 
@@ -1524,6 +1525,17 @@ namespace backend.Services.Implementations
             }
 
             return result;
+        }
+        public object GetDebugConnectionInfo()
+        {
+            var conn = _context.Database.GetDbConnection();
+            var info = new
+            {
+                Server = conn.DataSource,
+                Database = conn.Database,
+                State = conn.State.ToString()
+            };
+            return info;
         }
     }
 }

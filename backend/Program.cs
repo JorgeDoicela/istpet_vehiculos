@@ -275,7 +275,22 @@ await using (var scope = app.Services.CreateAsyncScope())
         {
             "ALTER TABLE tipo_licencia ADD COLUMN id_categoria_sigafi INT NULL UNIQUE",
             
-            // Hardening de Metadatos (Unblock Sync)
+            // Hardening de Metadatos y Paridad (Unblock Sync & Auth)
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS abreviatura VARCHAR(5) NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS abreviatura_post VARCHAR(5) NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idParroquiaNacimiento INT NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idParroquiaResidencia INT NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idEtnia INT NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idNacionalidad INT NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS idDiscapacidad INT NULL",
+            "ALTER TABLE profesores ADD COLUMN IF NOT EXISTS emailInstitucional VARCHAR(255) NULL",
+            
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idEtnia INT NULL",
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idNacionalidad INT NULL",
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idDiscapacidad INT NULL",
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS email_institucional VARCHAR(255) NULL",
+
+            // Saneamiento de constraints
             "ALTER TABLE profesores MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idParroquiaNacimiento INT NULL, MODIFY idParroquiaResidencia INT NULL, MODIFY idDiscapacidad INT NULL, MODIFY tipoSangre VARCHAR(5) NULL",
             "ALTER TABLE alumnos MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idDiscapacidad INT NULL",
             
