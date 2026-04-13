@@ -291,6 +291,37 @@ namespace backend.Services.Implementations
                 var take = Math.Clamp(limit, 1, 200);
                 var sql = $@"
                     SELECT
+                        COALESCE(p.idPractica, 0) AS idPractica,
+                        av.idAlumno AS idalumno,
+                        av.idVehiculo AS idvehiculo,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
+                        av.idProfesor AS idProfesor,
+                        av.idPeriodo AS idPeriodo,
+                        fh.fecha AS fecha,
+                        p.hora_salida AS hora_salida,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                        CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                        CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                        p.hora_llegada AS SigafiHoraLlegada,
+                        h.idAsignacionHorario AS idAsignacionHorario,
+                        hc.hora_inicio AS HoraPlanificadaInicio,
+                        hc.hora_fin AS HoraPlanificadaFin,
+                        1 AS EsPlanificado
+                    FROM cond_alumnos_horarios h
+                    JOIN cond_alumnos_vehiculos av ON av.idAsignacion = h.idAsignacion
+                    JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                    JOIN horas_clases hc ON hc.idhora = h.idHora
+                    LEFT JOIN cond_practicas_horarios_alumnos pha ON pha.idAsignacionHorario = h.idAsignacionHorario
+                    LEFT JOIN cond_alumnos_practicas p ON p.idPractica = pha.idPractica
+                    JOIN alumnos a ON a.idAlumno = av.idAlumno
+                    JOIN vehiculos v ON v.idVehiculo = av.idVehiculo
+                    JOIN profesores pr ON pr.idProfesor = av.idProfesor
+                    WHERE fh.fecha = CURDATE() AND COALESCE(h.activo, 1) = 1 AND COALESCE(av.activa, 1) = 1
+
+                    UNION
+
+                    SELECT
                         p.idPractica,
                         p.idalumno,
                         p.idvehiculo,
@@ -303,13 +334,25 @@ namespace backend.Services.Implementations
                         CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
                         CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
                         CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
-                        p.hora_llegada AS SigafiHoraLlegada
+                        p.hora_llegada AS SigafiHoraLlegada,
+                        NULL AS idAsignacionHorario,
+                        NULL AS HoraPlanificadaInicio,
+                        NULL AS HoraPlanificadaFin,
+                        0 AS EsPlanificado
                     FROM cond_alumnos_practicas p
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE COALESCE(p.cancelado, 0) = 0
-                    ORDER BY p.fecha DESC, p.hora_salida DESC
+                      AND p.fecha >= CURDATE() - INTERVAL 1 DAY
+                      AND NOT EXISTS (
+                          SELECT 1 
+                          FROM cond_practicas_horarios_alumnos pha 
+                          JOIN cond_alumnos_horarios h ON h.idAsignacionHorario = pha.idAsignacionHorario
+                          JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                          WHERE pha.idPractica = p.idPractica AND fh.fecha = CURDATE()
+                      )
+                    ORDER BY fecha DESC, COALESCE(HoraPlanificadaInicio, '23:59:00') ASC, hora_salida DESC
                     LIMIT {take}";
                 return await QueryListAsync(sql, MapScheduledPractice);
             }
@@ -1151,6 +1194,19 @@ WHERE COALESCE(activo, 1) = 0";
             var ensalida = ReadInt(reader, "SigafiEnsalida");
             var llegada = ReadNullableTime(reader, "SigafiHoraLlegada");
             var idPer = ReadNullableString(reader, "idPeriodo")?.Trim();
+            
+            int? idAsigHorario = null;
+            try { idAsigHorario = ReadNullableInt(reader, "idAsignacionHorario"); } catch { }
+
+            string? hpInicio = null;
+            try { hpInicio = ReadNullableString(reader, "HoraPlanificadaInicio"); } catch { }
+
+            string? hpFin = null;
+            try { hpFin = ReadNullableString(reader, "HoraPlanificadaFin"); } catch { }
+
+            bool esPlanificado = false;
+            try { esPlanificado = ReadInt(reader, "EsPlanificado") == 1; } catch { }
+
             return new ScheduledPracticeDto
             {
                 idPractica = ReadInt(reader, "idPractica"),
@@ -1166,7 +1222,11 @@ WHERE COALESCE(activo, 1) = 0";
                 AlumnoNombre = ReadString(reader, "AlumnoNombre"),
                 VehiculoDetalle = ReadString(reader, "VehiculoDetalle"),
                 ProfesorNombre = ReadString(reader, "ProfesorNombre"),
-                EstadoOperativo = EstadoOperativoDesdeCamposPractica(cancelado, ensalida, llegada)
+                EstadoOperativo = EstadoOperativoDesdeCamposPractica(cancelado, ensalida, llegada),
+                idAsignacionHorario = idAsigHorario,
+                HoraPlanificadaInicio = hpInicio,
+                HoraPlanificadaFin = hpFin,
+                EsPlanificado = esPlanificado
             };
         }
 

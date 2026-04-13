@@ -279,9 +279,10 @@ const ControlOperativo = () => {
     const buildAgendaCtx = (ag) => {
         if (!ag) return null;
         return {
-            idPractica: ag.idPractica,
+            idPractica: ag.idPractica, // Puede ser 0 si es solo planificado
             idVehiculo: ag.idvehiculo,
-            idProfesor: ag.idProfesor
+            idProfesor: ag.idProfesor,
+            idAsignacionHorario: ag.idAsignacionHorario ?? ag.IdAsignacionHorario
         };
     };
 
@@ -848,7 +849,9 @@ const ControlOperativo = () => {
                                                     <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
                                                         <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
                                                             <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
-                                                            {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
+                                                            {ag.estadoOperativo === 'pendiente' && ag.EsPlanificado && ag.HoraPlanificadaInicio
+                                                                ? <span className="text-[var(--istpet-gold)] font-black text-[9px] block mt-0.5">{ag.HoraPlanificadaInicio} - {ag.HoraPlanificadaFin}</span>
+                                                                : (ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—')}
                                                         </span>
                                                         <div className="flex flex-wrap items-center gap-1.5 justify-end">
                                                             <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-tight ${chip.cls}`}>{chip.label}</span>
@@ -882,7 +885,9 @@ const ControlOperativo = () => {
                                                     <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
                                                         <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
                                                             <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
-                                                            {ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}
+                                                            {ag.estadoOperativo === 'pendiente' && ag.EsPlanificado && ag.HoraPlanificadaInicio
+                                                                ? <span className="text-[var(--istpet-gold)] font-black text-[9px] block mt-0.5">{ag.HoraPlanificadaInicio} - {ag.HoraPlanificadaFin}</span>
+                                                                : (ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—')}
                                                         </span>
                                                         <div className="flex flex-wrap items-center gap-1.5 justify-end">
                                                             <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded-full tracking-tight ${chip.cls}`}>{chip.label}</span>

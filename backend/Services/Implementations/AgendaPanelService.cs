@@ -109,7 +109,8 @@ namespace backend.Services.Implementations
                 AlumnoNombre = $"{r.e.apellidoPaterno} {r.e.apellidoMaterno} {r.e.primerNombre} {r.e.segundoNombre}".Trim(),
                 VehiculoDetalle = $"#{(r.v.numero_vehiculo ?? "?")} ({(r.v.placa ?? "")})",
                 ProfesorNombre = $"{r.i.apellidos} {r.i.nombres}".Trim(),
-                EstadoOperativo = ResolverEstadoOperativoPractica(r.p.cancelado, r.p.ensalida, r.p.hora_llegada)
+                EstadoOperativo = ResolverEstadoOperativoPractica(r.p.cancelado, r.p.ensalida, r.p.hora_llegada),
+                EsPlanificado = false
             }).ToList();
         }
     }

@@ -42,6 +42,9 @@ export const logisticaService = {
     if (agendaCtx?.idPractica != null && agendaCtx.idPractica !== '') {
       p.set('idPracticaAgenda', String(agendaCtx.idPractica));
     }
+    if (agendaCtx?.idAsignacionHorario != null && agendaCtx.idAsignacionHorario !== '') {
+      p.set('idAsignacionHorario', String(agendaCtx.idAsignacionHorario));
+    }
     const qs = p.toString();
     const response = await api.get(`/logistica/estudiante/${encodeURIComponent(idAlumno)}${qs ? `?${qs}` : ''}`);
     return unwrap(response);

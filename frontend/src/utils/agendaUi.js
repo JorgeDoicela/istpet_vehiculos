@@ -10,7 +10,10 @@ export function normalizeAgendaPractica(ag) {
     AlumnoNombre: ag.alumnoNombre ?? ag.AlumnoNombre ?? '',
     VehiculoDetalle: ag.vehiculoDetalle ?? ag.VehiculoDetalle ?? '',
     ProfesorNombre: ag.profesorNombre ?? ag.ProfesorNombre ?? '',
-    estadoOperativo: ag.estadoOperativo ?? ag.EstadoOperativo ?? 'sin_sincronizar'
+    estadoOperativo: ag.estadoOperativo ?? ag.EstadoOperativo ?? 'sin_sincronizar',
+    HoraPlanificadaInicio: ag.horaPlanificadaInicio ?? ag.HoraPlanificadaInicio,
+    HoraPlanificadaFin: ag.horaPlanificadaFin ?? ag.HoraPlanificadaFin,
+    EsPlanificado: ag.esPlanificado ?? ag.EsPlanificado ?? false
   };
 }
 

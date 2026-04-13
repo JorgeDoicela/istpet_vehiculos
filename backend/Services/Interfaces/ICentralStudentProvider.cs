@@ -106,6 +106,12 @@ namespace backend.Services.Interfaces
         public string ProfesorNombre { get; set; } = string.Empty;
 
         public string EstadoOperativo { get; set; } = "sin_sincronizar";
+
+        // Campos de Planificación Extendida (Agenda Perfecta)
+        public int? idAsignacionHorario { get; set; }
+        public string? HoraPlanificadaInicio { get; set; }
+        public string? HoraPlanificadaFin { get; set; }
+        public bool EsPlanificado { get; set; }
     }
 
     public class AgendaLogisticaResponseDto

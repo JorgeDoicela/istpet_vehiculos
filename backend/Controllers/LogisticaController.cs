@@ -61,7 +61,8 @@ namespace backend.Controllers
             string idAlumno,
             [FromQuery] int? idVehiculoAgenda = null,
             [FromQuery] string? idProfesorAgenda = null,
-            [FromQuery] int? idPracticaAgenda = null)
+            [FromQuery] int? idPracticaAgenda = null,
+            [FromQuery] int? idAsignacionHorario = null)
         {
             idAlumno = idAlumno.Trim();
 
@@ -89,7 +90,7 @@ namespace backend.Controllers
             {
                 var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
                 await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
-                await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda);
+                await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda, idAsignacionHorario);
                 fromCentral.isBusy = await _context.Practicas
                     .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
@@ -106,7 +107,8 @@ namespace backend.Controllers
             EstudianteLogisticaResponse student,
             int? idVehiculoAgenda,
             string? idProfesorAgenda,
-            int? idPracticaAgenda)
+            int? idPracticaAgenda,
+            int? idAsignacionHorario)
         {
             if (idVehiculoAgenda is > 0)
             {
@@ -127,7 +129,11 @@ namespace backend.Controllers
                     student.practicaInstructor = $"{ins.apellidos} {ins.nombres}".Trim();
             }
 
-            if (idPracticaAgenda is > 0)
+            if (idAsignacionHorario is > 0)
+            {
+                student.idAsignacionHorario = idAsignacionHorario;
+            }
+            else if (idPracticaAgenda is > 0)
             {
                 var link = await _context.PracticasHorarios.AsNoTracking()
                     .Where(x => x.idPractica == idPracticaAgenda.Value)
