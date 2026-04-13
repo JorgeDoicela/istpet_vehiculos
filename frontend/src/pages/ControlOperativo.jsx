@@ -503,16 +503,27 @@ const ControlOperativo = () => {
                                                                     </p>
                                                                     {s.esAgendado ? (
                                                                         <div className="flex items-center gap-2">
-                                                                            <span className="text-[10px] font-black text-emerald-700 flex items-center gap-1">
-                                                                                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                                {s.hora}
+                                                                        <div className="flex items-center gap-2.5 mt-1 bg-[var(--apple-primary)]/5 px-2.5 py-1.5 rounded-xl border border-[var(--apple-primary)]/10">
+                                                                            <span className="text-[10px] font-black text-[var(--apple-primary)] flex items-center gap-1.5">
+                                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                                {s.horaAgenda || 'Consultando Hora...'}
                                                                             </span>
-                                                                            <span className="text-[9px] font-bold text-slate-500 uppercase">
-                                                                                {s.vehiculo}
-                                                                            </span>
-                                                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse uppercase ${s.isBusy ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                                                            {s.vehiculoAgenda ? (
+                                                                                <span className="text-[9px] font-black text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 uppercase tracking-tighter">
+                                                                                    {s.vehiculoAgenda}
+                                                                                </span>
+                                                                            ) : s.esAgendado && (
+                                                                                 <span className="text-[9px] font-bold text-[var(--apple-text-sub)] border-l border-[var(--apple-border)] pl-2.5 uppercase tracking-tighter">
+                                                                                    S/V
+                                                                                </span>
+                                                                            )}
+
+                                                                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse uppercase ${s.isBusy ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
                                                                                 {s.isBusy ? 'EN PISTA' : 'AGENDADO'}
                                                                             </span>
+                                                                        </div>
+
+
                                                                         </div>
                                                                     ) : (
                                                                         <div className="flex items-center gap-2">
@@ -575,9 +586,12 @@ const ControlOperativo = () => {
                                                             {estudianteData.horarioProximo && (
                                                                 <div className="flex items-center gap-2 px-2 py-0.5 bg-[var(--apple-primary)]/10 rounded-full border border-[var(--apple-primary)]/20 animate-apple-in">
                                                                     <svg className="h-3 w-3 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                    <span className="text-[9px] font-black text-[var(--apple-primary)] uppercase">PLAN: {estudianteData.horarioProximo}</span>
+                                                                    <span className="text-[9px] font-black text-[var(--apple-primary)] uppercase">
+                                                                        {estudianteData.horarioFecha && `${estudianteData.horarioFecha} | `}PLAN: {estudianteData.horarioProximo}
+                                                                    </span>
                                                                 </div>
                                                             )}
+
                                                             {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
                                                                 <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-500/5 rounded-full border border-slate-500/10 animate-apple-in" title="Información sugerida por SIGAFI">
                                                                     <span className="text-[8px] font-bold text-slate-400 uppercase">Sugerido:</span>
@@ -930,8 +944,11 @@ const ControlOperativo = () => {
                                         <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em]">Hoy</p>
                                         {agendaBloqueHoy.map((ag) => {
                                             const chip = estadoAgendaChip(ag.estadoOperativo);
+                                            // Usar una llave compuesta para evitar el error de 'key=0' en agendados
+                                            const itemKey = ag.idPractica > 0 ? `p-${ag.idPractica}` : `h-${ag.idAsignacionHorario}`;
                                             return (
-                                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm">
+                                                <div key={itemKey} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm">
+
                                                     <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
                                                         <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
                                                             <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
@@ -966,8 +983,9 @@ const ControlOperativo = () => {
                                         <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] pt-1">Anteriores</p>
                                         {agendaBloqueAnteriores.map((ag) => {
                                             const chip = estadoAgendaChip(ag.estadoOperativo);
+                                            const itemKey = ag.idPractica > 0 ? `p-${ag.idPractica}` : `h-${ag.idAsignacionHorario}`;
                                             return (
-                                                <div key={ag.idPractica} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm opacity-95">
+                                                <div key={itemKey} className="bg-[var(--apple-card)] p-4 rounded-2xl border border-[var(--apple-border)] group/item hover:border-[var(--apple-primary)]/50 transition-all shadow-sm opacity-95">
                                                     <div className="flex justify-between items-start mb-2 gap-2 flex-wrap">
                                                         <span className="text-[10px] font-black text-[var(--apple-primary)] leading-tight">
                                                             <span className="block text-[9px] text-[var(--apple-text-sub)] uppercase tracking-tight">{fmtFechaAgenda(ag.fecha)}</span>
@@ -1067,8 +1085,9 @@ const ControlOperativo = () => {
                                     <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-widest mb-2">Hoy</p>
                                     {agendaBloqueHoy.map((ag, idx) => {
                                         const chip = estadoAgendaChip(ag.estadoOperativo);
+                                        const itemKey = ag.idPractica > 0 ? `p-${ag.idPractica}` : `h-${ag.idAsignacionHorario}`;
                                         return (
-                                            <div key={ag.idPractica} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
+                                            <div key={itemKey} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
                                                 <div className="flex items-start gap-3">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">
@@ -1093,8 +1112,9 @@ const ControlOperativo = () => {
                                     <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest mb-2">Anteriores</p>
                                     {agendaBloqueAnteriores.map((ag, idx) => {
                                         const chip = estadoAgendaChip(ag.estadoOperativo);
+                                        const itemKey = ag.idPractica > 0 ? `p-${ag.idPractica}` : `h-${ag.idAsignacionHorario}`;
                                         return (
-                                            <div key={ag.idPractica} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
+                                            <div key={itemKey} className={`group px-1 ${idx !== 0 ? 'border-t border-[var(--apple-border)]/40 pt-4 mt-4' : ''}`}>
                                                 <div className="flex items-start gap-3">
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex flex-wrap items-center gap-2 mb-1">

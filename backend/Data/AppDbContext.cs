@@ -162,16 +162,8 @@ namespace backend.Data
                 entity.Property(e => e.user_asigna).HasColumnName("user_asigna");
                 entity.Property(e => e.user_llegada).HasColumnName("user_llegada");
                 
-                // Detectar modo de base de datos para cancelado
-                var dbMode = Environment.GetEnvironmentVariable("DATABASE_MODE") ?? "Mirror";
-                if (dbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase))
-                {
-                    entity.Ignore(e => e.cancelado);
-                }
-                else
-                {
-                    entity.Property(e => e.cancelado).HasColumnName("cancelado");
-                }
+                // Columna cancelado: siempre habilitada para consistencia entre modos
+                entity.Property(e => e.cancelado).HasColumnName("cancelado");
             });
 
             // 9. ASIGNACIONES (Mirroring 'cond_alumnos_vehiculos' schema)

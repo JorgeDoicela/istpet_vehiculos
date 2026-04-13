@@ -61,7 +61,6 @@ namespace backend.Services.Interfaces
         public string? segundoApellido { get; set; }
         public string? primerNombre { get; set; }
         public string? segundoNombre { get; set; }
-        public int estadoCivil { get; set; }
         public string? direccion { get; set; }
         public string? callePrincipal { get; set; }
         public string? calleSecundaria { get; set; }
@@ -374,5 +373,7 @@ namespace backend.Services.Interfaces
         /// Llamar antes de un MasterSync para garantizar datos frescos.
         /// </summary>
         void InvalidateSigafiCatalogCache();
+        Task<IDictionary<string, CentralHorarioDto>> GetNextSchedulesForAlumnosAsync(IEnumerable<string> ids);
     }
 }
+

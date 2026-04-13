@@ -28,7 +28,9 @@ namespace backend.DTOs
         public string? horarioProximo { get; set; } // Ej: "14:00 - 15:00"
         public int? idAsignacionHorario { get; set; }
         public bool asistenciaHoy { get; set; }
+        public string? horarioFecha { get; set; }
         public string? vehiculoPlanificado { get; set; }
+
         public string? instructorPlanificado { get; set; }
 
         public bool tienePracticaHoy => idPracticaCentral.HasValue;

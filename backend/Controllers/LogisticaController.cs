@@ -71,7 +71,10 @@ namespace backend.Controllers
             CentralStudentDto? centralData;
             try
             {
-                centralData = await _centralProvider.GetFromCentralAsync(idAlumno);
+                var central = await _centralProvider.GetFromCentralAsync(idAlumno);
+                if (central == null) return NotFound(ApiResponse<EstudianteLogisticaResponse>.Fail("Estudiante no encontrado en SIGAFI"));
+                
+                centralData = central;
             }
             catch (Exception ex)
             {
@@ -158,10 +161,15 @@ namespace backend.Controllers
 
         private async Task<EstudianteLogisticaResponse> BuildLogisticaFromSigafiAndPersistAsync(CentralStudentDto centralData)
         {
-            // [JIT RESILIENCE] Ensure all catalog dependencies exist locally BEFORE any persistence or fallback calculations.
-            await EnsureCatalogDependenciesExistAsync(centralData.idPeriodo, centralData.idNivel, centralData.idSeccion, centralData.idModalidad);
+            bool isDirect = IsDirectMode();
+            
+            // [JIT RESILIENCE] Skip catalog sync in direct mode (SIGAFI is the source of truth)
+            if (!isDirect)
+            {
+                await EnsureCatalogDependenciesExistAsync(centralData.idPeriodo, centralData.idNivel, centralData.idSeccion, centralData.idModalidad);
+            }
 
-            var eBase = await _context.Estudiantes.FindAsync(centralData.idAlumno);
+            var eBase = await _context.Estudiantes.AsNoTracking().FirstOrDefaultAsync(e => e.idAlumno == centralData.idAlumno);
             if (eBase == null)
             {
                 eBase = new Estudiante
@@ -265,8 +273,10 @@ namespace backend.Controllers
                         matriculaUsada.idModalidad = centralData.idModalidad;
                 }
             }
-
-            await _context.SaveChangesAsync();
+            if (!isDirect)
+            {
+                await _context.SaveChangesAsync();
+            }
 
             var carreraNombre = centralData.CarreraNombre?.Trim();
             if (string.IsNullOrEmpty(carreraNombre) && nivelLocal != null && nivelLocal.idCarrera > 0)
@@ -407,7 +417,19 @@ namespace backend.Controllers
         {
             var scheduled = await _centralProvider.GetScheduledPracticeAsync(student.idAlumno);
             if (scheduled != null)
-                await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(new[] { scheduled });
+            {
+                // Inyectamos los datos de la agenda en la respuesta para el frontend
+                student.horarioProximo = scheduled.EsPlanificado ? $"{scheduled.HoraPlanificadaInicio} - {scheduled.HoraPlanificadaFin}" : null;
+                student.idAsignacionHorario = scheduled.idAsignacionHorario;
+                student.horarioFecha = scheduled.fecha.ToString("ddd, dd MMM").ToUpper();
+                student.vehiculoPlanificado = scheduled.VehiculoDetalle;
+                student.instructorPlanificado = scheduled.ProfesorNombre;
+
+                if (!IsDirectMode())
+                {
+                    await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(new[] { scheduled });
+                }
+            }
 
             CentralInstructorDto? tutor = null;
             if (scheduled == null)
@@ -450,26 +472,32 @@ namespace backend.Controllers
             var nextSched = await _centralProvider.GetNextScheduleAsync(student.idAlumno);
             if (nextSched != null)
             {
-                // Si hay horario planificado para hoy, lo formateamos mejor
+                // Formateamos la fecha del horario para que el usuario sepa de cuándo es
+                student.horarioFecha = nextSched.FechaReal?.ToString("dd/MM/yyyy");
+
+                // Prioridad para el texto del horario
                 if (!string.IsNullOrEmpty(nextSched.HoraInicio))
                 {
                     student.horarioProximo = $"{nextSched.HoraInicio} - {nextSched.HoraFin}";
-                    // Si no tenemos hora de práctica registrada aún, usamos la del horario
-                    if (string.IsNullOrEmpty(student.practicaHora))
-                        student.practicaHora = nextSched.HoraInicio;
                 }
                 else
                 {
-                    student.horarioProximo = nextSched.observacion ?? string.Empty;
+                    student.horarioProximo = !string.IsNullOrEmpty(nextSched.observacion) 
+                        ? nextSched.observacion 
+                        : "HORARIO ASIGNADO";
                 }
+                
+                // Siempre usamos la hora de inicio como sugerencia de práctica si no hay una real
+                if (string.IsNullOrEmpty(student.practicaHora))
+                    student.practicaHora = nextSched.HoraInicio;
 
                 // Información planificada (informativa)
                 student.vehiculoPlanificado = nextSched.VehiculoPlanificado;
                 student.instructorPlanificado = nextSched.InstructorPlanificado;
 
-                // Lógica de asistencia: Presente si marcó biometrico (asiste=1) 
-                // O si ya se encuentra registrado en pista (ensalida=1)
-                student.asistenciaHoy = nextSched.asiste == 1 || (scheduled?.SigafiEnsalida == 1);
+                // Lógica de asistencia: Reflejamos el estado del registro encontrado (asiste = 1)
+                // O el estado operativo (ensalida = 1)
+                student.asistenciaHoy = (nextSched.asiste == 1) || (scheduled?.SigafiEnsalida == 1);
 
                 // Si SIGAFI dice que es fin de semana según fechas_horarios, ajustamos etiqueta
                 if (nextSched.FinSemana == 1 && !student.jornada.Contains("FIN DE SEMANA"))
@@ -479,9 +507,10 @@ namespace backend.Controllers
             }
             else
             {
-                // Si no hay horario agendado para hoy, el frontend lo manejará (mostrando "SIN CITA" o similar)
                 student.horarioProximo = "SIN CITA AGENDADA";
+                student.asistenciaHoy = false;
             }
+
 
         }
 
@@ -489,7 +518,16 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<IEnumerable<VehiculoLogisticaResponse>>>> GetVehiculosDisponibles()
         {
             var centralVehicles = await _centralProvider.GetAllVehiclesFromCentralAsync();
-            await SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
+            
+            // Solo sincronizar si NO estamos en modo Directo (evita escritura redundante en SIGAFI)
+            var dbMode = _context.Database.ProviderName?.Contains("MySql") == true ? "Direct" : "Mirror"; 
+            // NOTA: Una mejor forma es leer el config, pero el context ya nos da una pista.
+            // Para ser 100% seguros y "Adaptables", evaluaremos la configuración de inicio.
+            
+            if (!IsDirectMode())
+            {
+                await SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
+            }
 
             var rawList = await GetVehiculosOperativosLocalesAsync();
 
@@ -710,26 +748,54 @@ namespace backend.Controllers
             {
                 try
                 {
-                    var porSigafi = await _centralProvider.GetNextOpenPracticesForAlumnosAsync(list.Select(x => x.idAlumno));
-                    if (porSigafi.Count > 0)
-                        await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(porSigafi.Values);
+                    var idList = list.Select(x => x.idAlumno).ToList();
+                    var porSigafi = await _centralProvider.GetNextOpenPracticesForAlumnosAsync(idList);
+                    var horariosSigafi = await _centralProvider.GetNextSchedulesForAlumnosAsync(idList);
 
                     foreach (var item in list)
                     {
-                        if (!porSigafi.TryGetValue(item.idAlumno, out var pr))
-                            continue;
-                        item.esAgendado      = true;
-                        item.horaAgenda      = pr.hora_salida.HasValue
-                            ? pr.hora_salida.Value.ToString(@"hh\:mm", CultureInfo.InvariantCulture)
-                            : null;
-                        item.vehiculoAgenda  = string.IsNullOrWhiteSpace(pr.VehiculoDetalle) ? null : pr.VehiculoDetalle;
-                        item.instructorAgenda = string.IsNullOrWhiteSpace(pr.ProfesorNombre) ? null : pr.ProfesorNombre;
+                        var tid = item.idAlumno.Trim();
+                        // Prioridad 1: Práctica abierta en pista
+                        if (porSigafi.TryGetValue(tid, out var pr))
+                        {
+                            item.esAgendado = true;
+                            item.horaAgenda = pr.hora_salida?.ToString(@"hh\:mm") ?? "En Pista";
+                            item.vehiculoAgenda = pr.VehiculoDetalle;
+                            item.instructorAgenda = pr.ProfesorNombre;
+                        }
+                        // Prioridad 2: Horario agendado (Cita)
+                        else if (horariosSigafi.TryGetValue(tid, out var hor))
+                        {
+                            item.esAgendado = true;
+                            
+                            string prefijo = "Cita";
+                            if (hor.FechaReal.HasValue)
+                            {
+                                var d = hor.FechaReal.Value.Date;
+                                if (d == DateTime.Today) prefijo = "Hoy";
+                                else if (d == DateTime.Today.AddDays(1)) prefijo = "Mañana";
+                                else if (d == DateTime.Today.AddDays(-1)) prefijo = "Ayer";
+                                else prefijo = d.ToString("dd/MM");
+                            }
+
+                            item.horaAgenda = $"{prefijo} {hor.HoraInicio ?? ""}".Trim();
+                            item.vehiculoAgenda = hor.VehiculoPlanificado;
+                            item.instructorAgenda = hor.InstructorPlanificado;
+                        }
+
+
+
+
+
+
                     }
                 }
+
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "SIGAFI no enriqueció sugerencias de alumnos (se devuelve lista sin práctica central).");
                 }
+
 
                 var ids = list.Select(x => x.idAlumno).ToList();
                 var busyIds = await _context.Practicas.AsNoTracking()
@@ -743,6 +809,13 @@ namespace backend.Controllers
             }
 
             return Ok(ApiResponse<IEnumerable<AlumnoSugerenciaLogisticaDto>>.Ok(list));
+        }
+
+        private bool IsDirectMode()
+        {
+            // Detectamos si estamos apuntando a la IP de SIGAFI directamente
+            var conn = _context.Database.GetDbConnection().ConnectionString;
+            return conn.Contains("192.168.7.50");
         }
     }
 }

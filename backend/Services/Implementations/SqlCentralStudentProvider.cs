@@ -30,8 +30,6 @@ namespace backend.Services.Implementations
         private static readonly TimeSpan CacheInstructores = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan CacheVehiculos    = TimeSpan.FromMinutes(5);
         private static readonly TimeSpan CacheCursos       = TimeSpan.FromMinutes(15);
-        private static readonly TimeSpan CacheLicencias    = TimeSpan.FromMinutes(15);
-        private static readonly TimeSpan CacheCategorias   = TimeSpan.FromMinutes(15);
         
         private const string AlumnoLiteCols = @"idAlumno, tipoDocumento, primerNombre, segundoNombre, apellidoPaterno, apellidoMaterno,
                                   fecha_Nacimiento, direccion, telefono, celular, email, 
@@ -178,7 +176,7 @@ namespace backend.Services.Implementations
                 const string sql = @"
                     SELECT
                         idProfesor, tipodocumento, apellidos, nombres, primerApellido, segundoApellido,
-                        primerNombre, segundoNombre, estadoCivil, direccion, callePrincipal, calleSecundaria,
+                        primerNombre, segundoNombre, direccion, callePrincipal, calleSecundaria,
                         numeroCasa, telefono, celular, email, fecha_nacimiento, sexo, clave, practicas,
                         tipo, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
                         emailInstitucional, fecha_ingreso,
@@ -204,7 +202,7 @@ namespace backend.Services.Implementations
             {
                 const string sql = @"
                     SELECT idProfesor, tipodocumento, apellidos, nombres, primerApellido, segundoApellido,
-                           primerNombre, segundoNombre, estadoCivil, direccion, callePrincipal, calleSecundaria,
+                           primerNombre, segundoNombre, direccion, callePrincipal, calleSecundaria,
                            numeroCasa, telefono, celular, email, fecha_nacimiento, sexo, clave, practicas,
                            tipo, titulo, abreviatura, abreviatura_post, CAST(activo AS SIGNED) AS activo,
                            emailInstitucional, fecha_ingreso,
@@ -228,6 +226,7 @@ namespace backend.Services.Implementations
                 const string sql = @"
                     SELECT
                         p.idProfesor,
+                        p.tipodocumento,
                         p.nombres,
                         p.apellidos,
                         p.primerApellido,
@@ -236,6 +235,17 @@ namespace backend.Services.Implementations
                         p.segundoNombre,
                         p.celular,
                         p.email,
+                        p.direccion,
+                        p.callePrincipal,
+                        p.calleSecundaria,
+                        p.numeroCasa,
+                        p.telefono,
+                        p.sexo,
+                        p.clave,
+                        p.tipo,
+                        p.titulo,
+                        p.abreviatura,
+                        p.abreviatura_post,
                         CAST(p.activo AS SIGNED) AS activo
                     FROM cond_alumnos_vehiculos v
                     JOIN profesores p ON p.idProfesor = v.idProfesor
@@ -411,15 +421,19 @@ namespace backend.Services.Implementations
                         NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'sigafi_es' AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado')
                         OR p.cancelado = 0
                     )
-                    AND p.idalumno IN ({inClause})
+                    AND TRIM(p.idalumno) IN ({inClause})
                     ORDER BY p.idalumno ASC, p.fecha ASC, p.hora_salida ASC";
+
+
                 var rows = (await QueryListAsync(sql, ids, MapScheduledPractice)).ToList();
                 var dict = new Dictionary<string, ScheduledPracticeDto>(StringComparer.Ordinal);
                 foreach (var row in rows)
                 {
-                    if (!dict.ContainsKey(row.idalumno))
-                        dict[row.idalumno] = row;
+                    var tid = row.idalumno?.Trim();
+                    if (tid != null && !dict.ContainsKey(tid))
+                        dict[tid] = row;
                 }
+
 
                 return dict;
             }
@@ -500,14 +514,23 @@ namespace backend.Services.Implementations
                     FROM cond_alumnos_horarios h
                     JOIN cond_alumnos_vehiculos a ON a.idAsignacion = h.idAsignacion
                     JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
-                    JOIN horas_clases hc ON hc.idhora = h.idHora
+                    LEFT JOIN horas_clases hc ON hc.idhora = h.idHora
                     LEFT JOIN vehiculos v ON v.idVehiculo = a.idVehiculo
                     LEFT JOIN profesores pr ON pr.idProfesor = a.idProfesor
-                    WHERE a.idAlumno = @p0 
-                    AND fh.fecha = CURDATE()
+                    WHERE TRIM(a.idAlumno) = TRIM(@p0) 
                     AND COALESCE(h.activo, 1) = 1
-                    ORDER BY hc.hora_inicio ASC
+
+                    ORDER BY 
+                        (CASE 
+                            WHEN fh.fecha = CURDATE() THEN 0 
+                            WHEN fh.fecha > CURDATE() THEN 1 
+                            ELSE 2 
+                        END) ASC,
+                        ABS(DATEDIFF(fh.fecha, CURDATE())) ASC,
+                        hc.hora_inicio ASC
                     LIMIT 1";
+
+
 
                 return await QuerySingleAsync(sql, idAlumno, MapCentralHorario);
             }
@@ -672,8 +695,6 @@ WHERE COALESCE(activo, 1) = 0";
         /// </summary>
         public async Task<IEnumerable<CentralTipoLicenciaDto>> GetAllLicenseTypesFromCentralAsync()
         {
-            if (_cache.TryGetValue("sigafi:licencias", out IEnumerable<CentralTipoLicenciaDto>? cached) && cached != null)
-                return cached;
             var result = (await QueryListAsync(
                 @"SELECT idCategoria, categoria FROM categoria_vehiculos",
                 reader =>
@@ -705,7 +726,6 @@ WHERE COALESCE(activo, 1) = 0";
                         activo = 1
                     };
                 })).ToList();
-            _cache.Set("sigafi:licencias", (IEnumerable<CentralTipoLicenciaDto>)result, CacheLicencias);
             return result;
         }
 
@@ -720,7 +740,7 @@ WHERE COALESCE(activo, 1) = 0";
 
         public Task<IEnumerable<CentralCategoriaExamenDto>> GetAllExamCategoriesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idCategoria AS IdCategoria, categoria, CAST(tieneNota AS SIGNED) AS tieneNota, CAST(activa AS SIGNED) AS activa FROM categorias_examenes_conduccion",
+                @"SELECT IdCategoria, categoria, CAST(tieneNota AS SIGNED) AS tieneNota, CAST(activa AS SIGNED) AS activa FROM categorias_examenes_conduccion",
                 reader => new CentralCategoriaExamenDto
                 {
                     IdCategoria = ReadInt(reader, "IdCategoria"),
@@ -885,11 +905,16 @@ WHERE COALESCE(activo, 1) = 0";
 
         public Task<IEnumerable<CentralHorarioDto>> GetAllSchedulesFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAsignacionHorario, idAsignacion, idFecha, idHora,
-                         CAST(asiste AS SIGNED) AS asiste,
-                         CAST(COALESCE(activo, 1) AS SIGNED) AS activo,
-                         observacion
-                  FROM cond_alumnos_horarios",
+                @"SELECT 
+                    h.idAsignacionHorario, h.idAsignacion, h.idFecha, h.idHora,
+                    CAST(h.asiste AS SIGNED) AS asiste,
+                    CAST(COALESCE(h.activo, 1) AS SIGNED) AS activo,
+                    h.observacion,
+                    hc.hora_inicio AS HoraInicio, hc.hora_fin AS HoraFin,
+                    fh.fecha AS FechaReal, fh.finsemana AS FinSemana
+                  FROM cond_alumnos_horarios h
+                  JOIN horas_clases hc ON hc.idhora = h.idHora
+                  JOIN fechas_horarios fh ON fh.idFecha = h.idFecha",
                 MapCentralHorario);
 
         public Task<IEnumerable<CentralPracticaHorarioDto>> GetPracticeScheduleLinksFromCentralAsync() =>
@@ -983,8 +1008,64 @@ WHERE COALESCE(activo, 1) = 0";
             _cache.Remove("sigafi:vehiculos");
             _cache.Remove("sigafi:cursos");
             _cache.Remove("sigafi:licencias");
-            _cache.Remove("sigafi:categorias");
             _logger.LogInformation("Caché de catálogos SIGAFI invalidado (pre-sync).");
+        }
+
+        public async Task<IDictionary<string, CentralHorarioDto>> GetNextSchedulesForAlumnosAsync(IEnumerable<string> ids)
+        {
+            // [TRIM RESILIENCE] Aseguramos que los IDs no tengan espacios para que el IN clause no falle
+            var studentIds = ids?
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim())
+                .Distinct()
+                .ToList() ?? new List<string>();
+                
+            if (studentIds.Count == 0)
+                return new Dictionary<string, CentralHorarioDto>(StringComparer.OrdinalIgnoreCase);
+            
+            try
+            {
+                var inClause = string.Join(",", studentIds.Select((_, i) => $"@p{i}"));
+                var sql = $@"
+                    SELECT 
+                        h.idAsignacionHorario, 
+                        h.idAsignacion,
+                        h.idFecha, h.idHora, CAST(h.asiste AS SIGNED) AS asiste, CAST(COALESCE(h.activo, 1) AS SIGNED) AS activo, h.observacion,
+                        av.idAlumno AS AlumnoId, fh.fecha AS FechaReal, hc.hora_inicio AS HoraInicio,
+                        hc.hora_fin AS HoraFin, fh.finsemana AS FinSemana,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoPlanificado,
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS InstructorPlanificado
+                    FROM cond_alumnos_horarios h
+                    JOIN cond_alumnos_vehiculos av ON av.idAsignacion = h.idAsignacion
+                    JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                    JOIN horas_clases hc ON hc.idhora = h.idHora
+                    LEFT JOIN vehiculos v ON v.idVehiculo = av.idVehiculo
+                    LEFT JOIN profesores pr ON pr.idProfesor = av.idProfesor
+                    WHERE TRIM(av.idAlumno) IN ({inClause})
+                    AND fh.fecha >= DATE_SUB(CURDATE(), INTERVAL 1 DAY)
+                    ORDER BY fh.fecha ASC, hc.hora_inicio ASC";
+
+                        
+
+                var rows = await QueryListAsync(sql, studentIds, reader => {
+                    var dto = MapCentralHorario(reader);
+                    return new { AlumnoId = ReadString(reader, "AlumnoId").Trim(), Dto = dto };
+                });
+
+                var dict = new Dictionary<string, CentralHorarioDto>(StringComparer.OrdinalIgnoreCase);
+                foreach (var item in rows)
+                {
+                    if (!dict.ContainsKey(item.AlumnoId))
+                        dict[item.AlumnoId] = item.Dto;
+                }
+                return dict;
+
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error consultando próximos horarios por lote.");
+                return new Dictionary<string, CentralHorarioDto>(StringComparer.Ordinal);
+            }
         }
 
         private Task<IEnumerable<T>> QueryListAsync<T>(string sql, Func<MySqlDataReader, T> mapper)
@@ -1187,7 +1268,6 @@ WHERE COALESCE(activo, 1) = 0";
             segundoApellido = ReadNullableString(reader, "segundoApellido"),
             primerNombre = ReadNullableString(reader, "primerNombre"),
             segundoNombre = ReadNullableString(reader, "segundoNombre"),
-            estadoCivil = ReadInt(reader, "estadoCivil"),
             direccion = ReadNullableString(reader, "direccion"),
             callePrincipal = ReadNullableString(reader, "callePrincipal"),
             calleSecundaria = ReadNullableString(reader, "calleSecundaria"),
@@ -1277,45 +1357,58 @@ WHERE COALESCE(activo, 1) = 0";
             HoraInicio = ReadNullableString(reader, "HoraInicio"),
             HoraFin = ReadNullableString(reader, "HoraFin"),
             FechaReal = ReadNullableDate(reader, "FechaReal"),
+
             FinSemana = ReadNullableInt(reader, "FinSemana"),
             VehiculoPlanificado = ReadNullableString(reader, "VehiculoPlanificado"),
             InstructorPlanificado = ReadNullableString(reader, "InstructorPlanificado")
         };
 
 
+        private static int GetSafeOrdinal(MySqlDataReader reader, string column)
+        {
+            try { return reader.GetOrdinal(column); }
+            catch { return -1; }
+        }
+
         private static string ReadString(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return string.Empty;
             return reader.IsDBNull(ord) ? string.Empty : reader.GetValue(ord)?.ToString() ?? string.Empty;
         }
 
         private static string? ReadNullableString(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             return reader.IsDBNull(ord) ? null : reader.GetValue(ord)?.ToString();
         }
 
         private static int ReadInt(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return 0;
             return reader.IsDBNull(ord) ? 0 : Convert.ToInt32(reader.GetValue(ord));
         }
 
         private static int? ReadNullableInt(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             return reader.IsDBNull(ord) ? null : Convert.ToInt32(reader.GetValue(ord));
         }
 
         private static decimal? ReadNullableDecimal(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             return reader.IsDBNull(ord) ? null : Convert.ToDecimal(reader.GetValue(ord));
         }
 
         private static DateTime ReadDate(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return DateTime.MinValue;
             if (reader.IsDBNull(ord)) return DateTime.MinValue;
             var value = reader.GetValue(ord);
             return value is DateTime dt ? dt : DateTime.Parse(value.ToString() ?? DateTime.MinValue.ToString("O"));
@@ -1323,7 +1416,8 @@ WHERE COALESCE(activo, 1) = 0";
 
         private static DateTime? ReadNullableDate(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             if (reader.IsDBNull(ord)) return null;
             var value = reader.GetValue(ord);
             if (value is DateTime dt) return dt;
@@ -1333,7 +1427,8 @@ WHERE COALESCE(activo, 1) = 0";
 
         private static TimeSpan? ReadNullableTime(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             if (reader.IsDBNull(ord)) return null;
             var value = reader.GetValue(ord);
             if (value is TimeSpan ts) return ts;
@@ -1343,8 +1438,10 @@ WHERE COALESCE(activo, 1) = 0";
 
         private static byte[]? ReadNullableBytes(MySqlDataReader reader, string column)
         {
-            var ord = reader.GetOrdinal(column);
+            var ord = GetSafeOrdinal(reader, column);
+            if (ord == -1) return null;
             return reader.IsDBNull(ord) ? null : (byte[])reader.GetValue(ord);
         }
     }
 }
+

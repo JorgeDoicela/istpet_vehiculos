@@ -454,6 +454,25 @@ await using (var scope = app.Services.CreateAsyncScope())
                 INDEX idx_audit_fecha   (fecha_hora)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_spanish_ci",
 
+            // Sincronización de columnas críticas para compatibilidad de modos (Robusto para MySQL < 8.0)
+            @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado');
+              SET @addItem = IF(@colExists = 0, 'ALTER TABLE cond_alumnos_practicas ADD COLUMN cancelado TINYINT DEFAULT 0', 'SELECT 1');
+              PREPARE stmt FROM @addItem;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vehiculos' AND COLUMN_NAME = 'chasis');
+              SET @addItem = IF(@colExists = 0, 'ALTER TABLE vehiculos ADD COLUMN chasis VARCHAR(50) NULL, ADD COLUMN motor VARCHAR(50) NULL, ADD COLUMN observacion TEXT NULL, ADD COLUMN idSubcategoria INT NULL', 'SELECT 1');
+              PREPARE stmt FROM @addItem;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alumnos' AND COLUMN_NAME = 'email_institucional');
+              SET @addItem = IF(@colExists = 0, 'ALTER TABLE alumnos ADD COLUMN email_institucional VARCHAR(255) NULL, ADD COLUMN primerIngreso TINYINT DEFAULT 1, ADD COLUMN tipo_sangre VARCHAR(10) NULL', 'SELECT 1');
+              PREPARE stmt FROM @addItem;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
             "CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)",
             "CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno)",
             "CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)",

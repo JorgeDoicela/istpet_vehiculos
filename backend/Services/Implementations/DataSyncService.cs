@@ -80,7 +80,6 @@ namespace backend.Services.Implementations
                                 segundoApellido = ci.segundoApellido,
                                 primerNombre = ci.primerNombre,
                                 segundoNombre = ci.segundoNombre,
-                                estadoCivil = ci.estadoCivil,
                                 direccion = ci.direccion,
                                 callePrincipal = ci.callePrincipal,
                                 calleSecundaria = ci.calleSecundaria,
@@ -115,7 +114,6 @@ namespace backend.Services.Implementations
                             existing.segundoApellido = ci.segundoApellido;
                             existing.primerNombre = ci.primerNombre;
                             existing.segundoNombre = ci.segundoNombre;
-                            existing.estadoCivil = ci.estadoCivil;
                             existing.direccion = ci.direccion;
                             existing.callePrincipal = ci.callePrincipal;
                             existing.calleSecundaria = ci.calleSecundaria;
@@ -540,7 +538,6 @@ namespace backend.Services.Implementations
                         segundoApellido = ci.segundoApellido,
                         primerNombre = ci.primerNombre,
                         segundoNombre = ci.segundoNombre,
-                        estadoCivil = ci.estadoCivil,
                         direccion = ci.direccion,
                         callePrincipal = ci.callePrincipal,
                         calleSecundaria = ci.calleSecundaria,
@@ -576,7 +573,6 @@ namespace backend.Services.Implementations
                     existing.segundoApellido = ci.segundoApellido;
                     existing.primerNombre = ci.primerNombre;
                     existing.segundoNombre = ci.segundoNombre;
-                    existing.estadoCivil = ci.estadoCivil;
                     existing.direccion = ci.direccion;
                     existing.callePrincipal = ci.callePrincipal;
                     existing.calleSecundaria = ci.calleSecundaria;
