@@ -621,8 +621,7 @@ namespace backend.Services.Implementations
                     existing.activo = eu.activo == 1;
                     existing.asistencia = eu.asistencia == 1;
                     existing.esRrhh = eu.esRrhh == 1;
-                    if (!existing.password.StartsWith("$2a$") && !existing.password.StartsWith("$2b$"))
-                        existing.password = eu.password;
+                    existing.password = eu.password;
                 }
                 processed++;
             }
@@ -1192,7 +1191,7 @@ namespace backend.Services.Implementations
                         idVehiculo = item.idVehiculo,
                         idProfesor = item.idProfesor,
                         fecha_asignacion = item.fecha_asignacion,
-                        fecha_salida = item.fecha_salida,
+                        fecha_salidad = item.fecha_salidad,
                         activo = item.activo == 1,
                         usuario_asigna = item.usuario_asigna,
                         usuario_desactiva = item.usuario_desactiva,
@@ -1207,7 +1206,7 @@ namespace backend.Services.Implementations
                         idVehiculo = item.idVehiculo,
                         idProfesor = item.idProfesor,
                         fecha_asignacion = item.fecha_asignacion,
-                        fecha_salida = item.fecha_salida,
+                        fecha_salidad = item.fecha_salidad,
                         activo = item.activo == 1,
                         usuario_asigna = item.usuario_asigna,
                         usuario_desactiva = item.usuario_desactiva,

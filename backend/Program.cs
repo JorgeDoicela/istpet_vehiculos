@@ -298,9 +298,7 @@ await using (var scope = app.Services.CreateAsyncScope())
             "CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(14), idVehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fechaAsignacion DATETIME DEFAULT CURRENT_TIMESTAMP, activa TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT NOT NULL, idFecha INT NOT NULL, idHora INT NOT NULL, asiste TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, observacion VARCHAR(100))",
             "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
-            "CREATE TABLE IF NOT EXISTS matriculas_operacion (idMatricula INT PRIMARY KEY, horas_completadas DECIMAL(10,2) DEFAULT 0, estado VARCHAR(20) DEFAULT 'ACTIVO')",
-            "CREATE TABLE IF NOT EXISTS practicas_operacion (idPractica INT PRIMARY KEY, validada TINYINT DEFAULT 0, observacion_admin TEXT NULL)",
-            "CREATE TABLE IF NOT EXISTS usuarios_web (usuario VARCHAR(20) PRIMARY KEY, password VARCHAR(255), salida TINYINT DEFAULT 0, ingreso TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, asistencia TINYINT DEFAULT 0, esRrhh TINYINT DEFAULT 0)",
+            "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
 
             // -------------------------------------------------------------------------
             // 2. HARDENING DE COLUMNAS (PROFESORES / ALUMNOS / MATRICULAS)
@@ -324,8 +322,7 @@ await using (var scope = app.Services.CreateAsyncScope())
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS idDiscapacidad INT NULL",
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS email_institucional VARCHAR(255) NULL",
             
-            "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_colegiatura DECIMAL(10,2) DEFAULT 0",
-            "ALTER TABLE matriculas ADD COLUMN IF NOT EXISTS beca_matricula DECIMAL(10,2) DEFAULT 0",
+            "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS email_institucional VARCHAR(255) NULL",
 
             "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salida DATETIME NULL",
 
@@ -431,12 +428,7 @@ await using (var scope = app.Services.CreateAsyncScope())
         // -------------------------------------------------------------------------
         // 5. SEEDING DE DATOS MAESTROS (BOOTSTRAP)
         // -------------------------------------------------------------------------
-        try
-        {
-            // Admin Bootstrap
-            await db.Database.ExecuteSqlRawAsync(@"
-                INSERT IGNORE INTO usuarios_web (usuario, password, salida, ingreso, activo, asistencia, esRrhh)
-                VALUES ('admin', '$2a$11$qR7iXv2D1K5z5F.h39.SDe6D1O1E1O1O1O1O1O1O1O1O1O1O1O1O1O1O', 1, 1, 1, 0, 1)");
+
             
             // Tipos de Licencia
             await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (1, 'C', 'CONDUCCIÓN NO PROFESIONAL TIPO C', 1)");

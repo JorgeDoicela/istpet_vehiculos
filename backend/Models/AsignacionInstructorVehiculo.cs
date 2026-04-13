@@ -19,7 +19,7 @@ namespace backend.Models
 
         public DateTime? fecha_asignacion { get; set; }
 
-        public DateTime? fecha_salida { get; set; }
+        public DateTime? fecha_salidad { get; set; }
 
         public bool activo { get; set; }
 

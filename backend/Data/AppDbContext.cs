@@ -16,9 +16,7 @@ namespace backend.Data
         public DbSet<Curso> Cursos { get; set; }
         public DbSet<Estudiante> Estudiantes { get; set; }
         public DbSet<Matricula> Matriculas { get; set; }
-        public DbSet<MatriculaOperacion> MatriculasOperaciones { get; set; }
         public DbSet<Practica> Practicas { get; set; }
-        public DbSet<PracticaOperacion> PracticasOperaciones { get; set; }
         public DbSet<Asignacion> Asignaciones { get; set; }
         public DbSet<AsignacionInstructorVehiculo> AsignacionesInstructores { get; set; }
         public DbSet<CategoriaVehiculo> CategoriasVehiculos { get; set; }
@@ -172,15 +170,6 @@ namespace backend.Data
                 entity.HasKey(e => e.idVehiculo);
             });
 
-            modelBuilder.Entity<MatriculaOperacion>(entity => {
-                entity.ToTable("matriculas_operacion");
-                entity.HasKey(e => e.idMatricula);
-            });
-
-            modelBuilder.Entity<PracticaOperacion>(entity => {
-                entity.ToTable("practicas_operacion");
-                entity.HasKey(e => e.idPractica);
-            });
 
             // 10. PERIODOS
             modelBuilder.Entity<Periodo>(entity => {

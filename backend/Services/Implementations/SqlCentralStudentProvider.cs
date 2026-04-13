@@ -828,7 +828,7 @@ WHERE COALESCE(activo, 1) = 0";
 
         public Task<IEnumerable<CentralAsignacionInstructorVehiculoDto>> GetInstructorVehicleAssignmentsFromCentralAsync() =>
             QueryListAsync(
-                @"SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, fecha_salida, CAST(activo AS SIGNED) AS activo, usuario_asigna, usuario_desactiva, observacion
+                @"SELECT idAsignacion, idVehiculo, idProfesor, fecha_asignacion, fecha_salidad, CAST(activo AS SIGNED) AS activo, usuario_asigna, usuario_desactiva, observacion
                   FROM asignacion_instructores_vehiculos",
                 reader => new CentralAsignacionInstructorVehiculoDto
                 {
@@ -836,7 +836,7 @@ WHERE COALESCE(activo, 1) = 0";
                     idVehiculo = ReadInt(reader, "idVehiculo"),
                     idProfesor = ReadString(reader, "idProfesor"),
                     fecha_asignacion = ReadNullableDate(reader, "fecha_asignacion"),
-                    fecha_salida = ReadNullableDate(reader, "fecha_salida"),
+                    fecha_salidad = ReadNullableDate(reader, "fecha_salidad"),
                     activo = ReadInt(reader, "activo"),
                     usuario_asigna = ReadNullableString(reader, "usuario_asigna"),
                     usuario_desactiva = ReadNullableString(reader, "usuario_desactiva"),

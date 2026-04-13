@@ -42,8 +42,10 @@ namespace backend.Models
 
         public int? folio { get; set; }
 
+        [Column(TypeName = "decimal(5,2)")]
         public decimal? beca_matricula { get; set; }
 
+        [Column(TypeName = "decimal(5,2)")]
         public decimal? beca_colegiatura { get; set; }
 
         public bool? retirado { get; set; }

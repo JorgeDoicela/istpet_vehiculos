@@ -124,11 +124,6 @@ namespace backend.Services.Implementations
 
                 _context.Practicas.Add(practica);
                 await _context.SaveChangesAsync();
-                _context.PracticasOperaciones.Add(new PracticaOperacion
-                {
-                    idPractica = practica.idPractica
-                });
-                await _context.SaveChangesAsync();
 
                 // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo)
                 if (idAsignacionHorario.HasValue && idAsignacionHorario.Value > 0)
@@ -177,30 +172,7 @@ namespace backend.Services.Implementations
                     practica.tiempo = practica.hora_llegada - practica.hora_salida;
                 }
 
-                // 4. Actualizar Horas Completadas en Matrícula
-                var matricula = await _context.Matriculas.FirstOrDefaultAsync(m => m.idAlumno == practica.idalumno);
-                if (matricula != null && practica.tiempo.HasValue)
-                {
-                    decimal horasCalculadas = (decimal)Math.Round(practica.tiempo.Value.TotalHours, 2);
-                    var matriculaOp = await _context.MatriculasOperaciones.FindAsync(matricula.idMatricula);
-                    if (matriculaOp == null)
-                    {
-                        matriculaOp = new MatriculaOperacion
-                        {
-                            idMatricula = matricula.idMatricula,
-                            estado = "ACTIVO"
-                        };
-                        _context.MatriculasOperaciones.Add(matriculaOp);
-                    }
-                    matriculaOp.horas_completadas += horasCalculadas;
-                }
 
-                var practicaOp = await _context.PracticasOperaciones.FindAsync(practica.idPractica);
-                if (practicaOp == null)
-                {
-                    practicaOp = new PracticaOperacion { idPractica = practica.idPractica };
-                    _context.PracticasOperaciones.Add(practicaOp);
-                }
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

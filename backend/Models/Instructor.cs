@@ -89,8 +89,18 @@ namespace backend.Models
 
         public DateTime? fecha_retiro { get; set; }
 
+        public int idEtnia { get; set; } = 1;
+
+        public int idNacionalidad { get; set; } = 1;
+
+        public int idParroquiaNacimiento { get; set; } = 1;
+
+        public int idParroquiaResidencia { get; set; } = 1;
+
+        public int idDiscapacidad { get; set; } = 1;
+
         [MaxLength(5)]
-        public string? tipoSangre { get; set; }
+        public string tipoSangre { get; set; } = "S/N";
 
         [MaxLength(255)]
         public string? foto { get; set; }

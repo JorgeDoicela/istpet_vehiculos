@@ -82,7 +82,7 @@ namespace backend.Controllers
                     return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
                 }
 
-                user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password, needsRehash);
+                user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password);
                 mensajeExito = "Ingreso exitoso (validado en SIGAFI).";
             }
             else if (sigafiNoDisponible)
@@ -104,12 +104,6 @@ namespace backend.Controllers
                         detalles: "Credenciales inválidas (espejo local).",
                         ipOrigen: ip);
                     return Unauthorized(ApiResponse<LoginResponse>.Fail("Credenciales inválidas."));
-                }
-
-                if (needsRehashLocal)
-                {
-                    localUser.password = BCrypt.Net.BCrypt.HashPassword(req.password ?? string.Empty);
-                    await _context.SaveChangesAsync();
                 }
 
                 user = localUser;
@@ -147,12 +141,10 @@ namespace backend.Controllers
             }, mensajeExito));
         }
 
-        private async Task<Usuario> UpsertLocalUsuarioFromSigafiAsync(CentralUserDto src, string? plainPassword, bool rehashToBcrypt)
+        private async Task<Usuario> UpsertLocalUsuarioFromSigafiAsync(CentralUserDto src, string? plainPassword)
         {
             var local = await _context.Usuarios.FindAsync(src.usuario);
-            var passwordToStore = rehashToBcrypt && !string.IsNullOrEmpty(plainPassword)
-                ? BCrypt.Net.BCrypt.HashPassword(plainPassword)
-                : (src.password ?? string.Empty);
+            var passwordToStore = src.password ?? string.Empty;
 
             if (local == null)
             {

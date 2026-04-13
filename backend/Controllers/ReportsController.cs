@@ -150,7 +150,7 @@ namespace backend.Controllers
                 var profNom = pr != null ? $"{pr.apellidos} {pr.nombres}".Trim() : p.idProfesor;
                 var alumNom = a != null ? $"{a.apellidoPaterno} {a.apellidoMaterno} {a.primerNombre} {a.segundoNombre}".Trim() : p.idalumno;
 
-                var practicaOp = await _context.PracticasOperaciones.FirstOrDefaultAsync(x => x.idPractica == p.idPractica);
+
                 list.Add(new ReportePracticasDTO
                 {
                     idPractica = p.idPractica,

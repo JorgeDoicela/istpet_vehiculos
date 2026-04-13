@@ -266,19 +266,7 @@ namespace backend.Controllers
             }
 
             await _context.SaveChangesAsync();
-            if (matriculaUsada.idMatricula > 0)
-            {
-                var operacionMatricula = await _context.MatriculasOperaciones.FirstOrDefaultAsync(x => x.idMatricula == matriculaUsada.idMatricula);
-                if (operacionMatricula == null)
-                {
-                    _context.MatriculasOperaciones.Add(new MatriculaOperacion
-                    {
-                        idMatricula = matriculaUsada.idMatricula,
-                        estado = "ACTIVO"
-                    });
-                    await _context.SaveChangesAsync();
-                }
-            }
+
 
             var nivelDisplay = (centralData.Nivel ?? nivelLocal?.Nivel ?? "S/N").ToUpper();
             var detalleSigafi = ConstruirDetalleMatriculaSigafi(centralData.DetalleRaw, jornadaEtiqueta);
