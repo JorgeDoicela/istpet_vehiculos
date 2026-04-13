@@ -502,7 +502,8 @@ await using (var scope = app.Services.CreateAsyncScope())
         // 5. SEEDING DE DATOS MAESTROS (BOOTSTRAP)
         // -------------------------------------------------------------------------
 
-            
+        try
+        {
             // Tipos de Licencia
             await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (1, 'C', 'CONDUCCIÓN NO PROFESIONAL TIPO C', 1)");
             await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (2, 'D', 'CONDUCCIÓN PROFESIONAL TIPO D', 1)");
