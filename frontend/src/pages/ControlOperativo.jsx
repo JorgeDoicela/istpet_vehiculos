@@ -356,8 +356,7 @@ const ControlOperativo = () => {
                     sVeh = {
                         idVehiculo: vid,
                         numeroVehiculo: m ? m[1] : (data.numeroVehiculo || "0"),
-                        vehiculoStr: data.practicaVehiculo,
-                        instructorNombre: 'DOCENTE ASIGNADO'
+                        vehiculoStr: data.practicaVehiculo
                     };
                 }
 

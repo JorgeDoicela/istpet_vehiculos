@@ -4,10 +4,22 @@ import React from 'react';
  * Vehicle Selection Card: Absolute SIGAFI Parity 2026.
  * All property naming aligned with SIGAFI schemas (idVehiculo, numeroVehiculo, vehiculoStr).
  */
+const placaDesdeVehiculoStr = (str) => {
+    if (!str?.trim()) return '---';
+    const s = str.trim();
+    const sigafi = s.match(/#\s*[\w-]+\s*\(([^)]+)\)/);
+    if (sigafi) return sigafi[1].trim();
+    return s.split(' - ')[0]?.trim() || '---';
+};
+
 const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
     // Exact mapping from refactored DTO
     const numero = vehiculo.numeroVehiculo || vehiculo.vehiculoStr?.split('#').pop() || '??';
-    const placa = vehiculo.vehiculoStr?.split(' - ')[0] || '---';
+    const placa = placaDesdeVehiculoStr(vehiculo.vehiculoStr);
+    const mostrarInstructor =
+        vehiculo.instructorNombre &&
+        vehiculo.instructorNombre.trim() !== '' &&
+        vehiculo.instructorNombre.trim().toUpperCase() !== 'DOCENTE ASIGNADO';
     const isOperativo = true; // Assumed operative if in selection list
 
     return (
@@ -49,7 +61,7 @@ const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
                 <p className={`text-[5px] lg:text-[7px] font-black uppercase tracking-[0.15em] leading-none transition-colors ${isSelected ? 'text-[var(--istpet-gold)] opacity-70' : 'text-[var(--apple-text-sub)]'}`}>
                     {placa}
                 </p>
-                {vehiculo.instructorNombre && (
+                {mostrarInstructor && (
                     <p className={`mt-2 text-[5px] font-bold uppercase tracking-wider transition-colors ${isSelected ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)]/60'}`}>
                         {vehiculo.instructorNombre}
                     </p>

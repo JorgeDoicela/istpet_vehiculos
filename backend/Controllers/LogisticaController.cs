@@ -467,7 +467,7 @@ namespace backend.Controllers
                 idVehiculo = v.idVehiculo,
                 numeroVehiculo = v.numero_vehiculo,
                 vehiculoStr = $"#{v.numero_vehiculo} ({v.placa})",
-                instructorNombre = "DOCENTE ASIGNADO",
+                instructorNombre = string.Empty,
                 idInstructorFijo = v.idInstructorFijo,
                 idTipoLicencia = v.idTipoLicencia,
                 estadoMecanico = v.estadoMecanico
