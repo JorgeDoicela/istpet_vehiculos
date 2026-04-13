@@ -7,7 +7,8 @@ El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura
 ### Pilares Fundamentales:
 *   **Dual-Database Bridge**: Sincronización bidireccional entre el espejo local (Mirror) e integridad referencial con el núcleo académico (SIGAFI).
 *   **Zero-Downtime Resilience**: Implementación de *Circuit Breakers* para garantizar operatividad incluso con conectividad intermitente hacia SIGAFI.
-*   **Auto-Adaptive Schema (Schema Healer)**: Protocolo de auto-sanación que garantiza la integridad estructural de la base de datos en cada arranque.
+*   **Auto-Adaptive Schema (Schema Healer)**: Protocolo de auto-sanación que garantiza la integridad estructural de la base de datos en cada arranque, con protección de escritura proactiva para entornos Directos.
+*   **Variable Environment Core**: Carga nativa de configuración vía `.env` con construcción dinámica de cadenas de conexión.
 
 ---
 

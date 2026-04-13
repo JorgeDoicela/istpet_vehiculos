@@ -15,7 +15,10 @@ El sistema se rige por el principio de **Defensa en Profundidad**, estructurado 
        ↓
 [ Capa 3: Escudo de Datos (Sanitización & Truncamiento) ]
        ↓
-[ Capa 4: Auditoría Forense (Audit Ledger) ]
+[ Capa 4: Blindaje SIGAFI (Direct Mode DDL Shield) ]
+       ↓
+[ Capa 5: Auditoría Forense (Audit Ledger) ]
+
 ```
 
 ---
@@ -28,10 +31,11 @@ El sistema se rige por el principio de **Defensa en Profundidad**, estructurado 
 
 ## 3. Capa 2: Identidad y Acceso Híbrido
 
-### Autenticación Dual (Legacy & Modern)
-El `AuthController` implementa un puente de compatibilidad que detecta el hash de origen:
-*   **SIGAFI Legacy**: Soporta hashes BCrypt (`$2a$`, `$2b$`) heredados del sistema central.
-*   **ISTPET Native**: Utiliza SHA-256 para usuarios creados localmente.
+### Autenticación Dual (Legacy & Central)
+El `AuthController` implementa un puente de compatibilidad que detecta el origen del usuario:
+*   **SIGAFI Direct**: Soporta contraseñas en texto plano con un límite estricto de 20 caracteres para compatibilidad con el esquema `usuarios_web` de SIGAFI.
+*   **ISTPET Native**: Utiliza hashes BCrypt de alta entropía para usuarios creados localmente.
+
 
 ### Hardening de Sesión
 *   **JWT Rotation**: Generación de tokens con llaves de 32 caracteres (256 bits) conforme a estándares JWA.
@@ -57,7 +61,24 @@ Para evitar que datos malformados de SIGAFI causen excepciones en el ORM, el sis
 
 ---
 
-## 5. Capa 4: Auditoría Forense (Digital Audit Ledger)
+## 5. Capa 4: Blindaje SIGAFI (Direct Mode DDL Shield)
+
+Implementado preventivamente en el arranque del servidor (`Program.cs`), este mecanismo protege la base de datos de producción cuando el sistema opera en modo `Direct`.
+
+### 5.1. Bloqueo de Alteración de Producción
+Al detectar `DATABASE_MODE=Direct`, el motor **Schema Healer** activa un filtro que:
+*   **Deniega** cualquier comando `CREATE TABLE` o `ALTER TABLE` sobre las 10 entidades maestras de SIGAFI.
+*   **Permite** únicamente el mantenimiento de tablas operativas locales (`vehiculos_operacion`, `audit_logs`).
+
+### 5.2. Certificación de Paridad Auditada (Sesión 2026-04-13)
+Se ha certificado la paridad total en nombres de columnas "Legacy", incluyendo la compatibilidad con los tipos:
+*   `fecha_salidad` (con 'd' ortográfica heredada).
+*   `fecha_matrucla_extraordinaria`.
+
+---
+
+## 6. Capa 5: Auditoría Forense (Digital Audit Ledger)
+
 
 Cada acción crítica (Inicios de sesión, Sincronizaciones masivas, Registro de Salida de Vehículos) es documentada por el `SqlAuditService`.
 

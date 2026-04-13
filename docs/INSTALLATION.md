@@ -14,22 +14,34 @@ Esta guía detalla el despliegue del ecosistema de logística vehicular. El sist
 
 ## 2. Despliegue del Backend (.NET 8)
 
-### 2.1. Configuración de Entorno
-Cree un archivo `appsettings.json` o configure las siguientes variables de entorno:
+### 2.1. Configuración de Entorno (.env)
+El sistema utiliza un sistema de carga nativa de variables de entorno. Cree un archivo `.env` en la raíz del proyecto basándose en el siguiente ejemplo:
 
-```json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=istpet_vehiculos;User=root;Password=****;SslMode=None;",
-    "SigafiConnection": "Server=localhost;Database=sigafi_es;User=root;Password=****;SslMode=None;"
-  },
-  "Jwt": {
-    "Key": "UNA_LLAVE_DE_AL_MENOS_32_CARACTERES_ALEATORIOS",
-    "Issuer": "istpet_logistica",
-    "Audience": "istpet_users"
-  }
-}
+```bash
+# MODO: Mirror (Sincronización local) | Direct (Escritura en SIGAFI)
+DATABASE_MODE=Mirror
+
+# BD LOCAL (istpet_vehiculos)
+LOCAL_DB_HOST=localhost
+LOCAL_DB_PORT=3306
+LOCAL_DB_NAME=istpet_vehiculos
+LOCAL_DB_USER=root
+LOCAL_DB_PASS=****
+
+# BD SIGAFI (Producción)
+REMOTE_SIGAFI_SERVER=192.168.7.50
+REMOTE_SIGAFI_PORT=3306
+REMOTE_SIGAFI_DB=sigafi_es
+REMOTE_SIGAFI_USER=root
+REMOTE_SIGAFI_PASS=****
+
+# SEGURIDAD
+JWT_KEY=UNA_LLAVE_DE_AL_MENOS_32_CARACTERES
 ```
+
+### 2.2. Conector Inteligente
+El backend detecta automáticamente las variables del `.env` y construye la cadena de conexión. No es necesario escribir la URI completa a menos que se use la variable `DATABASE_URL` para sobrescribir el comportamiento por defecto.
+
 
 ### 2.2. El Protocolo Schema Healer (Auto-Run)
 A diferencia de sistemas tradicionales, **no es obligatorio ejecutar scripts SQL manualmente**.

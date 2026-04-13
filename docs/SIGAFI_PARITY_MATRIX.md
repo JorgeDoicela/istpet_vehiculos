@@ -19,11 +19,12 @@ El sistema opera bajo una política de **Paridad Atómica**. El objetivo es que 
 
 | Capacidad | Nivel de Espejo | Observación Técnica |
 | :--- | :--- | :--- |
-| **Maestros Académicos** | 1:1 Completo | `carreras`, `periodos`, `cursos`, `secciones`, `modalidades`. |
-| **Recursos Humanos** | 1:1 Filtro Activos | `profesores`. Se sincronizan solo cuentas habilitadas. |
-| **Estudiantes** | 1:1 JIT Enabled | `alumnos`. Esquema idéntico (sin BLOB). |
+| **Maestros Académicos** | 1:1 Paridad Total | Incluye corregido `fecha_matrucla_extraordinaria`. |
+| **Recursos Humanos** | 1:1 Paridad Total | `profesores`. Corrección de `fecha_salidad`. |
+| **Estudiantes** | 1:1 Paridad Total | `alumnos`. Máximo 30-60 chars según SIGAFI CORE. |
 | **Control Vehicular** | 1:1 Mirror + Ext | `vehiculos`. Columnas SIGAFI + Extensión `vehiculos_operacion`. |
 | **Logística Central** | 1:1 Transaccional | `cond_alumnos_practicas`, `cond_alumnos_vehiculos`. |
+| **Usuarios Web** | 1:1 Paridad Total | `usuarios_web`. Longitud de password: 20 caracteres. |
 | **Horarios y Agendas** | High Volume Mirror | `cond_alumnos_horarios`, `fechas_horarios`. |
 
 ---

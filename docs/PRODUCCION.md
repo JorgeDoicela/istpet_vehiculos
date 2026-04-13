@@ -29,22 +29,23 @@ Al iniciar, el contenedor del backend ejecutará el **Schema Healer**. No es nec
 
 ---
 
-## 2. Escenario B: Despliegue en la Nube (Arquitectura Distribuida)
+## 3. Escenario C: Integración Directa (Escritura en SIGAFI)
 
-Para accesibilidad global con redundancia.
+Este modo se activa mediante `DATABASE_MODE=Direct` y permite al sistema operar directamente sobre la base de datos de producción de SIGAFI sin necesidad de una base de datos local.
 
-### 2.1. Persistencia (TiDB Cloud)
-*   **SSL Enforced**: La conexión hacia TiDB Cloud utiliza Triple-DES/AES con certificados SSL gestionados automáticamente por el backend.
-*   **Modo Réplica**: Se recomienda mantener una base `sigafi_es` en el mismo clúster para minimizar la latencia del **Master Sync**.
+### 3.1. Arquitectura de Escritura Directa
+*   **Conexión Única**: Tanto la lectura como la escritura se realizan en el servidor de SIGAFI.
+*   **Tablas Operativas**: El sistema creará automáticamente las tablas `vehiculos_operacion` y `audit_logs` dentro de la base de datos de SIGAFI.
 
-### 2.2. Backend (Render / PaaS)
-*   **Docker Context**: Utilice la carpeta `backend/` como raíz de construcción.
-*   **Health Check Endpoint**: `/health`. Render monitorizará este endpoint para garantizar que el servicio esté respondiendo antes de promover el despliegue.
+### 3.2. Escudo de Protección DDL
+> [!IMPORTANT]
+> Cuando el sistema opera en modo `Direct`, el **Schema Healer** activa un filtro de seguridad proactivo que **bloquea** cualquier comando `CREATE` o `ALTER` sobre las tablas maestras de SIGAFI (`alumnos`, `profesores`, `matriculas`, `vehiculos`, etc.). Esto garantiza la integridad absoluta de la base de datos central.
 
-### 2.3. Frontend (Vercel)
-*   **Edge Optimization**: El frontend se sirve desde nodos de borde (CDN) para garantizar latencia mínima en carga de activos pesados y modo oscuro.
+### 3.3. Optimización de Red
+En este modo, el sistema desactiva automáticamente el servicio de sincronización masiva y las escrituras redundantes durante el inicio de sesión, reduciendo la carga sobre el servidor institucional.
 
 ---
+
 
 ## 3. Seguridad y Hardening de Producción
 
