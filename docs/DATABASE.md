@@ -1,247 +1,98 @@
-# Base de Datos — ISTPET Logística
+# Arquitectura de Datos y Matriz de Paridad
 
-Base de datos: `istpet_vehiculos` | Motor: MySQL / MariaDB | Cotejamiento: `utf8mb4_spanish_ci`
-
----
-
-## 🛡️ Integración SIGAFI (Política de Solo Lectura)
-
-Para garantizar la integridad de la base de datos institucional (`sigafi_es`), el sistema de Logística implementa una arquitectura de **blindaje bidireccional**:
-
-1.  **Consumo Pasivo de Datos**: El sistema extrae información de alumnos, cursos, profesores y horarios mediante consultas `SELECT` únicamente.
-2.  **Espejo Local (Mirroring)**: Todas las tablas críticas de SIGAFI tienen un espejo en la base de datos local `istpet_vehiculos`. La sincronización masiva se realiza vía scripts SQL que depositan la "Verdad Central" en tablas locales para su operación.
-3.  **Aislamiento del Backend (ORM)**: El `AppDbContext` está configurado para que todas las entidades operativas (incluso las vinculadas a agendas y categorías) apunten **exclusivamente** al esquema local. No existen mapeos de escritura hacia `sigafi_es`.
-4.  **Operatividad Independiente**: Los registros de salida, llegada y asistencia se graban en tablas locales. El sistema central no sufre alteraciones por el uso diario de la plataforma logística.
+Este documento detalla la estructura de la base de datos `istpet_vehiculos` y su relación simbiótica con el núcleo académico SIGAFI. El sistema implementa una **Política de Espejo Estricto (Mirroring)** para garantizar la integridad y el rendimiento local.
 
 ---
 
-## Diagrama Entidad-Relación (ERD)
+## 1. Política de Paridad SIGAFI 2026
+
+Para asegurar que la logística no dependa de la latencia del servidor central, el sistema se rige por las siguientes reglas:
+
+1.  **Fuente de Verdad**: SIGAFI (`sigafi_es`) es el origen único de datos maestros.
+2.  **Aislamiento de Escritura**: La aplicación **nunca** escribe en SIGAFI. Todos los registros operativos se graban localmente.
+3.  **Tablas Espejo (Mirror Tables)**: Réplicas exactas de SIGAFI (sin BLOBs de fotos) para optimizar búsquedas.
+4.  **Tablas Operativas (Ops Tables)**: Tablas con sufijo `_operacion` que almacenan el estado local sin alterar el espejo institucional.
+
+---
+
+## 2. Clasificación de Entidades
+
+### 2.1. Entidades en Espejo (ReadOnly Mirror)
+Sincronizadas mediante el motor **Master Sync**:
+*   `alumnos`, `profesores`, `usuarios_web`.
+*   `periodos`, `carreras`, `cursos`, `secciones`, `modalidades`.
+*   `matriculas`, `cond_alumnos_practicas`, `cond_alumnos_vehiculos`.
+*   `vehiculos`, `categoria_vehiculos`, `categorias_examenes_conduccion`.
+*   `cond_alumnos_horarios`, `fechas_horarios`.
+
+### 2.2. Entidades Operativas Locales (Write-Heavy)
+Almacenan la lógica de negocio propia de la aplicación de logística:
+*   `vehiculos_operacion`: Estado mecánico y mapeo de licencias locales.
+*   `matriculas_operacion`: Control de horas acumuladas y estado de aprobación.
+*   `practicas_operacion`: Observaciones granulares del guardia o instructor.
+*   `audit_logs`: Registro histórico de IPs, usuarios y transacciones.
+
+---
+
+## 3. Diagrama Entidad-Relación (Ecosistema Mirroring)
 
 ```mermaid
 erDiagram
-    usuarios_web {
-        string usuario PK
-        string password
-        string rol
-        string nombre_completo
-        bool activo
-        bool salida
-        bool ingreso
-        datetime creado_en
-    }
+    ALUMNOS ||--o{ MATRICULAS : "inscrito"
+    MATRICULAS ||--o{ PRACTICAS : "genera"
+    VEHICULOS ||--o{ PRACTICAS : "utilizado"
+    PROFESORES ||--o{ PRACTICAS : "imparte"
+    
+    VEHICULOS ||--|| VEHICULOS_OPERACION : "estado_ops"
+    MATRICULAS ||--|| MATRICULAS_OPERACION : "progreso_ops"
+    PRACTICAS ||--|| PRACTICAS_OPERACION : "detalle_ops"
 
-    tipo_licencia {
-        int id_tipo PK
-        string codigo UK
-        string descripcion
-        bool activo
-    }
+    subgraph "Master Data Mirror"
+        ALUMNOS
+        PROFESORES
+        PERIODOS
+        CARRERAS
+    end
 
-    profesores {
-        string idProfesor PK
-        string primerNombre
-        string primerApellido
-        string nombres
-        string apellidos
-        string celular
-        string email
-        bool activo
-    }
-
-    vehiculos {
-        int idVehiculo PK
-        int numero_vehiculo UK
-        string placa UK
-        string marca
-        string modelo
-        int id_tipo_licencia FK
-        string id_instructor_fijo FK
-        string estado_mecanico
-        bool activo
-    }
-
-    cursos {
-        int idNivel PK
-        string Nivel
-        int idCarrera
-    }
-
-    alumnos {
-        string idAlumno PK
-        string primerNombre
-        string apellidoPaterno
-        string email
-        bool activo
-    }
-
-    matriculas {
-        int idMatricula PK
-        string idAlumno FK
-        int idNivel FK
-        string idPeriodo
-        string paralelo
-        int horas_completadas
-        string estado
-    }
-
-    cond_alumnos_practicas {
-        int idPractica PK
-        int idMatricula FK
-        int idvehiculo FK
-        string idProfesor FK
-        datetime fecha
-        time hora_salida
-        time hora_llegada
-        byte ensalida
-        byte verificada
-    }
-
-    cond_alumnos_vehiculos {
-        int idAsignacion PK
-        string idAlumno FK
-        int idVehiculo FK
-        string idProfesor FK
-        string idPeriodo
-        byte activa
-    }
-
-    tipo_licencia ||--o{ vehiculos : "requiere"
-    tipo_licencia ||--o{ matriculas : "vincula_curso"
-    profesores ||--o{ vehiculos : "asignado_fijo"
-    vehiculos ||--o{ cond_alumnos_practicas : "utilizado_en"
-    profesores ||--o{ cond_alumnos_practicas : "conduce_en"
-    alumnos ||--o{ matriculas : "se_inscribe"
-    cursos ||--o{ matriculas : "contiene"
-    matriculas ||--o{ cond_alumnos_practicas : "genera"
-    alumnos ||--o{ cond_alumnos_vehiculos : "tutoriza"
-    usuarios_web ||--o{ cond_alumnos_practicas : "registra"
+    subgraph "Operational Layer"
+        PRACTICAS
+        VEHICULOS_OPERACION
+        AUDIT_LOGS
+    end
 ```
 
 ---
 
-## Descripción de Tablas
+## 4. Vistas de Inteligencia Operativa
 
-### Grupo 1: Seguridad y Acceso
-
-#### `usuarios_web`
-Credenciales y roles del personal que opera el sistema. Sincronizado directamente con la tabla central de usuarios de SIGAFI.
-
-| Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
-| `usuario` | VARCHAR PK | Nombre de usuario (Cédula o Login) |
-| `password` | VARCHAR | Hash SHA-256 o BCrypt según el origen |
-| `rol` | VARCHAR | `admin`, `guardia`, `estacionable` |
-| `salida` | BOOL | Permiso para registrar salidas |
-| `ingreso` | BOOL | Permiso para registrar llegadas |
-| `activo` | BOOL | Control de acceso activo |
-
----
-
-### Grupo 2: Parametrización
-
-#### `tipo_licencia`
-Catálogo maestro de categorías de licencias de conducción.
-
-| Código | Descripción |
-| :--- | :--- |
-| `C` | Profesional — Taxis y autos livianos |
-| `D` | Profesional — Buses de pasajeros |
-| `E` | Profesional — Camiones y carga pesada |
-
----
-
-### Grupo 3: Recursos Humanos
-
-#### `profesores`
-Datos del personal docente e instructores de conducción. Mapeado 1:1 con la tabla `profesores` de SIGAFI.
-
----
-
-### Grupo 4: Gestión de Flota
-
-#### `vehiculos`
-Catálogo de unidades de la escuela.
-
-| Campo | Tipo | Descripción |
-| :--- | :--- | :--- |
-| `idVehiculo` | INT PK | Corresponde al IdVehiculo de SIGAFI |
-| `numero_vehiculo` | INT | Número interno (Eco) |
-| `placa` | VARCHAR | Placa de circulación |
-| `id_tipo_licencia` | FK | Licencia requerida |
-| `id_instructor_fijo`| FK | Instructor titular asignada |
-| `estado_mecanico` | VARCHAR | `OPERATIVO`, `MANTENIMIENTO` |
-
-#### `mantenimientos`
-Historial de ingresos al taller de cada vehículo.
-
----
-
-### Grupo 5: Académico
-
-#### `cursos`
-Mapeado a la tabla `cursos` de SIGAFI. Define los niveles académicos.
-
-| Campo | Descripción |
-| :--- | :--- |
-| `idNivel` | Identificador único del nivel |
-| `Nivel` | Nombre descriptivo del curso |
-
-#### `alumnos`
-Mapeado a `alumnos` de SIGAFI. Los estudiantes se auto-registran localmente al ser consultados.
-
-#### `matriculas`
-Vincula un estudiante con su curso actual. Almacena las `horas_completadas` de práctica calculadas en cada retorno.
-
----
-
-### Grupo 6: Control Logístico (Operativo)
-
-#### `cond_alumnos_practicas`
-Tabla central donde se registran las salidas y llegadas diarias. Equivale al libro de control de pista.
-
-#### `cond_alumnos_vehiculos`
-Asignaciones de tutoría y vehículo fijo para el periodo académico vigente.
-
----
-
-### Grupo 7: Auditoría
-
-#### `sync_logs`
-Registro de cada operación de ingesta masiva ejecutada via `POST /api/sync/students`. Almacena cuántos registros fueron procesados, cuántos fallaron y el motivo.
-
----
-
-## Vistas SQL
+El sistema utiliza vistas SQL para el monitoreo en tiempo real (Mission Control):
 
 ### `v_clases_activas`
-Muestra en tiempo real todos los vehículos que están actualmente en pista.
-
-```sql
-SELECT cp.idPractica AS id_registro, v.idVehiculo AS id_vehiculo, a.idAlumno,
-       CONCAT(a.primerNombre, ' ', a.apellidoPaterno) AS estudiante,
-       v.placa, v.numero_vehiculo,
-       CONCAT(p.primerNombre, ' ', p.primerApellido) AS instructor,
-       cp.fecha AS salida
-FROM cond_alumnos_practicas cp
-JOIN matriculas m ON cp.idMatricula = m.idMatricula
-JOIN alumnos a ON m.idAlumno = a.idAlumno
-JOIN vehiculos v ON cp.idvehiculo = v.idVehiculo
-JOIN profesores p ON cp.idProfesor = p.idProfesor
-WHERE cp.hora_llegada IS NULL AND cp.cancelado = 0;
-```
+Calcula qué vehículos han salido pero no han registrado llegada, cruzando datos de alumnos e instructores.
+*   **Uso**: Dashboard principal y pestaña de "Registro de Llegada".
 
 ### `v_alerta_mantenimiento`
-Lista todos los vehículos cuyo `estado_mecanico` es `'MANTENIMIENTO'`.
+Identifica unidades con bandera de inactividad o fallos mecánicos reportados en la capa operativa.
+*   **Uso**: Advertencias visuales en el selector de vehículos del guardia.
 
 ---
 
-## Usuario Administrador Inicial
+## 5. El Protocolo Schema Healer
 
-```sql
--- Usuario: admin_istpet
--- Contraseña: istpet2026
-INSERT INTO usuarios_web (usuario, password, rol, nombre_completo, activo)
-VALUES ('admin_istpet', 'istpet2026', 'admin', 'Administrador General ISTPET', 1);
-```
+La base de datos se autogestiona mediante el código en `Program.cs`. En cada arranque:
+1.  **Exploración**: Verifica la existencia de las 32 tablas y 4 vistas.
+2.  **Reparación**: Si falta una tabla (ej. por un despliegue limpio), el sistema ejecuta el DDL necesario instantáneamente.
+3.  **Bootstrap**: Si la tabla de usuarios está vacía, inyecta las credenciales de administración por defecto y los tipos de licencia base.
 
-> **Nota de Seguridad:** Cambiar la contraseña del administrador inmediatamente después de la instalación.
+---
+
+## 6. Auditoría de Datos (Audit Ledger)
+
+Cada transacción crítica escribe en `audit_logs`:
+| Campo | Propósito |
+| :--- | :--- |
+| `User` | Quién realizó la acción (ID o Username) |
+| `Action` | Descripción técnica (LOGIN, CHECK_IN, CHECK_OUT) |
+| `IP` | Dirección origen de la petición |
+| `Metadata` | Detalles JSON de la carga (payload) |
+| `Timestamp` | Marca de tiempo UTC para trazabilidad forense |

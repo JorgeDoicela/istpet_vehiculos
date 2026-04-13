@@ -1,257 +1,66 @@
-# Integración con la Base de Datos Central SIGAFI — ISTPET
+# Integración de Datos Maestros: Núcleo SIGAFI
 
-## Contexto
+Este documento académico-técnico detalla la arquitectura de integración entre el sistema de Logística y el núcleo institucional SIGAFI, basada en un modelo de **Puente Híbrido Universal**.
 
-El ISTPET opera dos sistemas de bases de datos independientes en el mismo servidor MySQL:
+---
 
-| Base de Datos | Propósito | Propiedad |
+## 1. Arquitectura del Puente (Hybrid Universal Bridge)
+
+La integración no es un simple enlace de datos, sino un sistema orquestado que garantiza la **Autonomía Operativa** mediante tres niveles de consulta:
+
+| Nivel | Componente | Acción |
 | :--- | :--- | :--- |
-| `istpet_vehiculos` | Sistema de logística de prácticas de manejo | Este proyecto |
-| `sigafi_es` | Sistema académico central institucional | SIGAFI (externo) |
-
-El sistema de logística se integra con SIGAFI mediante **consultas SQL cross-database** (cross-schema queries en MySQL). Esto elimina la necesidad de APIs intermedias y permite acceder a datos académicos en tiempo real.
-
----
-
-## Arquitectura de la Integración
-
-```mermaid
-graph LR
-    subgraph "Servidor MySQL"
-        A[(istpet_vehiculos<br/>Base Local)]
-        B[(sigafi_es<br/>Base Central)]
-    end
-
-    subgraph "Backend .NET 8"
-        C[SqlCentralStudentProvider]
-        D[AppDbContext<br/>EF Core]
-    end
-
-    D -->|Lectura/Escritura| A
-    C -->|SqlQueryRaw<br/>cross-database| B
-    C -->|Auto-registro| D
-```
-
-El acceso es **solo lectura** hacia SIGAFI — el sistema nunca escribe en la base central.
-
-Politica de espejo actual:
-
-- Se replica paridad casi total de atributos para tablas usadas por el sistema.
-- Se excluyen columnas BLOB de foto por rendimiento.
-- Se conserva `password` en las tablas donde existe en SIGAFI.
-- Las extensiones operativas locales se mantienen sin sobrescribir desde SIGAFI.
+| **L1: Cache Local** | Mirror DB | Respuesta instantánea (<5ms) para datos previamente sincronizados. |
+| **L2: JIT Fetching** | SIGAFI Bridge | Búsqueda profunda en `sigafi_es` con inyección automática en el espejo. |
+| **L3: Resilience Hub** | Polly Pipeline | Gestión de fallos y latencia mediante Circuit Breaker. |
 
 ---
 
-## Tablas de SIGAFI Consultadas
+## 2. El Pipeline de Resiliencia (`SigafiResiliencePipeline`)
 
-### `sigafi_es.alumnos`
-```
-idAlumno       VARCHAR(15) -- Cédula del estudiante
-primerNombre   VARCHAR(50)
-segundoNombre  VARCHAR(50)
-apellidoPaterno VARCHAR(50)
-apellidoMaterno VARCHAR(50)
-celular        VARCHAR(15)
-email          VARCHAR(100)
-foto           LONGBLOB    -- No se replica al espejo local por politica de rendimiento
-```
-
-### `sigafi_es.profesores`
-```
-idProfesor     VARCHAR(15) -- Cédula del profesor
-primerNombre   VARCHAR(50)
-segundoNombre  VARCHAR(50)
-primerApellido VARCHAR(50)
-segundoApellido VARCHAR(50)
-activo         INT (1=activo)
-```
-
-### `sigafi_es.matriculas`
-```
-idMatricula    INT
-idAlumno       VARCHAR(15) -- FK -> alumnos
-idPeriodo      INT         -- FK -> periodos
-idNivel        INT         -- FK -> cursos
-idSeccion      INT         -- FK -> secciones
-paralelo       VARCHAR(5)
-valida         INT (1=válida)
-```
-
-### `sigafi_es.periodos`
-```
-idPeriodo      INT
-detalle        VARCHAR(50) -- Ej: "OCT2025"
-activo         INT (1=período vigente)
-```
-
-### `sigafi_es.cursos`
-```
-idNivel        INT
-nombre         VARCHAR(100) -- Ej: "DESARROLLO DE SOFTWARE CUARTO"
-```
-
-### `sigafi_es.secciones`
-```
-idSeccion      INT
-nombre         VARCHAR(50) -- MATUTINA, NOCTURNA, FIN DE SEMANA
-```
-
-### `sigafi_es.cond_alumnos_practicas` (Agenda Diaria)
-Tabla para las prácticas de conducción agendadas para un día específico.
-```
-idPractica     INT PK
-idalumno       VARCHAR(15) -- FK -> alumnos
-idvehiculo     INT         -- FK -> vehiculo
-idProfesor     VARCHAR(15) -- FK -> profesores
-fecha          DATE        -- Filtro CURDATE()
-hora_salida    TIME
-cancelado      INT (0=vigente)
-```
-
-### `sigafi_es.cond_alumnos_vehiculos` (Tutores Asignados)
-Tabla que define el instructor responsable y vehículo fijo asignado a un estudiante para todo el curso.
-```
-idAsignacion   INT PK
-idAlumno       VARCHAR(15) -- FK -> alumnos
-idVehiculo     INT         -- FK -> vehiculo
-idPeriodo      INT
-idProfesor     VARCHAR(15) -- FK -> profesores
-activa         INT (1=asignación vigente)
-```
-
-### `sigafi_es.vehiculo`
-```
-IdVehiculo     INT
-NumeroVehiculo INT
-Placa          VARCHAR(15)
-Marca          VARCHAR(50)
-Modelo         VARCHAR(50)
-```
+Para mitigar la volatilidad de la red institucional, el sistema implementa un disyuntor lógico:
+*   **Detección de Caída**: Si una consulta cruzada falla o excede el umbral de tiempo (2s), el puente se "abre".
+*   **Operación Degradada**: La aplicación redirige todas las peticiones al Espejo Local, permitiendo el despacho de vehículos basado en la última sincronización válida.
+*   **Auto-Reconexión**: El sistema realiza pruebas de "pulso" periódicas para re-establecer el puente automáticamente.
 
 ---
 
-## Queries Cross-Database Implementados
+## 3. Matriz de Consultas Transversales (Cross-Schema)
 
-### 1. Búsqueda de Estudiante (Puente Híbrido)
-Ejecutado por `SqlCentralStudentProvider.GetFromCentralAsync(cedula)`.
+El sistema utiliza SQL de alto rendimiento para extraer la "Verdad Central":
 
+### 3.1. Extracción con Enriquecimiento JIT
 ```sql
 SELECT
-    a.idAlumno          AS Cedula,
-    a.primerNombre      AS Nombres,
-    a.apellidoPaterno   AS Apellidos,
-    m.paralelo          AS Paralelo,
-    s.nombre            AS Jornada,
-    CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno,
-              a.primerNombre, a.segundoNombre) AS NombreCompleto,
-    CONCAT(c.nombre, ', PARALELO:', m.paralelo, ' ', s.nombre) AS DetalleRaw,
-    c.nombre            AS CursoDetalle,
-    CAST(p.idPeriodo AS CHAR) AS Periodo,
-    TO_BASE64(a.foto)   AS FotoBase64
+    a.idAlumno, a.primerNombre, a.apellidoPaterno,
+    m.paralelo, s.nombre AS Jornada,
+    TO_BASE64(a.foto) AS FotoBase64
 FROM sigafi_es.alumnos a
-JOIN sigafi_es.matriculas m  ON m.idAlumno = a.idAlumno
-JOIN sigafi_es.periodos p    ON p.idPeriodo = m.idPeriodo
-LEFT JOIN sigafi_es.cursos c ON c.idNivel = m.idNivel
+JOIN sigafi_es.matriculas m ON m.idAlumno = a.idAlumno
+JOIN sigafi_es.periodos p ON p.idPeriodo = m.idPeriodo
 LEFT JOIN sigafi_es.secciones s ON s.idSeccion = m.idSeccion
-WHERE a.idAlumno = @cedula AND p.activo = 1
-LIMIT 1;
+WHERE a.idAlumno = @cedula AND p.activo = 1;
 ```
 
-### 2. Detección de Tutor Asignado (Fixed Assignment)
-Ejecutado por `GetAssignedTutorAsync(cedula)` si no hay práctica agendada hoy.
-
-```sql
-SELECT
-    p.idProfesor        AS Cedula,
-    CONCAT_WS(' ', p.primerNombre, p.segundoNombre) AS Nombres,
-    CONCAT_WS(' ', p.primerApellido, p.segundoApellido) AS Apellidos
-FROM sigafi_es.cond_alumnos_vehiculos v
-JOIN sigafi_es.profesores p ON p.idProfesor = v.idProfesor
-WHERE v.idAlumno = @cedula AND v.activa = 1
-LIMIT 1;
-```
-
-### 3. Práctica Agendada para Hoy (Daily Schedule)
-Ejecutado por `GetScheduledPracticeAsync(cedula)`. Posee prioridad sobre el Tutor Asignado.
-
-```sql
-SELECT
-    p.idPractica        AS IdPractica,
-    p.idalumno          AS CedulaAlumno,
-    p.idvehiculo        AS IdVehiculo,
-    CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno,
-              a.primerNombre, a.segundoNombre) AS AlumnoNombre,
-    p.idProfesor        AS CedulaProfesor,
-    p.hora_salida       AS HoraSalida,
-    CONCAT('#', v.NumeroVehiculo, ' (', v.Placa, ')') AS VehiculoDetalle,
-    CONCAT_WS(' ', pr.primerApellido, pr.segundoApellido,
-              pr.primerNombre, pr.segundoNombre) AS ProfesorNombre
-FROM sigafi_es.cond_alumnos_practicas p
-JOIN sigafi_es.alumnos a     ON a.idAlumno = p.idalumno
-JOIN sigafi_es.vehiculo v    ON v.IdVehiculo = p.idvehiculo
-JOIN sigafi_es.profesores pr ON pr.idProfesor = p.idProfesor
-WHERE p.idalumno = @cedula AND p.fecha = CURDATE()
-LIMIT 1;
-```
-
-### 4. Agenda (panel lateral)
-`GetRecentSchedulesAsync` alimenta `GET /api/Dashboard/agenda-reciente` (vía `IAgendaPanelService`): prácticas no canceladas, orden **fecha y hora descendente** (límite por query). Si SIGAFI no devuelve filas, el API usa el espejo local con el mismo criterio.
-
-## Lógica de Sincronización Automática (Bajo Demanda)
-
-El sistema Logistics está diseñado para minimizar la carga sobre el servidor central SIGAFI y garantizar la operatividad local mediante un modelo de sincronización inteligente:
-
-1. **Auto-registro de Estudiantes**:
-   - Al buscar un estudiante por CI en el panel de control, el sistema primero consulta los datos oficiales en `sigafi_es`.
-   - Si el estudiante existe en el sistema central pero no en la base local `istpet_vehiculos`, el sistema lo **crea y matricula automáticamente** en la base de datos local con los datos recuperados.
-   - Esto permite que nuevos alumnos registrados en SIGAFI sean operativos en Logistics de inmediato sin intervención manual.
-
-2. **Propósito de la Persistencia Local**:
-   - **Autonomía Operativa**: El sistema puede seguir registrando salidas y llegadas incluso si la conexión con el servidor 192.168.7.50 se interrumpe temporalmente.
-  - **Enriquecimiento de Datos**: La base local mantiene datos operativos fuera de las tablas espejo, en tablas auxiliares como `matriculas_operacion`, `vehiculos_operacion` y `practicas_operacion`.
-   - **Performance**: Reduce drásticamente los tiempos de respuesta al evitar consultas transversales constantes para datos que cambian poco (nombres, fotos, etc.).
-
-3. **Sincronización de Usuarios e Instructores**:
-   - El servicio `DataSyncService` permite realizar barridos manuales o programados de la tabla `usuarios_web` e `instructores`, asegurando que las credenciales y el catálogo de personal estén siempre alineados con la administración central.
+### 3.2. Orquestación de Agenda Diaria
+Detecta las prácticas programadas en SIGAFI, otorgando prioridad sobre las asignaciones fijas. Esto alimenta el selector predictivo del **Control Hub**.
 
 ---
 
-## Comportamiento ante Fallos de la BD Central
+## 4. El Motor de Sincronización (Master Sync)
 
-El sistema está diseñado con **resiliencia total**: si la base de datos SIGAFI no está disponible (servidor caído, permisos revocados, timeout), todos los métodos de `SqlCentralStudentProvider` capturan la excepción y retornan `null` o lista vacía. El sistema de logística de `istpet_vehiculos` continúa funcionando con los datos locales sin interrupciones.
-
----
-
-## Configuración del Usuario MySQL
-
-El usuario de base de datos configurado en `appsettings.json` debe tener permisos `SELECT` sobre ambas bases de datos:
-
-```sql
-GRANT SELECT ON sigafi_es.* TO 'istpet_user'@'localhost';
-GRANT ALL PRIVILEGES ON istpet_vehiculos.* TO 'istpet_user'@'localhost';
-FLUSH PRIVILEGES;
-```
+El `DataSyncService` ejecuta una secuencia de **20 pasos de integridad** para alinear el ecosistema local:
+1.  Sincronización de Catálogos (Periodos, Carreras, Modalidades).
+2.  Sincronización de Unidades (Vehículos y sus categorías).
+3.  Sincronización de Recursos (Instructores y Personal Admin).
+4.  Carga de Matrículas Vigentes.
+5.  Actualización de Agendas y Horarios.
 
 ---
 
-## Script de Simulación (Laboratorio)
+## 5. Protocolo de Acceso y Blindaje
 
-Para desarrollo y pruebas sin acceso al servidor real de SIGAFI, ejecutar:
-
-```sql
-SOURCE docs/Scripts/MOCK_SIGAFI_ES.sql;
-```
-
-Este script crea la base de datos `sigafi_es` con estructura y datos de prueba, incluyendo:
-- Alumnos históricos y vigentes (`1725555377`, `1750000002`).
-- Profesores e Instructores registrados en SIGAFI.
-- Flota de vehículos de prueba.
-- **Tutorías asignadas** en `cond_alumnos_vehiculos`.
-- **Prácticas agendadas** en `cond_alumnos_practicas` vinculadas al día actual (`CURDATE()`).
-
----
-
-## Verificación operativa (API y SQL)
-
-Para comprobar conexión, extracción módulo a módulo, Master Sync desde Swagger y consultas de conteo/comparación entre `sigafi_es` e `istpet_vehiculos`, ver **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
+Para garantizar que el sistema de logística sea un ente **no intrusivo**, se aplican estas restricciones:
+*   **Read-Only Strict**: El backend carece de permisos `WRITE` en el esquema de SIGAFI.
+*   **Sanitización de Carga**: Cada registro extraído pasa por el **Escudo de Datos** para corregir inconsistencias del sistema central (mayúsculas, espacios, truncamiento de campos largos).
+*   **Desacoplamiento de Identidad**: Las contraseñas en SIGAFI se validan mediante el **Puente de Seguridad Híbrida**, soportando hashing BCrypt heredado.

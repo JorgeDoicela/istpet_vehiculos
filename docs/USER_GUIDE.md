@@ -1,119 +1,64 @@
-# Manual de Usuario — ISTPET Sistema de Logística
+# Guía Maestra del Usuario: Control Logístico Vehicular
 
-## Acceso al Sistema
-
-Abrir el navegador web y acceder a la URL proporcionada por el administrador (en local: `http://localhost:5173`).
+Bienvenido al sistema de gestión logística industrial del ISTPET. Este manual detalla la operación de los tres núcleos operativos del sistema: **Control Hub**, **Mission Control** y el **Puente de Sincronización**.
 
 ---
 
-## Módulo 1: Control Operativo (Pantalla Principal)
+## 1. El Control Hub (Registro de Salida)
 
-Esta es la pantalla de trabajo diaria del guardia de garita. Permite registrar la salida y el retorno de vehículos con estudiantes.
+Es la interfaz primaria para el despacho de unidades. El sistema utiliza **Inteligencia Predictiva** basada en la agenda de SIGAFI.
 
-### Pestaña "Salida" — Despachar un Vehículo
-
-**Flujo paso a paso:**
-
-#### Paso 1: Buscar al Estudiante
-
-En el campo **"Cédula del Estudiante"**, ingresar el número de cédula.
-
-- El sistema busca automáticamente al teclear (autocompletado desde 3 caracteres).
-- Al completar los 10 dígitos, la búsqueda se ejecuta sola.
-- Si el estudiante aparece en el listado de sugerencias, hacer clic sobre su nombre.
-
-**Resultados posibles:**
-
-| Situación | Lo que muestra el sistema |
-| :--- | :--- |
-| Estudiante encontrado localmente | Tarjeta con nombre, curso, licencia, jornada y paralelo |
-| Estudiante encontrado en SIGAFI | Tarjeta con los datos + foto (si disponible) |
-| Estudiante no encontrado en ningún lugar | Mensaje de error: "No localizado" |
-
-**Sugerencia de Agenda e Inteligencia de Despacho:** Si el estudiante tiene una práctica agendada hoy o un tutor asignado en SIGAFI, el sistema **seleccionará automáticamente** al vehículo y al instructor.
-
-#### Paso 2: Seleccionar el Vehículo
-
-Si el sistema no detectó una sugerencia automática, se muestra la flota de vehículos disponibles:
-
-- Las tarjetas se pueden filtrar escribiendo la placa o número de unidad en el buscador.
-- Los indicadores **C / D / E** muestran la categoría de licencia del estudiante. Solo aparecen los vehículos compatibles.
-- Haga clic en una tarjeta para seleccionarla manualmente si es necesario.
-
-#### Paso 3: Seleccionar el Instructor
-
-En el menú desplegable **"Instructor Responsable"**, el sistema pre-seleccionará al docente asignado. Puede cambiarlo manualmente si el docente se encuentra ausente.
-
-#### Paso 4: Confirmar la Salida
-
-El reloj muestra la hora actual automáticamente. Cuando los tres datos están completos (estudiante, vehículo, instructor), el botón **"Confirmar Salida"** se activa.
-
-Al hacer clic:
-- Si todo es correcto: Notificación verde "¡Vehículo en pista registrado!" y la pantalla se reinicia.
-- Si hay un problema: Notificación roja con el motivo (ej: "VEHICULO_EN_USO", "INSTRUCTOR_OCUPADO").
+### Flujo de Despacho Profesional:
+1.  **Identificación JIT (Just-In-Time)**: Ingrese los últimos 3-4 dígitos de la cédula del estudiante. El sistema buscará en el espejo local; si no existe, activará automáticamente el **Puente Híbrido** hacia SIGAFI.
+2.  **Sugerencia de Agenda**: Si el estudiante tiene una práctica programada o un tutor asignado, el Hub pre-seleccionará el vehículo e instructor idóneos, minimizando el error humano.
+3.  **Filtrado por Categoría**: Los vehículos se bloquean visualmente si no coinciden con la categoría de licencia del estudiante (C, D, E).
+4.  **Confirmación de Salida**: Al presionar "Confirmar Salida", el sistema valida en nanosegundos el "Triángulo de Disponibilidad" (Estudiante, Vehículo, Instructor).
 
 ---
 
-### Pestaña "Llegada" — Registrar el Retorno
+## 2. Mission Control (Registro de Llegada y Dashboard)
 
-Hacer clic en la pestaña **"Llegada"** (o acceder directamente con `/?tab=llegada`).
+Visible en la pestaña "Llegada" y en el módulo de "Mantenimiento". Permite el monitoreo táctico de la flota en pista.
 
-Se muestra una cuadrícula con todos los vehículos que están actualmente en pista. Cada tarjeta muestra:
-- Número de unidad
-- Nombre del instructor
-- Nombre del estudiante
-- Hora de salida
-
-**Para registrar un retorno:**
-
-1. Hacer clic en la tarjeta del vehículo que regresó (se selecciona con borde azul).
-2. Verificar que la hora de **"Retorno Proyectado"** (reloj en tiempo real) es correcta.
-3. Hacer clic en **"Confirmar Retorno"** (botón dorado).
-4. Notificación verde "¡Llegada confirmada!" — las horas de práctica del estudiante se actualizan automáticamente.
+### Operación de Retorno:
+*   **Grid de Tiempo Real**: Muestra tarjetas con efecto *Glassmorphism* de cada unidad fuera de garita.
+*   **Reloj de Paridad**: Indica el tiempo transcurrido desde la salida.
+*   **Cierre de Transacción**: Al confirmar la llegada, el sistema calcula automáticamente las horas de práctica y las asocia al expediente operativo del alumno.
 
 ---
 
-## Módulo 2: Monitoreo (Dashboard)
+## 3. Gestión de la Flota y Catálogos
 
-Accesible desde el menú lateral en **"Monitoreo"**.
+### Gestión de Unidades (Vehículos)
+*   **Estado Mecánico**: Un vehículo marcado en "Mantenimiento" en este módulo aparecerá bloqueado para despacho en el Control Hub.
+*   **Mapeo de Instructor**: Permite asignar un docente fijo a una unidad física.
 
-Muestra:
-- **Clases Activas:** Los mismos vehículos en pista que la pestaña Llegada, en formato de tarjetas informativas.
-- **Alertas de Mantenimiento:** Vehículos con estado "MANTENIMIENTO" que requieren atención.
-
-Este módulo es de solo lectura — no permite realizar acciones.
-
----
-
-## Módulo 3: Estudiantes
-
-Accesible desde el menú lateral. Muestra el catálogo completo de estudiantes registrados en la base de datos local. Permite buscar por nombre o cédula.
+### Expedientes Estudiantiles
+*   **Historial de Paridad**: Permite verificar si los datos locales coinciden con SIGAFI. Si hay una discrepancia, el administrador puede forzar una **Inspección de Paridad**.
 
 ---
 
-## Módulo 4: Vehículos
+## 4. El Dashboard de Monitoreo
 
-Accesible desde el menú lateral. Muestra el catálogo completo de vehículos con su estado mecánico actual.
-
----
-
-## Panel Lateral: Agenda SIGAFI Hoy
-
-Visible siempre en la pestaña de Salida. Muestra las prácticas programadas para el día actual según el sistema académico central.
-
-- Al pasar el cursor sobre una tarjeta, aparece el botón **"CARGAR CÉDULA"** que copia automáticamente la cédula del estudiante al campo de búsqueda.
+Ubicado en el menú lateral, ofrece una visión analítica:
+*   **Indicador de Carga**: Porcentaje de la flota actualmente en uso.
+*   **Panel de Alertas**: Notificaciones críticas sobre vehículos que han excedido el tiempo promedio de práctica o unidades con fallos reportados.
 
 ---
 
-## Modo Oscuro
+## 5. Resiliencia en Caso de Desconexión
 
-El ícono de luna/sol en la barra lateral permite alternar entre modo claro y modo oscuro. La preferencia se mantiene mientras la sesión está activa.
+> [!IMPORTANT]
+> El sistema está diseñado para el **Modo de Operación Local Aislada**.
+
+Si la conexión con el servidor central SIGAFI se interrumpe (indicado por un aviso en la barra de búsqueda):
+1.  Usted podrá seguir registrando salidas y llegadas de alumnos que ya hayan sido sincronizados previamente.
+2.  La búsqueda de nuevos alumnos desde SIGAFI se reactivará automáticamente cuando se reestablezca el enlace.
+3.  **No es necesario reiniciar el sistema**; el *Resilience Pipeline* detectará la reconexión.
 
 ---
 
-## Consideraciones Operativas
-
-- **Un vehículo solo puede salir una vez:** El sistema rechaza el despacho de un vehículo que ya está en pista.
-- **Un instructor no puede estar en dos prácticas simultáneas:** El sistema lo valida.
-- **Las horas de práctica se acumulan automáticamente:** Cada vez que se registra una llegada, el sistema calcula el tiempo transcurrido y lo suma al contador de horas del estudiante.
-- **Si SIGAFI no está disponible:** El sistema de logística local sigue funcionando con normalidad. Solo la agenda y la búsqueda desde central estarán inactivas.
+## 6. Iconografía y Atajos Rápidos
+*   **Luna/Sol**: Cambio de ambiente visual (Modo Oscuro recomendado para turnos nocturnos).
+*   **Badge de Categoría**: Indica el tipo de licencia (Verde para C, Amarillo para D, Rojo para E).
+*   **Log de Auditoría**: Visible solo para administradores para rastrear quién autorizó cada salida.

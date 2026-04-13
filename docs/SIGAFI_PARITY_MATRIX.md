@@ -1,42 +1,52 @@
-# Matriz de Paridad SIGAFI -> istpet_vehiculos
+# Matriz de Paridad Técnica: SIGAFI Core
 
-Objetivo: mantener un espejo estricto de SIGAFI en la base local para las tablas espejo, excluyendo solo fotos/BLOB.
+Este documento define la topología de espejado y las reglas de integridad que rigen el enlace entre el núcleo académico SIGAFI y el ecosistema ISTPET Vehículos.
 
-## Politica de paridad
+---
 
-- **Fuente de verdad**: `sigafi_es` (solo lectura desde la app).
-- **Espejo local**: `istpet_vehiculos` replica las tablas espejo con el mismo set de columnas que SIGAFI, salvo `foto`.
-- **Fotos**: excluidas del espejo (`alumnos.foto` no se replica).
-- **Passwords**: se conservan en espejo (`alumnos.password`, `usuarios_web.password`).
-- **Master Sync**: mecanismo operativo principal de paridad.
+## 1. Filosofía de Mirroring (Espejo Estricto)
 
-## Clasificacion por tabla
+El sistema opera bajo una política de **Paridad Atómica**. El objetivo es que la lógica de negocio local actúe sobre datos que son réplicas exactas de la fuente central, minimizando la latencia de red y garantizando la autonomía operativa.
 
-| Tabla | Tipo | Nota de paridad |
+### Reglas de Oro:
+*   **Fuente de Verdad (SoT)**: SIGAFI (`sigafi_es`) es el único origen de datos maestros.
+*   **Exclusión Selectiva**: Los campos BLOB (`foto`) se excluyen del espejado persistente para optimizar los tiempos de I/O de la base de datos local. El sistema los recupera mediante el **Puente JIT** solo cuando es necesario mostrarlos en el UI.
+*   **Encapsulamiento Operativo**: Ninguna tabla espejo debe tener columnas adicionales que no existan en SIGAFI. Los datos locales residen exclusivamente en tablas con el sufijo `_operacion`.
+
+---
+
+## 2. Clasificación de Entidades y Nivel de Paridad
+
+| Capacidad | Nivel de Espejo | Observación Técnica |
 | :--- | :--- | :--- |
-| `alumnos` | mirror | Se replica set completo excepto BLOB `foto`. |
-| `profesores` | mirror | Replica completa de columnas remotas usadas en SIGAFI. |
-| `vehiculos` | mirror | Replica las columnas remotas; el estado operativo queda en `vehiculos_operacion`. |
-| `periodos` | mirror | Replica completa. |
-| `carreras` | mirror | Replica completa. |
-| `cursos` | mirror | Replica exacta segun SIGAFI. |
-| `secciones` | mirror | Replica completa. |
-| `modalidades` | mirror | Replica completa. |
-| `instituciones` | mirror | Replica completa. |
-| `categoria_vehiculos` | mirror | Replica completa. |
-| `categorias_examenes_conduccion` | mirror | Replica completa. |
-| `matriculas` | mirror | Replica remota completa; estado operativo queda en `matriculas_operacion`. |
-| `cond_alumnos_practicas` | mirror | Replica remota exacta; observaciones locales quedan en `practicas_operacion`. |
-| `cond_alumnos_vehiculos` | mirror | Replica completa. |
-| `asignacion_instructores_vehiculos` | mirror | Replica completa. |
-| `cond_alumnos_horarios` | mirror | Replica completa, incluyendo activos e inactivos. |
-| `cond_practicas_horarios_alumnos` | mirror | Replica completa de enlaces existentes en origen. |
-| `matriculas_examen_conduccion` | mirror | Replica completa. |
-| `usuarios_web` | mirror | Replica exacta incluyendo `esRrhh`. |
-| `tipo_licencia` | derivada local | Catalogo local derivado desde `categoria_vehiculos` mientras SIGAFI no publique tabla propia. |
+| **Maestros Académicos** | 1:1 Completo | `carreras`, `periodos`, `cursos`, `secciones`, `modalidades`. |
+| **Recursos Humanos** | 1:1 Filtro Activos | `profesores`. Se sincronizan solo cuentas habilitadas. |
+| **Estudiantes** | 1:1 JIT Enabled | `alumnos`. Esquema idéntico (sin BLOB). |
+| **Control Vehicular** | 1:1 Mirror + Ext | `vehiculos`. Columnas SIGAFI + Extensión `vehiculos_operacion`. |
+| **Logística Central** | 1:1 Transaccional | `cond_alumnos_practicas`, `cond_alumnos_vehiculos`. |
+| **Horarios y Agendas** | High Volume Mirror | `cond_alumnos_horarios`, `fechas_horarios`. |
 
-## Reglas para evitar perdida de datos locales
+---
 
-- No agregar columnas operativas dentro de tablas espejo.
-- Los datos operativos locales viven en tablas auxiliares: `vehiculos_operacion`, `matriculas_operacion`, `practicas_operacion`.
-- Filtros funcionales (activos/validos) deben vivir en consumo de negocio, no en el espejo.
+## 3. El Escudo de Datos (Sync Data Shield)
+
+Durante el proceso de paridad, el `DataSyncService` aplica filtros de protección:
+1.  **Sanitización de Strings**: Conversión a formatos compatibles con el cotejamiento `utf8mb4_spanish_ci`.
+2.  **Validación de Llaves Foráneas**: Si una matrícula referencia a un periodo inexistente localmente, el sistema activa una **Sincronización en Cascada** del catálogo maestro antes de persistir la matrícula.
+3.  **Deduplicación por Clave Única**: Uso de `idAlumno` y `idVehiculo` como anclas de sincronización para evitar duplicidad de registros.
+
+---
+
+## 4. Auditoría de Deriva (Data Drift Audit)
+
+Para asegurar que el espejo no se degrade, el sistema proporciona herramientas de auditoría:
+*   **Drift Check**: Comparación de `COUNT(*)` entre SIGAFI y Local.
+*   **Inspección Granular**: Comparación campo por campo de registros específicos mediante el endpoint `/api/sync/inspect`.
+*   **Health Status**: El dashboard de administración muestra una alerta roja si la paridad de una tabla crítica cae por debajo del 95% de confianza.
+
+---
+
+## 5. Prevención de Inconsistencias
+
+> [!WARNING]
+> Cualquier alteración manual de las tablas espejo (Manual SQL Update) en `istpet_vehiculos` será sobrescrita por el motor de **Master Sync** en su siguiente ejecución. Toda persistencia local debe residir en las tablas `_operacion`.

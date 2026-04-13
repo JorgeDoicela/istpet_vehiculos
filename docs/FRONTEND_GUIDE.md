@@ -1,172 +1,67 @@
-# Guía Frontend — React + Vite + Tailwind CSS
+# Guía de Ingeniería Frontend: React 19 (Industrial Edition)
 
-## Stack Tecnológico
+Este documento detalla la arquitectura, el sistema de diseño y los patrones de desarrollo utilizados en la interfaz de usuario de ISTPET Vehículos.
 
-| Tecnología | Versión | Uso |
+---
+
+## 1. Stack Tecnológico de Vanguardia
+
+| Tecnología | Versión | Rol Crítico |
 | :--- | :--- | :--- |
-| React | 19.2 | Framework de UI basado en componentes |
-| Vite | 8.0 | Bundler y servidor de desarrollo |
-| Tailwind CSS | 3.4 | Utilidades CSS (configuración personalizada) |
-| React Router DOM | 7 | Navegación SPA |
-| Axios | 1.14 | Cliente HTTP para la API REST |
+| **React** | 19.x | Motor de UI con soporte para Concurrent Rendering. |
+| **Vite** | 8.x | Herramienta de construcción ultrarrápida (HMR instantáneo). |
+| **Tailwind CSS** | 3.4+ | Sistema de diseño atómico con tokens personalizados. |
+| **Axios** | 1.1x | Cliente de red con interceptores para inyección de **JWT**. |
+| **Framer Motion** | (Opcional) | Orquestación de micro-animaciones en `VehicleCard`. |
 
 ---
 
-## Estructura del Proyecto
+## 2. Sistema de Diseño: Apple Aesthetic (Glassmorphism)
 
-```
-frontend/src/
-├── App.jsx                  # Raíz de la app y definición de rutas
-├── main.jsx                 # Punto de entrada de React (createRoot)
-├── index.css                # Variables CSS globales (design tokens)
-├── App.css                  # Animaciones y estilos globales (apple-*)
-│
-├── pages/
-│   ├── ControlOperativo.jsx # Página principal (Salida y Llegada de vehículos)
-│   ├── Home.jsx             # Dashboard de monitoreo
-│   ├── Students.jsx         # Catálogo de estudiantes
-│   └── Vehicles.jsx         # Catálogo de vehículos
-│
-├── components/
-│   ├── layout/
-│   │   ├── Layout.jsx       # Contenedor principal con Sidebar
-│   │   └── Sidebar.jsx      # Navegación lateral con links y modo oscuro
-│   ├── common/
-│   │   ├── StatusBadge.jsx  # Badge de estado reutilizable ("En Pista", etc.)
-│   │   └── ThemeContext.jsx  # Context API para modo claro/oscuro
-│   ├── features/
-│   │   ├── ActiveClasses.jsx  # Tarjetas de vehículos en pista
-│   │   ├── VehicleList.jsx    # Lista de vehículos del catálogo
-│   │   ├── StudentSearch.jsx  # Búsqueda de estudiantes
-│   │   └── SkeletonLoader.jsx # Placeholders de carga animados
-│   └── logistica/
-│       ├── VehicleCard.jsx    # Tarjeta de vehículo disponible (seleccionable)
-│       └── LogisticaHeader.jsx # Encabezado del módulo con tabs Salida/Llegada
-│
-└── services/
-    ├── api.js               # Instancia base de Axios (baseURL configurada aquí)
-    ├── logisticaService.js  # Métodos para el módulo de Control Operativo
-    ├── dashboardService.js  # Métodos para el módulo de monitoreo
-    ├── studentService.js    # Métodos para el catálogo de estudiantes
-    └── vehicleService.js    # Métodos para el catálogo de vehículos
-```
+La interfaz se basa en los principios de diseño de Apple (iOS/macOS), optimizados para la visibilidad en garitas con luz solar directa y entornos nocturnos.
+
+### Tokens de Diseño (`index.css`):
+*   **Backdrop Blur**: Uso de `backdrop-filter: blur(20px)` para profundidad visual.
+*   **Color Palette**: Harmonía de `istpet-navy` (#1a2544) y `apple-primary` (#007AFF).
+*   **Typography**: Familia de fuentes sin-serif de alta legibilidad (inter-ui/system-ui).
 
 ---
 
-## Rutas de la Aplicación
+## 3. Arquitectura del Control Hub (`ControlOperativo.jsx`)
 
-Definidas en `App.jsx` con React Router DOM v7:
+Este es el núcleo de despacho (600+ líneas de lógica reactiva).
 
-| Ruta | Componente | Descripción |
-| :--- | :--- | :--- |
-| `/` | `ControlOperativo` | Panel de despacho. Ruta principal |
-| `/monitoreo` | `Home` | Dashboard con clases activas y alertas |
-| `/estudiantes` | `Students` | Catálogo de estudiantes |
-| `/vehiculos` | `Vehicles` | Catálogo de flota |
-| `/*` (cualquier otra) | `ControlOperativo` | Redirige al panel principal |
+### Patrones Implementados:
+1.  **JIT (Just-In-Time) Refresh**: Al detectar que un instructor recién sincronizado no está en la lista local, el componente dispara un "Silent Refresh" para actualizar el catálogo de docentes sin interrumpir la experiencia del usuario.
+2.  **Debouncing de Búsqueda**: Implementa un retardo de 300ms para el autocompletado y 800ms para la búsqueda profunda por cédula (10 dígitos).
+3.  **Reloj de Paridad Local**: Reloj de alta precisión sincronizado con el servidor para el cálculo de tiempos de práctica proyectados.
+4.  **Matriz de Compatibilidad**: Lógica de filtrado que deshabilita vehículos basándose en la jerarquía de licencias (C < D < E).
 
 ---
 
-## Sistema de Diseño (Design Tokens)
+## 4. Orquestación de Servicios (Service Layer)
 
-El diseño utiliza variables CSS definidas en `index.css`. Están disponibles en toda la aplicación:
+Los servicios en `frontend/src/services/` actúan como una capa de abstracción sobre la API REST.
 
-```css
-:root {
-  --apple-bg: #f5f5f7;          /* Fondo principal */
-  --apple-card: #ffffff;         /* Fondo de tarjetas */
-  --apple-border: #e2e8f0;       /* Color de bordes */
-  --apple-primary: #007AFF;      /* Azul de acción principal */
-  --apple-text-main: #1a2544;    /* Texto principal oscuro */
-  --apple-text-sub: #8e8e93;     /* Texto secundario gris */
-  --istpet-navy: #1a2544;        /* Azul corporativo ISTPET */
-  --istpet-gold: #f0a500;        /* Dorado corporativo ISTPET */
-}
-```
+### `api.js` (La Puerta de Enlace):
+Implementa interceptores automáticos:
+*   Si existe un token en `localStorage`, se inyecta en el header `Authorization: Bearer ...`.
+*   Maneja globalmente estados 401 (Unauthorized) redirigiendo al usuario al login.
 
 ---
 
-## Módulo Principal: ControlOperativo.jsx
+## 5. Componentes de Misión Crítica
 
-Es el componente más complejo del sistema (627 líneas). Gestiona dos pestañas: **Salida** y **Llegada**.
-
-### Estado del Componente
-
-```javascript
-// --- Pestaña Salida ---
-activeTab           // 'salida' | 'llegada'
-idAlumno            // Texto del campo de búsqueda (Cédula)
-sugerencias         // Lista de autocompletado (máx. 5)
-estudianteData      // Datos del estudiante localizado
-vehiculos           // Lista de unidades disponibles
-vehiculoSeleccionado
-instructores
-instructorSeleccionado
-
-// --- Pestaña Llegada ---
-clasesActivas       // Vehículos actualmente en pista
-claseSeleccionada   // Vehículo a registrar retorno
-horaRetorno         // Reloj en tiempo real (actualiza cada 1s)
-agendadosHoy        // Lista de prácticas de SIGAFI para hoy
-```
-
-### Lógica de Autocompletado
-
-Implementa un **debounce de 300ms** sobre el campo de cédula. Al escribir:
-1. Filtra localmente la lista `agendadosHoy` (sin llamada al servidor).
-2. Simultáneamente, consulta `GET /api/logistica/buscar?query=...` para alumnos históricos.
-3. Combina ambas listas eliminando duplicados. Muestra máximo 5 sugerencias.
-
-### Auto-búsqueda Completa
-
-Cuando la cédula tiene exactamente **10 dígitos** y hay un **debounce de 800ms** sin cambios, dispara automáticamente `ejecutarBusquedaEstudiante()` — el mismo que activa el botón de búsqueda manual.
-
-### Filtrado de Vehículos por Licencia
-
-Al seleccionar un estudiante, el selector de vehículos solo muestra las unidades cuyo `idTipoLicencia` sea menor o igual al tipo de licencia del estudiante (permite que un estudiante tipo C conduzca vehículos tipo C; un tipo E puede conducir cualquiera).
-
-### Inteligencia de Despacho (Auto-selección)
-
-Al localizar a un estudiante, el sistema preselecciona automáticamente al instructor y al vehículo si están disponibles en la respuesta de la API:
-- **Vehículo Sugerido**: Se selecciona automáticamente si `idPracticaCentral` coincide con un vehículo de la flota disponible.
-- **Instructor Sugerido**: Se selecciona mediante `idPracticaInstructor`. Si el instructor no existe en el catálogo local (recién sincronizado), el sistema realiza un **Silent Refresh** (recarga la lista de docentes) y luego aplica la selección.
+*   **`ActiveClasses.jsx`**: Implementa el "Mission Control Grid", visualizando las unidades en pista con indicadores de tiempo transcurrido.
+*   **`VehicleCard.jsx`**: Tarjeta reactiva que cambia de estado (Seleccionada, Bloqueada, Mantenimiento) con transiciones suaves de color.
+*   **`ThemeContext.jsx`**: Motor de tematización que persiste la preferencia de Modo Oscuro en el navegador del guardia.
 
 ---
 
-## Capa de Servicios (Axios)
-
-### `api.js` — Configuración Base
-
-```javascript
-import axios from 'axios';
-
-const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
-  headers: { 'Content-Type': 'application/json' }
-});
-
-export default api;
-```
-
-### `logisticaService.js` — Métodos
-
-| Método | HTTP | Endpoint | Descripción |
-| :--- | :--- | :--- | :--- |
-| `buscarEstudiante(idAlumno)` | GET | `/logistica/estudiante/{idAlumno}` | Busca estudiante (local + SIGAFI) |
-| `buscarSugerencias(query)` | GET | `/logistica/buscar?query=...` | Autocompletado (min 3 chars) |
-| `getVehiculosDisponibles()` | GET | `/logistica/vehiculos-disponibles` | Flota disponible |
-| `getInstructores()` | GET | `/logistica/instructores` | Lista de instructores activos |
-| `registrarSalida(idMat, idVeh, idInst)` | POST | `/logistica/salida` | Registra salida |
-| `registrarLlegada(idRegistro)` | POST | `/logistica/llegada` | Registra llegada |
-| `getAgendadosHoy()` | GET | `/Dashboard/agenda-reciente?limit=100` | Agenda reciente (mismo servicio que monitoreo) |
-
----
-
-## Comandos de Desarrollo
+## 6. Pipeline de Construcción y Calidad
 
 ```bash
-npm run dev      # Servidor de desarrollo (http://localhost:5173)
-npm run build    # Compilar para producción (output: /dist)
-npm run preview  # Previsualizar el build de producción
-npm run lint     # Analizar el código con ESLint
+npm run dev      # Entorno de desarrollo con HMR
+npm run build    # Genera bundle optimizado para despliegue en Vercel
+npm run lint     # Garantiza que el código cumple con el estándar de Proyectos ISTPET
 ```

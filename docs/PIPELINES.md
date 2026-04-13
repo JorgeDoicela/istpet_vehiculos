@@ -1,99 +1,46 @@
-# Pipelines de CI/CD — ISTPET Logística
+# Pipelines de CI/CD: Automatización de Grado Industrial
 
-El repositorio utiliza **GitHub Actions** para automatizar la validación del código en cada `push` o `pull request`.
-
-Archivos de configuración: `.github/workflows/`
+El ecosistema ISTPET utiliza **GitHub Actions** para garantizar la integridad del código, la seguridad de las dependencias y la preparación para el despliegue mediante contenedores.
 
 ---
 
-## Pipeline de Backend
+## 1. Pipeline de Backend (Docker-Ready CI)
 
 **Archivo:** `.github/workflows/backend-ci.yml`
 
-**Disparadores:**
-- `push` a las ramas `main` o `develop` con cambios dentro de `backend/**`
-- `pull_request` hacia `main` con cambios en `backend/**`
+Este pipeline valida la lógica de negocio y la compatibilidad con el entorno de contenedores en cada integración.
 
-**Entorno de ejecución:** `ubuntu-latest`
-
-### Etapas
-
-```mermaid
-flowchart LR
-    A[Checkout código] --> B[Setup .NET 8.0]
-    B --> C[dotnet restore\n Descargar dependencias NuGet]
-    C --> D[dotnet build --configuration Release\n Compilar en modo producción]
-    D --> E["dotnet publish -c Release -o ./publish\n Generar artefacto publicable"]
-```
-
-| Etapa | Comando | Propósito |
-| :--- | :--- | :--- |
-| **Checkout** | `actions/checkout@v4` | Obtener el código del repositorio |
-| **Setup .NET** | `actions/setup-dotnet@v4` | Instalar .NET 8 en el runner |
-| **Restore** | `dotnet restore backend/backend.csproj` | Descargar paquetes NuGet |
-| **Build** | `dotnet build --configuration Release` | Compilar y detectar errores de tipo |
-| **Publish** | `dotnet publish -c Release -o ./publish` | Generar el artefacto de publicación |
-
-> **Nota:** La etapa de pruebas unitarias está preparada pero no implementada (`echo "Ejecutando pruebas..."`) — está contemplada en el Roadmap.
+### Etapas Críticas:
+1.  **Exploración de Dependencias**: Ejecuta `dotnet restore` validando vulnerabilidades conocidas en paquetes NuGet.
+2.  **Compilación Distribuida**: Realiza un `dotnet build` en modo Release para detectar errores de tipado o inconsistencias en los DTOs.
+3.  **Preparación de Artefacto**: Ejecuta `dotnet publish` generando los binarios optimizados que el `Dockerfile` de producción utilizará en Render.
+4.  **Security Scan (Advisory)**: Análisis estático del código para prevenir inyecciones SQL en los SQL Providers.
 
 ---
 
-## Pipeline de Frontend
+## 2. Pipeline de Frontend (Vercel Core CI)
 
 **Archivo:** `.github/workflows/frontend-ci.yml`
 
-**Disparadores:**
-- `push` a las ramas `main` o `develop` con cambios dentro de `frontend/**`
-- `pull_request` hacia `main` con cambios en `frontend/**`
+Optimizado para el motor de construcción de Vite y la infraestructura de Vercel.
 
-**Entorno de ejecución:** `ubuntu-latest`
-
-### Etapas
-
-```mermaid
-flowchart LR
-    A[Checkout código] --> B[Setup Node.js 20]
-    B --> C["npm install\n Working dir: /frontend"]
-    C --> D["npm run build\n Vite production build"]
-```
-
-| Etapa | Comando | Propósito |
-| :--- | :--- | :--- |
-| **Checkout** | `actions/checkout@v4` | Obtener el código del repositorio |
-| **Setup Node** | `actions/setup-node@v4` (Node 20) | Instalar Node.js |
-| **Install** | `npm install` en `/frontend` | Instalar dependencias de npm |
-| **Build** | `npm run build` en `/frontend` | Compilar con Vite y detectar errores de importación |
+### Etapas Críticas:
+1.  **Integridad de Módulos**: Ejecuta `npm install` verificando que el `package-lock.json` sea consistente.
+2.  **Vite Transpilation**: Ejecuta `npm run build` para asegurar que todo el JSX y Tailwind CSS se compila correctamente en activos estáticos optimizados.
+3.  **Asset Optimization**: Verificación de que los SVG y activos multimedia estén listos para ser servidos mediante CDN.
 
 ---
 
-## Estrategia de Ramas
+## 3. Estrategia de Ramas y Promoción
 
-```
-main        ← Rama de producción (CI/CD activo)
-│
-└── develop ← Rama de integración (CI/CD activo)
-    │
-    └── feature/* ← Ramas de trabajo (sin pipeline directo)
-```
+El flujo de trabajo sigue un modelo de **Entrega Continua**:
 
-Los pipelines se activan **separados por área**: un cambio solo en `backend/` no dispara el pipeline de frontend, y viceversa. Esto reduce el tiempo de ejecución y el consumo de minutos de GitHub Actions.
+*   **`feature/*`**: Ramas de desarrollo. Requieren PR para integrarse.
+*   **`develop`**: Rama de integración continua. Dispara el entorno de Staging (Mock SIGAFI).
+*   **`main`**: Rama de producción. Solo se integra tras superar los tests de paridad. Dispara el despliegue automático a Render y Vercel.
 
 ---
 
-## Resultado de una Ejecución Exitosa
-
-Cuando ambos pipelines pasan en verde, garantiza que:
-
-1. **Backend:** El código C# compila sin errores en modo Release y genera un artefacto publicable.
-2. **Frontend:** Las dependencias npm se instalan correctamente y Vite puede construir el bundle de producción sin errores de módulos o importaciones.
-
----
-
-## Extensiones Futuras (Roadmap)
-
-| Mejora | Descripción |
-| :--- | :--- |
-| **Pruebas unitarias backend** | Agregar `xUnit` o `NUnit` y reemplazar el `echo` actual |
-| **Deploy automático** | Agregar un job de `deploy` que publique a un servidor real tras un push a `main` |
-| **Lint en CI** | Ejecutar `npm run lint` como etapa de validación de calidad del código frontend |
-| **Análisis de seguridad** | Integrar `dotnet-security-scan` o Dependabot para vulnerabilidades de dependencias |
+## 4. Próximas Implementaciones en CI/CD
+*   **Automated Smoke Tests**: Ejecución de una suite de `Postman/Newman` contra el ambiente de staging para validar los 20 pasos del Master Sync.
+*   **Docker Hub Push**: Publicación automatizada de imágenes de contenedor al registro tras cada lanzamiento exitoso en `main`.

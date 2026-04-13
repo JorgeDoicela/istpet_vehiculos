@@ -1,166 +1,101 @@
-# Arquitectura del Sistema — ISTPET Logística
+# Arquitectura del Sistema — ISTPET Logística (Industrial Grade)
 
-## Visión General
+## 1. Visión Holística
 
-El sistema sigue una **arquitectura desacoplada por capas** (Layered Architecture) con separación estricta de responsabilidades entre el frontend, la API REST y la base de datos. Adicionalmente, incorpora un **puente de integración** con la base de datos académica central del ISTPET (sistema SIGAFI).
+El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura de Puente Híbrido Universal**. No es solo una aplicación aislada, sino una extensión resiliente del ecosistema SIGAFI, optimizada para operaciones críticas de logística terrestre en tiempo real.
+
+### Pilares Fundamentales:
+*   **Dual-Database Bridge**: Sincronización bidireccional entre el espejo local (Mirror) e integridad referencial con el núcleo académico (SIGAFI).
+*   **Zero-Downtime Resilience**: Implementación de *Circuit Breakers* para garantizar operatividad incluso con conectividad intermitente hacia SIGAFI.
+*   **Auto-Adaptive Schema (Schema Healer)**: Protocolo de auto-sanación que garantiza la integridad estructural de la base de datos en cada arranque.
 
 ---
 
-## Diagrama de Capas
+## 2. Diagrama de Arquitectura de Misión Crítica
 
 ```mermaid
 graph TD
-    subgraph "Capa de Presentación (React + Vite)"
-        A[ControlOperativo.jsx<br/>Salida / Llegada] 
-        B[Home.jsx<br/>Dashboard]
-        C[Students.jsx / Vehicles.jsx<br/>Catálogos]
+    subgraph "Capa de Presentación (React 19 + Apple-Style UI)"
+        A[Control Hub<br/>Registro Salida/Llegada] 
+        B[Mission Control<br/>Dashboard de Pista]
+        C[Fleet Management<br/>Gestión de Unidades]
     end
 
-    subgraph "Servicios Frontend (Axios)"
-        D[logisticaService.js]
-        E[dashboardService.js]
-        F[studentService.js / vehicleService.js]
+    subgraph "Servicios de Orquestación Frontend"
+        D[Logistics Engine]
+        E[Monitoring Service]
+        F[Sync Data Shield]
     end
 
-    subgraph "API REST - .NET 8"
-        G[LogisticaController]
-        H[DashboardController]
-        I[AuthController]
-        J[SyncController]
+    subgraph "Nervio Central: API REST .NET 8"
+        G[Logistica Controller<br/>Lógica Operativa]
+        H[Dashboard Controller<br/>Métricas Tiempo Real]
+        I[Sync Controller<br/>Audit & Parity]
     end
 
-    subgraph "Capa de Servicios"
-        K[SqlLogisticaService<br/>Lógica de Negocio]
-        L[SqlCentralStudentProvider<br/>Puente SIGAFI]
-        M[DataSyncService<br/>Ingesta Externa]
+    subgraph "Capa de Resiliencia y Paridad"
+        K[Resilience Pipeline<br/>Polly Circuit Breaker]
+        L[Hybrid Universal Bridge<br/>SIGAFI Adapter]
+        M[Master Sync Engine<br/>20-Step Sequence]
+        SH[Schema Healer<br/>Boot Protocol]
     end
 
-    subgraph "Capa de Datos"
-        N[AppDbContext<br/>EF Core + Fluent API]
-        O[(MySQL<br/>istpet_vehiculos)]
-        P[(MySQL<br/>sigafi_es<br/>BD Central)]
+    subgraph "Ecosistema de Datos"
+        N[EF Core 8 Power Layer]
+        O[(Local Mirror DB<br/>istpet_vehiculos)]
+        P[(SIGAFI Central DB<br/>External Source)]
     end
 
-    A --> D --> G --> K --> N --> O
+    A --> D --> G --> K
     B --> E --> H --> N
     G --> L --> P
-    J --> M --> N
+    J[Guard] --> SH --> O
+    I --> M --> N
+    K --> L
+    L --> N
+    N --> O
 ```
 
 ---
 
-## Estructura de Directorios
+## 3. Componentes Estratégicos
 
-```
-istpet_vehiculos/
-├── backend/
-│   ├── Controllers/        # Controladores REST (7 archivos)
-│   ├── DTOs/               # Objetos de Transferencia de Datos
-│   ├── Data/               # AppDbContext (EF Core)
-│   ├── Mappings/           # Perfiles AutoMapper
-│   ├── Middleware/         # Manejo global de errores
-│   ├── Models/             # Entidades del dominio (13 modelos)
-│   └── Services/
-│       ├── Helpers/        # DataValidator (Sanitización)
-│       ├── Interfaces/     # Contratos de servicio
-│       └── Implementations/  # Implementaciones SQL reales
-├── frontend/
-│   └── src/
-│       ├── components/
-│       │   ├── common/     # StatusBadge, ThemeContext
-│       │   ├── features/   # ActiveClasses, VehicleList, etc.
-│       │   ├── layout/     # Layout, Sidebar
-│       │   └── logistica/  # LogisticaHeader, VehicleCard
-│       ├── pages/          # ControlOperativo, Home, Students, Vehicles
-│       └── services/       # Clientes Axios por módulo
-└── docs/
-    └── Scripts/            # SQL_SCHEMA.sql, MOCK_SIGAFI_ES.sql
-```
+### 3.1. Puente Híbrido Universal (`SqlCentralStudentProvider`)
+Actúa como la **Capa de Extracción Primaria**. Realiza búsquedas paralelas en tiempo real:
+1.  **Cache Local**: Si el estudiante ya existe en el espejo local (`alumnos`), retorna datos inmediatos.
+2.  **JIT Fetching**: Si no reside localmente, el puente cruza hacia SIGAFI, materializa la ficha y la inyecta quirúrgicamente en el espejo local antes de responder al frontend.
+
+### 3.2. Resilience Pipeline (`SigafiResiliencePipeline`)
+Implementa el patrón de **Circuit Breaker** (Disyuntor) mediante la librería `Polly`. Si SIGAFI reporta latencia alta o errores (HTTP 5xx/Timeouts), el sistema entra en **Modo de Operación Local Aislada**, permitiendo el flujo de vehículos sin depender de la conectividad externa.
+
+### 3.3. Schema Healer Protocol
+Ubicado en el arranque de `Program.cs`, este servicio actúa como un "administrador de base de datos automatizado". Verifica la existencia de 30+ tablas y 4 vistas críticas. Si falta alguna entidad o índice, el Healer los recrea dinámicamente, eliminando la necesidad de migraciones manuales en despliegues cloud.
 
 ---
 
-## Patrones de Diseño Implementados
+## 4. Patrones de Diseño Avanzados
 
-| Patrón | Ubicación | Propósito |
+| Patrón | Implementación | Función Crítica |
 | :--- | :--- | :--- |
-| **Dependency Injection** | `Program.cs` | Registra servicios como `ILogisticaService`, `ICentralStudentProvider`, etc. Permite intercambiar implementaciones (ej: Mock vs SQL real) sin modificar los controladores. |
-| **Repository / Service Layer** | `Services/Implementations/` | Encapsula toda la lógica de negocio. Los controladores delegan en servicios, no acceden directamente a la BD. |
-| **DTO Pattern** | `DTOs/` | `ApiResponse<T>` estandariza todas las respuestas. Los DTOs de Logística (`EstudianteLogisticaResponse`, `VehiculoLogisticaResponse`) ocultan los detalles de las entidades del dominio. |
-| **Adapter Pattern** | `SqlCentralStudentProvider.cs` | Traduce el esquema SIGAFI (nombres de tablas y columnas en camelCase) al modelo de dominio de ISTPET. |
-| **Global Error Handler** | `ErrorHandlingMiddleware.cs` | Un único punto de captura para todas las excepciones no controladas, devolviendo siempre un `ApiResponse` coherente. |
-| **AutoMapper** | `Mappings/MappingProfile.cs` | Transforma entidades de dominio a DTOs de forma automática y centralizada. |
-| **Hybrid Auth Bridge** | `AuthController.cs` | Soporta dos algoritmos de hash (BCrypt legacy de SIGAFI y SHA-256 nativo) para garantizar compatibilidad al migrar usuarios. |
+| **Mirroring Pattern** | `DataSyncService` | Mantiene paridad 1:1 con SIGAFI mientras protege los datos operativos locales en tablas auxiliares (`_operacion`). |
+| **JIT Materialization** | `LogisticaController` | Sincronización bajo demanda que elimina la necesidad de pre-cargar toda la base de datos de SIGAFI. |
+| **Circuit Breaker** | `SigafiResiliencePipeline` | Evita el colapso de la aplicación por fallas en dependencias externas (SIGAFI). |
+| **Audit Ledger** | `SqlAuditService` | Registra no solo acciones, sino metadatos como IP y User-Agent para cada transacción crítica. |
+| **Dependency Injection** | ASP.NET Core Native | Gestión desacoplada de lifetimes (Scoped para DB, Singleton para Pipelines). |
 
 ---
 
-## Flujo Principal: Registro de Salida de Vehículo
+## 5. Estándares Operativos de Datos
 
-```mermaid
-sequenceDiagram
-    participant G as Guardia (UI)
-    participant API as LogisticaController
-    participant S as SqlLogisticaService
-    participant DB as MySQL (local)
-    participant C as SqlCentralStudentProvider
-    participant SDB as sigafi_es (central)
-
-    G->>API: GET /api/logistica/estudiante/{cedula}
-    API->>DB: Buscar en tablas locales (matriculas + alumnos)
-    alt Encontrado localmente
-        DB-->>API: Datos del estudiante
-        API->>C: GetScheduledPracticeAsync(cedula)
-        C->>SDB: Query cond_alumnos_practicas WHERE fecha=CURDATE()
-        SDB-->>C: Práctica agendada (si existe)
-        API-->>G: EstudianteLogisticaResponse + datos de agenda
-    else No encontrado localmente
-        API->>C: GetFromCentralAsync(cedula)
-        C->>SDB: Query cross-database a sigafi_es.alumnos + matriculas
-        SDB-->>C: Datos crudos SIGAFI
-        C-->>API: CentralStudentDto
-        API->>DB: Auto-registra Alumno + Matrícula local
-        API-->>G: EstudianteLogisticaResponse (origen: SIGAFI Bridge)
-    end
-
-    G->>API: POST /api/logistica/salida
-    API->>S: RegistrarSalidaAsync(idMatricula, idVehiculo, idInstructor)
-    S->>DB: Valida: vehículo operativo, no en uso, instructor libre, estudiante no en pista
-    S->>DB: INSERT cond_alumnos_practicas (dentro de transacción)
-    DB-->>S: OK
-    S-->>API: "EXITO"
-    API-->>G: ApiResponse<string> {success: true}
-```
+El sistema cumple con el **Protocolo de Paridad SIGAFI 2026**:
+- **Sanitización Obligatoria**: Truncamiento preventivo de cadenas para evitar desbordamientos en campos de `chasis`, `motor` y `observaciones`.
+- **Integridad Foránea**: Las transacciones de salida solo se permiten si existe un "Triángulo de Validación": Estudiante (Matriculado) + Vehículo (Disponible) + Instructor (Activo).
+- **Auditabilidad Total**: Cada registro de salida (`cond_alumnos_practicas`) genera automáticamente una entrada en el log de auditoría centralizado.
 
 ---
 
-## Estandarización de Respuestas API
-
-Todos los endpoints retornan el siguiente envelope genérico:
-
-```json
-{
-  "success": true,
-  "message": "Operación exitosa",
-  "data": { ... },
-  "timestamp": "2026-04-07T03:00:00Z"
-}
-```
-
-En caso de error:
-```json
-{
-  "success": false,
-  "message": "Descripción del problema",
-  "data": null,
-  "timestamp": "2026-04-07T03:00:00Z"
-}
-```
-
----
-
-## Estándares de Código
-
-- **Backend (C#)**: Nomenclatura `PascalCase` para clases y propiedades internas.
-- **Frontend (JavaScript)**: Nomenclatura `camelCase` para variables y funciones.
-- **Base de Datos (MySQL)**: Nomenclatura **SIGAFI Mirroring** (Híbrida: `snake_case` y `camelCase` según la tabla externa).
-- **Mapeo de nombres**: Atributos `[Column]` y Fluent API de EF Core resuelven la paridad 1:1 con el servidor remoto.
-- **Iconografía**: SVG inline (Heroicons) en el frontend. Sin dependencias de icon fonts.
+## 6. Iconografía y Estética (Apple Design System)
+El sistema utiliza un sistema de diseño propio inspirado en SF Pro de Apple:
+- **Glassmorphism**: Superposición de capas con desenfoque (`backdrop-filter`) para jerarquía visual.
+- **Gráfica Reactiva**: Micro-animaciones en `VehicleCard` y transiciones de estado mediante `StatusBadge`.
+- **Zero-Latency Feel**: Uso intensivo de `Search Debouncing` y estados optimistas en el frontend.

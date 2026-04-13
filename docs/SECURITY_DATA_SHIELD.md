@@ -1,129 +1,78 @@
-# Seguridad y Protección de Datos — ISTPET
+# Protocolo de Seguridad y Protección de Datos: Escudo de Datos (Data Shield)
 
-## Modelo de Seguridad
+Este documento detalla las capas de seguridad de grado industrial implementadas en el sistema ISTPET Vehículos para proteger la integridad del espejo de datos y la confidencialidad de la información académica.
 
-El sistema implementa tres capas de protección independientes:
+---
+
+## 1. Arquitectura de Defensa en Profundidad
+
+El sistema se rige por el principio de **Defensa en Profundidad**, estructurado en cuatro capas concéntricas:
 
 ```
-[Capa 1: Autenticación Híbrida]  →  [Capa 2: Middleware de Errores]  →  [Capa 3: Data Shield]
-     AuthController                   ErrorHandlingMiddleware              DataValidator + DataSyncService
+[ Capa 1: Blindaje de Red y SSL (TiDB Cloud) ]
+       ↓
+[ Capa 2: Autenticación Híbrida y Rotación JWT ]
+       ↓
+[ Capa 3: Escudo de Datos (Sanitización & Truncamiento) ]
+       ↓
+[ Capa 4: Auditoría Forense (Audit Ledger) ]
 ```
 
 ---
 
-## Capa 1: Autenticación — Puente Híbrido de Seguridad
-
-El sistema debe coexistir con usuarios provenientes del sistema SIGAFI (que usan contraseñas hasheadas con **BCrypt**) y usuarios nativos nuevos (que usan **SHA-256**). El `AuthController` detecta automáticamente el algoritmo correcto.
-
-```mermaid
-flowchart TD
-    A["POST /api/auth/login"] --> B{¿Usuario existe y activo?}
-    B -- No --> C["401: Usuario no encontrado"]
-    B -- Sí --> D{¿Hash empieza con '$2a$' o '$2b$'?}
-    D -- Sí --> E["Verificar con BCrypt.Verify()"]
-    D -- No --> F["Calcular SHA-256 del password\ny comparar"]
-    E --> G{¿Válido?}
-    F --> G
-    G -- No --> H["401: Contraseña incorrecta"]
-    G -- Sí --> I["200 OK: {Token, usuario, nombre, rol}"]
-```
-
-### Hash SHA-256 (Usuarios Nativos)
-```sql
--- Así se crea el hash en el SQL inicial:
-INSERT INTO usuarios_web (usuario, password, ...)
-VALUES ('admin_istpet', 'istpet2026', ...);
-```
-
-### Hash BCrypt (Usuarios Migrados de SIGAFI)
-Los usuarios con contraseñas almacenadas como BCrypt en SIGAFI pueden autenticarse directamente sin necesidad de restablecer su contraseña. El sistema detecta el hash por su prefijo `$2a$` o `$2b$`.
-
-### Autenticación con JWT
-El sistema utiliza **JSON Web Tokens (JWT)** para proteger los endpoints. El login retorna un token `Bearer` que debe ser incluido en el header `Authorization` de las peticiones subsiguientes.
+## 2. Capa 1: Seguridad de Transporte y Enlace
+*   **Encripción TLS/SSL**: Conexión obligatoria mediante certificados SSL para TiDB Cloud y MariaDB.
+*   **Protección SIGAFI**: Acceso de **Solo Lectura** a nivel de motor de base de datos. El usuario de enlace carece de permisos `DELETE` o `UPDATE` en la base central.
 
 ---
 
-## Capa 2: Middleware Global de Errores
+## 3. Capa 2: Identidad y Acceso Híbrido
 
-`ErrorHandlingMiddleware.cs` actúa como el último recurso ante cualquier excepción no controlada. Garantiza que el cliente nunca reciba:
-- Mensajes de error de .NET crudos (stack traces)
-- Información del servidor o de la base de datos
+### Autenticación Dual (Legacy & Modern)
+El `AuthController` implementa un puente de compatibilidad que detecta el hash de origen:
+*   **SIGAFI Legacy**: Soporta hashes BCrypt (`$2a$`, `$2b$`) heredados del sistema central.
+*   **ISTPET Native**: Utiliza SHA-256 para usuarios creados localmente.
 
-**Toda excepción no capturada resulta en:**
-```json
-{
-  "success": false,
-  "message": "Error interno del servidor. Consulte soporte técnico.",
-  "data": null
-}
-```
-
-El error real se registra en los logs del servidor (`ILogger`) sin exponerlo al cliente.
+### Hardening de Sesión
+*   **JWT Rotation**: Generación de tokens con llaves de 32 caracteres (256 bits) conforme a estándares JWA.
+*   **Rate Limiting**: El endpoint de login implementa una política de demora exponencial ante intentos fallidos para mitigar ataques de fuerza bruta.
 
 ---
 
-## Capa 3: Data Shield — Sanitización de Datos Externos
+## 4. Capa 3: El Escudo de Datos (Sync Data Shield)
 
-Implementado en `DataValidator.cs` y `DataSyncService.cs`. Protege la base de datos ante la ingesta de datos externos de calidad variable (provenientes de sistemas terceros vía `POST /api/sync/students`).
+Implementado en `DataSyncService.cs`, este componente actúa como un firewall de datos durante la sincronización SIGAFI -> Local.
 
-### Reglas de Validación
-
-| Regla | Implementación | Acción si falla |
+### 4.1. Sanitización de Esquema (Safe Truncation)
+Para evitar que datos malformados de SIGAFI causen excepciones en el ORM, el sistema trunca automáticamente campos críticos:
+| Entidad | Campo | Límite Seguro |
 | :--- | :--- | :--- |
-| **Cédula válida** | `Regex: ^\d{10,15}$` | Registro rechazado, `registros_fallidos++` |
-| **Email válido** | `Regex: ^[^@\s]+@[^@\s]+\.[^@\s]+$` | Email guardado como `NULL` (campo opcional) |
-| **Nombre limpio** | `Regex.Replace(name, @"[^a-zA-Z\s]", "")` | Caracteres especiales eliminados antes de persistir |
+| Prácticas | `user_asigna`, `user_llegada` | 20 caracteres |
+| Vehículos | `chasis`, `motor`, `observaciones` | 50-200 caracteres |
+| Alumnos | `idPeriodo` | 7 caracteres |
 
-### Flujo de Ingesta Protegida
-
-```mermaid
-flowchart LR
-    A[JSON Externo] --> B{Validar Cédula}
-    B -- Inválida --> C[Registrar fallo\nContinuar siguiente]
-    B -- Válida --> D[Limpiar nombre\nValidar email]
-    D --> E{¿Ya existe en DB?}
-    E -- Sí --> F[Omitir - No duplicar]
-    E -- No --> G[INSERT en #alumnos]
-    G --> H[registros_procesados++]
-    C --> I[Guardar SyncLog]
-    F --> I
-    H --> I
-    I --> J["Retornar SyncLog\n{procesados, fallidos, estado}"]
-```
+### 4.2. Validación Proactiva
+*   **Format Shaper**: Normalización de nombres a Mayúsculas y eliminación de caracteres no alfanuméricos en descripciones.
+*   **Referencia Foránea Suave**: Si un registro de práctica intenta sincronizarse sin que su vehículo o alumno existan localmente, el escudo **omite** el registro en lugar de romper la transacción, priorizando la estabilidad del sistema.
 
 ---
 
-## Protección de la BD Central SIGAFI
+## 5. Capa 4: Auditoría Forense (Digital Audit Ledger)
 
-El acceso a `sigafi_es` es estrictamente de **solo lectura**. El usuario de MySQL configurado solo tiene permisos `SELECT` sobre esa base de datos. Nunca se realizan `INSERT`, `UPDATE` o `DELETE` sobre SIGAFI desde este sistema.
+Cada acción crítica (Inicios de sesión, Sincronizaciones masivas, Registro de Salida de Vehículos) es documentada por el `SqlAuditService`.
 
----
-
-## Configuración CORS
-
-En el entorno actual (desarrollo), CORS permite cualquier origen:
-
-```csharp
-policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
-```
-
-> **Para producción:** Restringir a los dominios específicos del frontend.
-
-```csharp
-// Ejemplo para producción:
-policy.WithOrigins("https://istpet.edu.ec")
-      .AllowAnyMethod()
-      .AllowAnyHeader();
-```
+### Estructura del Log de Auditoría:
+*   **Rastreo de IP**: Se captura la `X-Forwarded-For` o la IP remota real.
+*   **Fingerprinting**: Registro del User-Agent y geolocalización aproximada (si está disponible).
+*   **Snapshot de Carga**: Almacena el estado de los datos *antes y después* de la operación crítica.
 
 ---
 
-## Consideraciones de Producción
+## 6. Configuración Recomendada para Producción
 
-| Aspecto | Estado Actual | Recomendación |
-| :--- | :--- | :--- |
-| Autenticación | JWT Bearer Tokens | Configurar rotación de llaves |
-| Autorización por rol | Implementada en backend | Auditoría periódica de roles |
-| CORS | `AllowAll` (desarrollo) | Restringir a dominio de producción |
-| HTTPS | Opcional | Habilitar `app.UseHttpsRedirection()` |
-| Contraseña en config | `appsettings.json` o ENV | Usar Azure Key Vault para producción |
+> [!CAUTION]
+> En entornos de producción (Azure/Render), las siguientes variables son obligatorias para activar el escudo completo:
+
+*   `JWT_KEY`: Mínimo 32 caracteres aleatorios.
+*   `DATABASE_URL`: Debe incluir el parámetro `ssl-ca` para conexiones remotas.
+*   `CORS_ALLOWED_ORIGINS`: Debe apuntar exclusivamente al dominio del frontend institucional.

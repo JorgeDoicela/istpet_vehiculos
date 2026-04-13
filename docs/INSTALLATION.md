@@ -1,165 +1,82 @@
-# Guía de Instalación y Configuración — ISTPET Logística
+# Guía de Instalación: Sistema de Logística ISTPET
 
-## Requisitos del Sistema
-
-| Componente | Versión Mínima | Notas |
-| :--- | :--- | :--- |
-| .NET SDK | 8.0 | [Descargar](https://dotnet.microsoft.com/download/dotnet/8) |
-| Node.js | 20 LTS | Para el frontend |
-| MySQL / MariaDB | 8.0 / 11+ | Servidor local o remoto |
-| Navegador | Moderno | Chrome, Edge, Firefox |
+Esta guía detalla el despliegue del ecosistema de logística vehicular. El sistema cuenta con **Protocolos de Auto-Configuración (Schema Healer)** que simplifican drásticamente la puesta en marcha.
 
 ---
 
-## Paso 1: Clonar el Repositorio
+## 1. Requisitos Previos (Ecosistema 2026)
 
-```bash
-git clone https://github.com/JorgeDoicela/istpet_vehiculos.git
-cd istpet_vehiculos
-```
-
----
-
-## Paso 2: Configurar la Base de Datos
-
-### 2.1 Crear la Base de Datos Principal
-
-Abrir MySQL Workbench o el cliente de línea de comandos y ejecutar:
-
-```bash
-mysql -u root -p < docs/Scripts/SQL_SCHEMA.sql
-```
-
-Esto crea la base de datos `istpet_vehiculos` con sus tablas core sincronizadas con SIGAFI (alumnos, profesores, matriculas, cond_alumnos_practicas), el usuario administrador inicial y los catálogos base.
-
-**Credenciales iniciales:**
-| Campo | Valor |
-| :--- | :--- |
-| Usuario | `admin_istpet` |
-| Contraseña | `istpet2026` |
-
-### 2.2 (Opcional) Simular la Base de Datos Central SIGAFI
-
-Si no tienes acceso al servidor real de SIGAFI, ejecuta el script de simulación para desarrollo:
-
-```bash
-mysql -u root -p < docs/Scripts/MOCK_SIGAFI_ES.sql
-```
-
-Este script crea la base de datos `sigafi_es` con datos de prueba, incluyendo un alumno, un profesor, un vehículo y una práctica agendada para hoy.
+*   **Runtime**: .NET 8.0 SDK y Node.js 20+ (LTS).
+*   **Persistencia**: MySQL 8.0+ o MariaDB 11+.
+*   **Conectividad**: Acceso a la base de datos central SIGAFI (o uso del entorno Mock).
 
 ---
 
-## Paso 3: Configurar el Backend
+## 2. Despliegue del Backend (.NET 8)
 
-### 3.1 Cadena de Conexión
-
-Editar `backend/appsettings.json`:
+### 2.1. Configuración de Entorno
+Cree un archivo `appsettings.json` o configure las siguientes variables de entorno:
 
 ```json
 {
   "ConnectionStrings": {
-    "DefaultConnection": "Server=localhost;Database=istpet_vehiculos;User=root;Password=TU_PASSWORD;"
+    "DefaultConnection": "Server=localhost;Database=istpet_vehiculos;User=root;Password=****;SslMode=None;",
+    "SigafiConnection": "Server=localhost;Database=sigafi_es;User=root;Password=****;SslMode=None;"
+  },
+  "Jwt": {
+    "Key": "UNA_LLAVE_DE_AL_MENOS_32_CARACTERES_ALEATORIOS",
+    "Issuer": "istpet_logistica",
+    "Audience": "istpet_users"
   }
 }
 ```
 
-**Parámetros de la cadena de conexión:**
+### 2.2. El Protocolo Schema Healer (Auto-Run)
+A diferencia de sistemas tradicionales, **no es obligatorio ejecutar scripts SQL manualmente**.
+Al ejecutar `dotnet run`, el sistema activará el **Schema Healer**:
+1.  Detectará si la base de datos existe.
+2.  Creará automáticamente las 32 tablas y 4 vistas críticas.
+3.  Inyectará los catálogos de licencias y el usuario administrador por defecto.
 
-| Parámetro | Descripción | Ejemplo |
-| :--- | :--- | :--- |
-| `Server` | Hostname del servidor MySQL | `localhost` o `192.168.1.5` |
-| `Database` | Nombre de la BD principal | `istpet_vehiculos` |
-| `User` | Usuario MySQL | `root` o `istpet_user` |
-| `Password` | Contraseña del usuario MySQL | `****` |
-| `Port` | Puerto (omitir si es el default 3306) | `3307` |
-
-### 3.2 Ejecutar el Backend
-
-```bash
-cd backend
-dotnet restore
-dotnet run
-```
-
-La API estará disponible en el puerto que indique la consola al arrancar. En desarrollo, `backend/Properties/launchSettings.json` define por defecto **HTTP `5112`** o **`5113`** (perfil `https-alt`). Ejemplos:
-
-- API: `http://localhost:5112`
-- Swagger UI: `http://localhost:5112/swagger`
-
-Si tu entorno usa otro puerto (por ejemplo `5000`), usa esa URL en el navegador y en el frontend.
-
-> En producción, usar `dotnet publish -c Release` y servir con IIS, nginx o como servicio de Windows.
-
-Para validar **lectura de SIGAFI** y **Master Sync** desde Swagger y con SQL, sigue **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
+**Credenciales de Primer Acceso**:
+*   **Usuario**: `admin_istpet`
+*   **Password**: `istpet2026`
 
 ---
 
-## Paso 4: Configurar el Frontend
+## 3. Despliegue del Frontend (React 19)
 
-### 4.1 URL de la API
-
-La URL base de la API se configura en `frontend/src/services/api.js`. Por defecto apunta a `http://localhost:5000/api`.
-
-Si el backend corre en un puerto diferente, editar ese archivo:
-
-```javascript
-// frontend/src/services/api.js
-const api = axios.create({
-  baseURL: 'http://localhost:5000/api',  // Cambiar aquí
-});
-```
-
-### 4.2 Instalar y Ejecutar
-
+### 3.1. Instalación de Dependencias
 ```bash
 cd frontend
 npm install
+```
+
+### 3.2. Configuración de API Endpoint
+Edite `.env` o el archivo de configuración de API:
+```env
+VITE_API_URL=http://localhost:5112/api
+```
+
+### 3.3. Ejecución
+```bash
 npm run dev
 ```
 
-La interfaz estará disponible en `http://localhost:5173`.
+---
+
+## 4. Verificación de la Matriz de Paridad
+
+Una vez que ambos servicios estén en línea:
+1.  Acceda a `/swagger` en el backend.
+2.  Autentíquese mediante `POST /api/auth/login`.
+3.  Ejecute `POST /api/sync/master` para realizar la primera sincronización masiva desde SIGAFI.
+4.  Si no tiene una base SIGAFI real, ejecute el script `docs/Scripts/MOCK_SIGAFI_ES.sql` antes del paso anterior.
 
 ---
 
-## Paso 5: Verificar la Instalación
+## 5. Solución de Problemas de Instalación
 
-1. Abrir `http://localhost:5173` en el navegador.
-2. Aparecerá la pantalla de **Control Operativo**.
-3. Las listas de vehículos e instructores deben cargarse desde el menú de Salida.
-4. Abrir Swagger en el puerto del backend (p. ej. `http://localhost:5112/swagger`) y comprobar que la API responde.
-5. Probar el endpoint `GET /api/dashboard/clases-activas` — debe devolver `[]` si no hay clases activas.
-
-**Conexión SIGAFI y espejo:** guía paso a paso con `ping-sigafi`, `sigafi-probe`, `POST /api/Sync/master` y consultas SQL en **[SYNC_VERIFICATION.md](SYNC_VERIFICATION.md)**.
-
----
-
-## Estructura de Archivos de Configuración
-
-| Archivo | Propósito |
-| :--- | :--- |
-| `backend/appsettings.json` | Configuración base (connection string, logging) |
-| `backend/appsettings.Development.json` | Sobrescritura para entorno de desarrollo |
-| `frontend/vite.config.js` | Configuración del servidor de desarrollo de Vite |
-| `frontend/tailwind.config.js` | Configuración de Tailwind CSS |
-
----
-
-## Solución de Problemas Comunes
-
-### Error: "Cannot connect to database"
-- Verificar que el servicio de MySQL esté corriendo.
-- Comprobar usuario y contraseña en `appsettings.json`.
-- Asegurarse de que la base de datos `istpet_vehiculos` fue creada ejecutando el script SQL.
-
-### Error: "Table 'alumnos' doesn't exist"
-Asegúrese de haber ejecutado `SQL_SCHEMA.sql`. En la versión 2026, la tabla de estudiantes se llama `alumnos` para mantener la paridad absoluta con el sistema central.
-
-### Error CORS en el navegador
-Verificar que el backend está corriendo antes de acceder al frontend. La configuración CORS en `Program.cs` permite todos los orígenes en desarrollo.
-
-### El widget "Agenda SIGAFI Hoy" no carga datos
-Si no se instaló `MOCK_SIGAFI_ES.sql`, la BD `sigafi_es` no existe. El sistema lo maneja sin error — simplemente mostrará la lista vacía. Para habilitar esta funcionalidad, ejecutar el script de simulación o conectarse al servidor real de SIGAFI.
-
-### Las fotos de los alumnos no cargan
-La foto solo se muestra si el alumno viene del puente SIGAFI (que incluye `TO_BASE64(a.foto)`). Alumnos registrados localmente no tienen foto.
+*   **Error de SSL**: Si usa TiDB Cloud o MySQL en la nube, asegúrese de incluir `SslMode=VerifyFull` y el certificado CA en la carpeta del backend.
+*   **JWT Key Error**: El sistema se cerrará instantáneamente si la llave JWT tiene menos de 32 caracteres (256 bits). Es un mecanismo de protección proactivo.
+*   **CORS Block**: Verifique que el puerto del frontend coincida con la política permitida en el `Program.cs` del backend.
