@@ -41,6 +41,10 @@ namespace backend.Services.Interfaces
         public string? paralelo { get; set; }
         public string? seccion { get; set; }
         public string? Nivel { get; set; }
+        /// <summary>Nombre de carrera SIGAFI (<c>carreras.Carrera</c>), sin mezclar semestre.</summary>
+        public string? CarreraNombre { get; set; }
+        /// <summary>Semestre/nivel del curso (<c>cursos.Nivel</c>), p. ej. TERCERO.</summary>
+        public string? NivelCurso { get; set; }
         public string? JornadaSigafi { get; set; }
         public string? NombreCompleto { get; set; } 
         public string? DetalleRaw { get; set; }   

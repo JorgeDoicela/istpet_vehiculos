@@ -78,6 +78,8 @@ namespace backend.Services.Implementations
                             ' ',
                             IFNULL(s.seccion, '')
                         ) AS DetalleRaw,
+                        NULLIF(TRIM(car.Carrera), '') AS CarreraNombre,
+                        NULLIF(TRIM(c.Nivel), '') AS NivelCurso,
                         TRIM(CONCAT_WS(' ', NULLIF(TRIM(car.Carrera), ''), NULLIF(TRIM(c.Nivel), ''))) AS Nivel";
 
                 // 0) Última matrícula válida (no usar alumnos.idPeriodo: en tu caso sigue ABR2024/50 mientras matriculas ya va por ABR2025/52).
@@ -144,6 +146,8 @@ namespace backend.Services.Implementations
                         NULL AS paralelo, NULL AS seccion,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS NombreCompleto,
                         'Alumno en SIGAFI sin matrícula registrada' AS DetalleRaw,
+                        NULL AS CarreraNombre,
+                        NULL AS NivelCurso,
                         NULL AS Nivel,
                         'SIN_MAT' AS idPeriodo
                     FROM alumnos a
@@ -1045,7 +1049,9 @@ WHERE COALESCE(activo, 1) = 0";
             seccion = ReadNullableString(reader, "seccion"),
             NombreCompleto = ReadNullableString(reader, "NombreCompleto"),
             DetalleRaw = ReadNullableString(reader, "DetalleRaw"),
-            Nivel = ReadNullableString(reader, "Nivel")
+            Nivel = ReadNullableString(reader, "Nivel"),
+            CarreraNombre = ReadNullableString(reader, "CarreraNombre"),
+            NivelCurso = ReadNullableString(reader, "NivelCurso")
         };
 
         private static CentralPeriodoDto MapCentralPeriodo(MySqlDataReader reader) => new()

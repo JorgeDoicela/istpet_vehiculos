@@ -268,8 +268,23 @@ namespace backend.Controllers
 
             await _context.SaveChangesAsync();
 
+            var carreraNombre = centralData.CarreraNombre?.Trim();
+            if (string.IsNullOrEmpty(carreraNombre) && nivelLocal != null && nivelLocal.idCarrera > 0)
+            {
+                carreraNombre = (await _context.Carreras.AsNoTracking()
+                    .Where(c => c.idCarrera == nivelLocal.idCarrera)
+                    .Select(c => c.NombreCarrera)
+                    .FirstOrDefaultAsync())?.Trim();
+            }
 
-            var nivelDisplay = (centralData.Nivel ?? nivelLocal?.Nivel ?? "S/N").ToUpper();
+            var nivelSemestre = !string.IsNullOrWhiteSpace(centralData.NivelCurso)
+                ? centralData.NivelCurso.Trim()
+                : (nivelLocal?.Nivel ?? "S/N").Trim();
+            if (string.IsNullOrEmpty(nivelSemestre))
+                nivelSemestre = "S/N";
+
+            var nivelDisplay = nivelSemestre.ToUpperInvariant();
+            var carreraDisplay = string.IsNullOrEmpty(carreraNombre) ? string.Empty : carreraNombre.ToUpperInvariant();
             var detalleSigafi = ConstruirDetalleMatriculaSigafi(centralData.DetalleRaw, jornadaEtiqueta);
             var periodoMostrar = !string.IsNullOrEmpty(centralData.idPeriodo) && centralData.idPeriodo != "SIN_MAT"
                 ? centralData.idPeriodo
@@ -279,6 +294,7 @@ namespace backend.Controllers
             {
                 idAlumno = eBase.idAlumno,
                 nombreCompleto = (centralData.NombreCompleto ?? $"{centralData.apellidoPaterno} {centralData.apellidoMaterno} {centralData.primerNombre} {centralData.segundoNombre}").Trim().ToUpper(),
+                carrera = carreraDisplay,
                 nivel = nivelDisplay,
                 detalleMatriculaSigafi = detalleSigafi,
                 paralelo = matriculaUsada.paralelo ?? "A",

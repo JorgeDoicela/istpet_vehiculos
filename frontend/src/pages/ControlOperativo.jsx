@@ -541,16 +541,24 @@ const ControlOperativo = () => {
 
                                                         {/* Horario Granular Discovery Integration */}
                                                         <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                            <div className="flex items-center gap-1.5 bg-[var(--apple-bg)]/80 border border-[var(--apple-border)]/50 px-2 py-1 rounded-md w-fit animate-apple-in">
-                                                                <svg className="w-3 h-3 text-[var(--apple-text-sub)] opacity-70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                            <div className="flex items-start gap-1.5 bg-[var(--apple-bg)]/80 border border-[var(--apple-border)]/50 px-2 py-1 rounded-md w-fit max-w-full animate-apple-in">
+                                                                <svg className="w-3 h-3 text-[var(--apple-text-sub)] opacity-70 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
                                                                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
                                                                 </svg>
-                                                                <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug">
-                                                                    {estudianteData.detalleMatriculaSigafi?.trim()
-                                                                        ? estudianteData.detalleMatriculaSigafi.replace(new RegExp(`\\s+${estudianteData.jornada}`, 'gi'), '')
-                                                                        : `${estudianteData.nivel} • ${estudianteData.paralelo}`}
-                                                                </span>
+                                                                <div className="flex flex-col gap-0.5 min-w-0 text-left">
+                                                                    {estudianteData.carrera?.trim() ? (
+                                                                        <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug break-words">
+                                                                            {estudianteData.carrera}
+                                                                        </span>
+                                                                    ) : null}
+                                                                    <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug break-words">
+                                                                        {`Nivel: ${estudianteData.nivel ?? ''}`.trim()}
+                                                                    </span>
+                                                                    <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug">
+                                                                        {`Paralelo: ${estudianteData.paralelo ?? ''}`.trim()}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                             {estudianteData.horarioProximo && (
                                                                 <div className="flex items-center gap-2 px-2 py-0.5 bg-[var(--apple-primary)]/10 rounded-full border border-[var(--apple-primary)]/20 animate-apple-in">
