@@ -115,6 +115,7 @@ namespace backend.Services.Implementations
                     idProfesor = idInstructor,
                     idPeriodo = matricula.idPeriodo ?? "S/P",
                     fecha = DateTime.Today,
+                    dia = DateTime.Today.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToUpper(),
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
