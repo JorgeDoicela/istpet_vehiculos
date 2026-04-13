@@ -20,7 +20,7 @@ export function normalizeAgendaPractica(ag) {
 /**
  * Práctica que aún aplica para “tiene algo agendado” en sugerencias de salida:
  * fecha hoy o futura y no cerrada en el espejo local (completada/cancelada).
- * Quien no tiene cita, ya cerró o solo figura en el pasado → false (UI “REGULAR”).
+ * Quien no tiene cita, ya cerró o solo figura en el pasado → false.
  */
 export function agendaPracticaVigenteParaSugerencia(ag) {
   if (!ag || typeof ag !== 'object') return false;
