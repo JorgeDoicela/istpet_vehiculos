@@ -98,6 +98,11 @@ namespace backend.Data
                 entity.Property(e => e.chasis).HasColumnName("chasis");
                 entity.Property(e => e.motor).HasColumnName("motor");
                 entity.Property(e => e.observacion).HasColumnName("observacion");
+
+                // RELACIÓN 1:1 CON VEHÍCULO OPERACIÓN
+                entity.HasOne(v => v.Operacion)
+                      .WithOne()
+                      .HasForeignKey<VehiculoOperacion>(vo => vo.idVehiculo);
             });
 
             // 5. ESTUDIANTES (Mirroring 'alumnos' schema)
@@ -178,6 +183,7 @@ namespace backend.Data
             modelBuilder.Entity<VehiculoOperacion>(entity => {
                 entity.ToTable("vehiculos_operacion");
                 entity.HasKey(e => e.idVehiculo);
+                entity.Property(e => e.idVehiculo).ValueGeneratedNever();
             });
 
 
