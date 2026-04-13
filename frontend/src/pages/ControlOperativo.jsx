@@ -432,13 +432,13 @@ const ControlOperativo = () => {
                                 {new Date().getHours() < 12 ? 'Buenos días' : new Date().getHours() < 19 ? 'Buenas tardes' : 'Buenas noches'}
                             </p>
                             <h2 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
-                                Bienvenida Operativa
+                                Bienvenido
                             </h2>
                         </div>
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card">
-                                <div className="mb-10 px-2 flex items-center justify-between">
+                                <div className="mb-6 px-2 flex items-center justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
                                         <span className="text-[8px] lg:text-[9px] text-[var(--apple-text-sub)] opacity-60 uppercase font-black tracking-widest mb-0.5">{fechaHoy}</span>
@@ -448,19 +448,19 @@ const ControlOperativo = () => {
 
                                 <div className="space-y-8">
                                     <div className="relative group">
-                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[9px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--istpet-gold)] z-10">
-                                            Identificación (idAlumno)
+                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[7.5px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--istpet-gold)] z-10">
+                                            Identificación del estudiante
                                         </label>
                                         <div className="relative flex items-center gap-3">
                                             <input
                                                 type="text"
                                                 inputMode="numeric"
                                                 pattern="[0-9]*"
-                                                placeholder="CEDULA / ID"
+                                                placeholder="CÉDULA"
                                                 maxLength={10}
                                                 value={salidaIdAlumno}
-                                                 onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-5 py-3 text-base lg:text-lg font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.2rem] px-4 py-2.5 text-[11px] lg:text-xs font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                             />
 
                                             {mostrarSugerencias && (
@@ -538,14 +538,20 @@ const ControlOperativo = () => {
                                                                 </span>
                                                             )}
                                                         </div>
-                                                        
-                                                        {/* 📅 Horario Granular Discovery Integration */}
-                                                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
-                                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide opacity-60 leading-snug">
-                                                                {estudianteData.detalleMatriculaSigafi?.trim()
-                                                                    ? estudianteData.detalleMatriculaSigafi
-                                                                    : `${estudianteData.nivel} • ${estudianteData.paralelo}`}
-                                                            </p>
+
+                                                        {/* Horario Granular Discovery Integration */}
+                                                        <div className="flex flex-wrap items-center gap-2 mt-2">
+                                                            <div className="flex items-center gap-1.5 bg-[var(--apple-bg)]/80 border border-[var(--apple-border)]/50 px-2 py-1 rounded-md w-fit animate-apple-in">
+                                                                <svg className="w-3 h-3 text-[var(--apple-text-sub)] opacity-70 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l9-5-9-5-9 5 9 5z" />
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                                                                </svg>
+                                                                <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug">
+                                                                    {estudianteData.detalleMatriculaSigafi?.trim()
+                                                                        ? estudianteData.detalleMatriculaSigafi.replace(new RegExp(`\\s+${estudianteData.jornada}`, 'gi'), '')
+                                                                        : `${estudianteData.nivel} • ${estudianteData.paralelo}`}
+                                                                </span>
+                                                            </div>
                                                             {estudianteData.horarioProximo && (
                                                                 <div className="flex items-center gap-2 px-2 py-0.5 bg-[var(--apple-primary)]/10 rounded-full border border-[var(--apple-primary)]/20 animate-apple-in">
                                                                     <svg className="h-3 w-3 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -587,7 +593,7 @@ const ControlOperativo = () => {
                                     <div className="pt-6">
                                         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1 group">
                                             <div className="flex-1 text-left min-w-0">
-                                                <h3 className="text-[9px] font-black uppercase tracking-[0.2em] mb-2 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Unidad</h3>
+                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-2 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Unidad</h3>
                                             </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
@@ -600,7 +606,7 @@ const ControlOperativo = () => {
                                                         placeholder="BUSCAR VEHÍCULO..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[10px] lg:text-[11px] font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[11px] lg:text-xs font-bold tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
                                                     />
                                                     {filtroVehiculo && (
                                                         <button onClick={() => setFiltroVehiculo('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-red-500 transition-colors">
@@ -615,8 +621,8 @@ const ControlOperativo = () => {
                                                             key={lic}
                                                             onClick={() => setFiltroLicencia(filtroLicencia === lic ? null : lic)}
                                                             className={`w-8 lg:w-10 h-7 lg:h-9 flex items-center justify-center rounded-[0.8rem] text-[9px] lg:text-[10px] font-black transition-all duration-300 select-none cursor-pointer
-                                                                ${filtroLicencia === lic 
-                                                                    ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30' 
+                                                                ${filtroLicencia === lic
+                                                                    ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30'
                                                                     : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100 hover:bg-[var(--apple-border)]/50'}
                                                             `}
                                                         >
@@ -627,15 +633,15 @@ const ControlOperativo = () => {
                                             </div>
                                         </div>
 
-                                        <div className="max-h-[380px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-4">
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+                                        <div className="max-h-[240px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-2">
+                                            <div className="grid grid-cols-3 gap-2">
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
                                                         const licIdMap = { 'C': 1, 'D': 2, 'E': 3 };
                                                         const filtered = vehiculos.filter(v => {
                                                             const term = filtroVehiculo.toLowerCase().trim();
-                                                            const matchLicencia = filtroLicencia 
-                                                                ? v.idTipoLicencia === licIdMap[filtroLicencia] 
+                                                            const matchLicencia = filtroLicencia
+                                                                ? v.idTipoLicencia === licIdMap[filtroLicencia]
                                                                 : (!estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3));
                                                             const matchFiltro = !term ||
                                                                 v.vehiculoStr?.toLowerCase().includes(term) ||
@@ -646,7 +652,7 @@ const ControlOperativo = () => {
                                                         if (filtered.length === 0) {
                                                             return (
                                                                 <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border border-dashed border-[var(--apple-border)] shadow-inner">
-                                                                     <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">SIN UNIDADES DISPONIBLES</p>
+                                                                    <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">SIN UNIDADES DISPONIBLES</p>
                                                                 </div>
                                                             );
                                                         }
@@ -672,7 +678,7 @@ const ControlOperativo = () => {
 
                                     <div className="pt-6 px-1 relative">
                                         <div className="mb-2 transition-all">
-                                            <p className={`text-[9px] font-black uppercase tracking-[0.2em] px-2 transition-colors duration-300 ${showInstructorMenu ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>Instructor (idProfesor)</p>
+                                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 transition-colors duration-300 ${showInstructorMenu ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>Instructor</p>
                                         </div>
 
                                         <div className="relative group">
@@ -688,7 +694,7 @@ const ControlOperativo = () => {
                                                         if (!showInstructorMenu) setShowInstructorMenu(true);
                                                     }}
                                                     onClick={() => setShowInstructorMenu(true)}
-                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-24 py-3 text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--istpet-gold)]' : 'border-[var(--apple-border)]'}`}
+                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-24 py-2.5 text-[11px] lg:text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase tracking-widest placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--istpet-gold)]' : 'border-[var(--apple-border)]'}`}
                                                 />
                                                 <button onClick={() => setIsSearchingInstructor(!isSearchingInstructor)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)] p-2">
                                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
@@ -747,7 +753,7 @@ const ControlOperativo = () => {
                                 </div>
 
                                 <div className="space-y-8">
-                                     <div className="max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
+                                    <div className="max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {clasesActivas.length > 0 ? (
                                                 clasesActivas.map(c => (
