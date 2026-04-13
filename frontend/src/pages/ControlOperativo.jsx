@@ -437,7 +437,7 @@ const ControlOperativo = () => {
                         </div>
 
                         {activeTab === 'salida' ? (
-                            <div className="apple-card">
+                            <div className="apple-card !pt-9 lg:!pt-12">
                                 <div className="mb-6 px-2 flex items-center justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
