@@ -135,7 +135,17 @@ namespace backend.Services.Interfaces
         public int asiste { get; set; }
         public int activo { get; set; }
         public string? observacion { get; set; }
+        
+        // Metadata extendida para Control Operativo
+        public string? HoraInicio { get; set; }
+        public string? HoraFin { get; set; }
+        public DateTime? FechaReal { get; set; }
+        public int? FinSemana { get; set; }
+        public string? VehiculoPlanificado { get; set; }
+        public string? InstructorPlanificado { get; set; }
     }
+
+
 
     public class CentralVehiculoDto
     {

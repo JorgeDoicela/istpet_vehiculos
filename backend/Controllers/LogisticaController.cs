@@ -450,9 +450,39 @@ namespace backend.Controllers
             var nextSched = await _centralProvider.GetNextScheduleAsync(student.idAlumno);
             if (nextSched != null)
             {
-                student.horarioProximo = nextSched.observacion ?? string.Empty;
-                student.asistenciaHoy = nextSched.asiste == 1;
+                // Si hay horario planificado para hoy, lo formateamos mejor
+                if (!string.IsNullOrEmpty(nextSched.HoraInicio))
+                {
+                    student.horarioProximo = $"{nextSched.HoraInicio} - {nextSched.HoraFin}";
+                    // Si no tenemos hora de práctica registrada aún, usamos la del horario
+                    if (string.IsNullOrEmpty(student.practicaHora))
+                        student.practicaHora = nextSched.HoraInicio;
+                }
+                else
+                {
+                    student.horarioProximo = nextSched.observacion ?? string.Empty;
+                }
+
+                // Información planificada (informativa)
+                student.vehiculoPlanificado = nextSched.VehiculoPlanificado;
+                student.instructorPlanificado = nextSched.InstructorPlanificado;
+
+                // Lógica de asistencia: Presente si marcó biometrico (asiste=1) 
+                // O si ya se encuentra registrado en pista (ensalida=1)
+                student.asistenciaHoy = nextSched.asiste == 1 || (scheduled?.SigafiEnsalida == 1);
+
+                // Si SIGAFI dice que es fin de semana según fechas_horarios, ajustamos etiqueta
+                if (nextSched.FinSemana == 1 && !student.jornada.Contains("FIN DE SEMANA"))
+                {
+                    student.jornada = "FIN DE SEMANA";
+                }
             }
+            else
+            {
+                // Si no hay horario agendado para hoy, el frontend lo manejará (mostrando "SIN CITA" o similar)
+                student.horarioProximo = "SIN CITA AGENDADA";
+            }
+
         }
 
         [HttpGet("vehiculos-disponibles")]

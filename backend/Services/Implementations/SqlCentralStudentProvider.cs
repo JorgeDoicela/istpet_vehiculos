@@ -484,19 +484,31 @@ namespace backend.Services.Implementations
             {
                 const string sql = @"
                     SELECT 
-                        h.idAsignacionHorario,
-                        h.idAsignacion,
-                        h.idFecha,
+                        h.idAsignacionHorario, 
+                        h.idAsignacion, 
+                        h.idFecha, 
                         h.idHora,
                         CAST(h.asiste AS SIGNED) AS asiste,
                         CAST(COALESCE(h.activo, 1) AS SIGNED) AS activo,
-                        h.observacion
+                        h.observacion,
+                        hc.hora_inicio AS HoraInicio,
+                        hc.hora_fin AS HoraFin,
+                        fh.fecha AS FechaReal,
+                        fh.finsemana AS FinSemana,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoPlanificado,
+                        TRIM(CONCAT_WS(' ', pr.apellidos, pr.nombres)) AS InstructorPlanificado
                     FROM cond_alumnos_horarios h
                     JOIN cond_alumnos_vehiculos a ON a.idAsignacion = h.idAsignacion
+                    JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                    JOIN horas_clases hc ON hc.idhora = h.idHora
+                    LEFT JOIN vehiculos v ON v.idVehiculo = a.idVehiculo
+                    LEFT JOIN profesores pr ON pr.idProfesor = a.idProfesor
                     WHERE a.idAlumno = @p0 
+                    AND fh.fecha = CURDATE()
                     AND COALESCE(h.activo, 1) = 1
-                    ORDER BY h.idAsignacionHorario DESC
+                    ORDER BY hc.hora_inicio ASC
                     LIMIT 1";
+
                 return await QuerySingleAsync(sql, idAlumno, MapCentralHorario);
             }
             catch (Exception ex)
@@ -1261,8 +1273,15 @@ WHERE COALESCE(activo, 1) = 0";
             idHora = ReadNullableInt(reader, "idHora"),
             asiste = ReadInt(reader, "asiste"),
             activo = ReadInt(reader, "activo"),
-            observacion = ReadNullableString(reader, "observacion")
+            observacion = ReadNullableString(reader, "observacion"),
+            HoraInicio = ReadNullableString(reader, "HoraInicio"),
+            HoraFin = ReadNullableString(reader, "HoraFin"),
+            FechaReal = ReadNullableDate(reader, "FechaReal"),
+            FinSemana = ReadNullableInt(reader, "FinSemana"),
+            VehiculoPlanificado = ReadNullableString(reader, "VehiculoPlanificado"),
+            InstructorPlanificado = ReadNullableString(reader, "InstructorPlanificado")
         };
+
 
         private static string ReadString(MySqlDataReader reader, string column)
         {
