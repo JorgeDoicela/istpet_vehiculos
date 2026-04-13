@@ -460,20 +460,23 @@ const ControlOperativo = () => {
                                                     maxLength={10}
                                                     value={salidaIdAlumno}
                                                     onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
-                                                    className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-4 pr-12 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/30 font-black text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                    className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-4 pr-16 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/30 font-black text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                                 />
                                                 {salidaIdAlumno && !salidaLoading && (
-                                                    <button
-                                                        onClick={() => {
-                                                            setSalidaIdAlumno('');
-                                                            setEstudianteData(null);
-                                                            setVehiculoSeleccionado(null);
-                                                            setInstructorSeleccionado(null);
-                                                        }}
-                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-rose-500 transition-colors p-1"
-                                                    >
-                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                    </button>
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center z-10 transition-all">
+                                                        <button
+                                                            onClick={() => {
+                                                                setSalidaIdAlumno('');
+                                                                setEstudianteData(null);
+                                                                setVehiculoSeleccionado(null);
+                                                                setInstructorSeleccionado(null);
+                                                            }}
+                                                            className="p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-all"
+                                                            title="Limpiar"
+                                                        >
+                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                        </button>
+                                                    </div>
                                                 )}
                                             </div>
 
@@ -615,21 +618,27 @@ const ControlOperativo = () => {
 
                                             <div className="flex items-center gap-2 flex-[2]">
                                                 <div className="relative flex-1 group/search">
-                                                    <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] group-focus-within/search:text-[var(--istpet-gold)] transition-colors">
-                                                        <svg className="h-3 w-3 lg:h-4 lg:w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                                    </div>
                                                     <input
                                                         type="text"
                                                         placeholder="BUSCAR VEHÍCULO..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-6 pr-24 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
                                                     />
-                                                    {filtroVehiculo && (
-                                                        <button onClick={() => setFiltroVehiculo('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-red-500 transition-colors">
-                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                        </button>
-                                                    )}
+                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10 transition-all">
+                                                        {filtroVehiculo && (
+                                                            <button
+                                                                onClick={() => setFiltroVehiculo('')}
+                                                                className="p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-all"
+                                                                title="Limpiar"
+                                                            >
+                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                            </button>
+                                                        )}
+                                                        <div className={`p-1.5 transition-all ${filtroVehiculo ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)]'}`}>
+                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                        </div>
+                                                    </div>
                                                 </div>
 
                                                 <div className="flex bg-[var(--apple-bg)] p-1 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
@@ -704,6 +713,7 @@ const ControlOperativo = () => {
                                                     ref={instructorInputRef}
                                                     type="text"
                                                     readOnly={!isSearchingInstructor}
+                                                    placeholder={isSearchingInstructor ? "BUSCAR..." : "VER LISTA..."}
                                                     value={isSearchingInstructor && showInstructorMenu ? filtroInstructor : (instructorSeleccionado?.fullName || '')}
                                                     onChange={(e) => {
                                                         const val = e.target.value.toUpperCase();
@@ -711,30 +721,73 @@ const ControlOperativo = () => {
                                                         if (!showInstructorMenu) setShowInstructorMenu(true);
                                                     }}
                                                     onClick={() => setShowInstructorMenu(true)}
-                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-24 py-2.5 text-[11px] lg:text-xs font-bold text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase tracking-widest placeholder:text-[var(--apple-text-sub)]/30 ${showInstructorMenu ? 'border-[var(--istpet-gold)]' : 'border-[var(--apple-border)]'}`}
+                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-28 py-2.5 text-sm lg:text-base font-black text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase tracking-widest placeholder:text-[11px] lg:placeholder:text-xs placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/30 z-[150] relative ${showInstructorMenu ? 'border-[var(--istpet-gold)]' : 'border-[var(--apple-border)]'}`}
                                                 />
-                                                <button onClick={() => setIsSearchingInstructor(!isSearchingInstructor)} className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)] p-2">
-                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="4"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                                </button>
+                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-[160] transition-all">
+                                                    <button
+                                                        onClick={() => {
+                                                            if (isSearchingInstructor) {
+                                                                setIsSearchingInstructor(false);
+                                                                setFiltroInstructor('');
+                                                                setShowInstructorMenu(true);
+                                                            } else {
+                                                                setShowInstructorMenu(!showInstructorMenu);
+                                                            }
+                                                        }}
+                                                        className={`p-1.5 transition-all ${(!isSearchingInstructor && showInstructorMenu) ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)]'}`}
+                                                        title="Ver lista"
+                                                    >
+                                                        {showInstructorMenu && !isSearchingInstructor ? (
+                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+                                                        ) : (
+                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+                                                        )}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsSearchingInstructor(true);
+                                                            setShowInstructorMenu(true);
+                                                            setTimeout(() => instructorInputRef.current?.focus(), 50);
+                                                        }}
+                                                        className={`p-1.5 transition-all ${isSearchingInstructor ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)]'}`}
+                                                        title="Buscar"
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                    </button>
+                                                </div>
                                             </div>
 
-                                            {showInstructorMenu && (
+                                            {showInstructorMenu && (isSearchingInstructor ? filtroInstructor.length > 0 : true) && (
                                                 <>
                                                     <div className="fixed inset-0 z-[140]" onClick={() => setShowInstructorMenu(false)} />
                                                     <div className="absolute left-0 right-0 top-full mt-3 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2.2rem] shadow-2xl z-[150] overflow-hidden animate-apple-in p-3 max-h-[300px] overflow-y-auto">
-                                                        {instructores.filter(i => !filtroInstructor || i.fullName.toUpperCase().includes(filtroInstructor)).map((i) => (
-                                                            <div
-                                                                key={i.idInstructor}
-                                                                onClick={() => {
-                                                                    setInstructorSeleccionado(i);
-                                                                    setShowInstructorMenu(false);
-                                                                    setFiltroInstructor('');
-                                                                }}
-                                                                className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all rounded-2xl ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'bg-[var(--apple-primary)]/10 text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}
-                                                            >
-                                                                <p className="text-[11px] font-black uppercase tracking-tight">{i.fullName}</p>
-                                                            </div>
-                                                        ))}
+                                                        {(() => {
+                                                            const filtered = instructores.filter(i =>
+                                                                !isSearchingInstructor || i.fullName.toUpperCase().includes(filtroInstructor)
+                                                            );
+
+                                                            if (filtered.length === 0 && isSearchingInstructor) {
+                                                                return (
+                                                                    <div className="p-8 text-center opacity-40">
+                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Sin coincidencias</p>
+                                                                    </div>
+                                                                );
+                                                            }
+
+                                                            return filtered.map((i) => (
+                                                                <div
+                                                                    key={i.idInstructor}
+                                                                    onClick={() => {
+                                                                        setInstructorSeleccionado(i);
+                                                                        setShowInstructorMenu(false);
+                                                                        setFiltroInstructor('');
+                                                                    }}
+                                                                    className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all rounded-2xl ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'bg-[var(--apple-primary)]/10 text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}
+                                                                >
+                                                                    <p className="text-[11px] font-black uppercase tracking-tight">{i.fullName}</p>
+                                                                </div>
+                                                            ));
+                                                        })()}
                                                     </div>
                                                 </>
                                             )}
