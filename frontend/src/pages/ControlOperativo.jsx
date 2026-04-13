@@ -928,13 +928,13 @@ const ControlOperativo = () => {
             {activeTab === 'salida' && (
                 <button
                     onClick={() => setShowAgendaDrawer(true)}
-                    className="lg:hidden fixed bottom-20 right-4 z-50 h-14 w-14 flex items-center justify-center rounded-[1.4rem] bg-white border-2 border-slate-200 text-[var(--apple-text-main)] shadow-xl active:scale-95 transition-all"
+                    className="lg:hidden fixed bottom-20 right-4 z-50 h-14 w-14 flex items-center justify-center rounded-[1.4rem] bg-white border-2 border-slate-100 text-[var(--apple-text-main)] shadow-xl active:scale-95 transition-all"
                 >
                     <svg className="h-6 w-6 text-[var(--istpet-gold)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     {agendadosHoy.length > 0 && (
-                        <span className="absolute top-1.5 right-1.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center text-[9px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 rounded-full border border-[var(--istpet-gold)]/20">
+                        <span className="absolute top-1 right-1.5 text-[10px] font-black text-[var(--istpet-gold)]">
                             {agendadosHoy.length}
                         </span>
                     )}
