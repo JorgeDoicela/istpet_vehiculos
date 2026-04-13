@@ -437,7 +437,7 @@ const ControlOperativo = () => {
 
                         {activeTab === 'salida' ? (
                             <div className="apple-card !pt-9 lg:!pt-12">
-                                <div className="mb-6 px-2 flex items-center justify-between">
+                                <div className="mb-6 px-2 flex items-start justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
                                         <span className="text-[8px] lg:text-[9px] text-[var(--apple-text-sub)] opacity-60 uppercase font-black tracking-widest mb-0.5">{fechaHoy}</span>
@@ -459,7 +459,7 @@ const ControlOperativo = () => {
                                                 maxLength={10}
                                                 value={salidaIdAlumno}
                                                 onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.2rem] px-4 py-2.5 text-[11px] lg:text-xs font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.2rem] px-4 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
                                             />
 
                                             {mostrarSugerencias && (
@@ -588,14 +588,14 @@ const ControlOperativo = () => {
                                         </div>
                                     ) : !salidaLoading && salidaIdAlumno.length >= 1 && (
                                         <div className="p-8 border-2 border-dashed border-[var(--apple-border)] rounded-[2rem] text-center">
-                                            <p className="text-[var(--apple-text-sub)] font-bold text-sm uppercase">Ingrese ID para validar matrícula</p>
+                                            <p className="text-[var(--apple-text-sub)] font-bold text-sm uppercase">Ingrese la cédula para identificar al estudiante</p>
                                         </div>
                                     )}
 
                                     <div className="pt-6">
                                         <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-y-1 gap-x-3 lg:gap-x-6 px-1 group">
                                             <div className="flex-1 text-left min-w-0">
-                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-0 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Unidad</h3>
+                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-0 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Vehículo</h3>
                                             </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
@@ -635,7 +635,7 @@ const ControlOperativo = () => {
                                             </div>
                                         </div>
 
-                                        <div className="max-h-[240px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-2">
+                                        <div className="max-h-[215px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-2">
                                             <div className="grid grid-cols-3 gap-2">
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
@@ -732,9 +732,9 @@ const ControlOperativo = () => {
                                             disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
                                             className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01]'}`}
                                         >
-                                            {!estudianteData ? 'VALIDAR ID ALUMNO' :
+                                            {!estudianteData ? 'INGRESAR CÉDULA DEL ALUMNO' :
                                                 estudianteData.isBusy ? 'ESTUDIANTE EN PISTA' :
-                                                    !vehiculoSeleccionado ? 'SELECCIONAR UNIDAD' :
+                                                    !vehiculoSeleccionado ? 'SELECCIONAR VEHÍCULO' :
                                                         !instructorSeleccionado ? 'SELECCIONAR INSTRUCTOR' :
                                                             '✓ REGISTRAR SALIDA'}
                                         </button>
