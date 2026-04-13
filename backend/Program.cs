@@ -81,6 +81,16 @@ if (string.IsNullOrWhiteSpace(sigafiConnectionString))
         "❌ No se encontró la cadena de conexión SIGAFI. " +
         "Define SIGAFI_CONNECTION_STRING, REMOTE_SIGAFI_SERVER o ConnectionStrings:SigafiConnection.");
 
+// [HARDENING] Inyectar de vuelta en la configuración para que todos los servicios la vean
+builder.Configuration["ConnectionStrings:DefaultConnection"] = connectionString;
+builder.Configuration["ConnectionStrings:SigafiConnection"] = sigafiConnectionString;
+
+// [HARDENING] Inyectar el modo de base de datos si viene de entorno
+var envDbMode = Environment.GetEnvironmentVariable("DATABASE_MODE");
+if (!string.IsNullOrEmpty(envDbMode))
+    builder.Configuration["DatabaseSettings:Database_Mode"] = envDbMode;
+
+
 
 // TiDB Cloud: SSL obligatorio
 if (connectionString.Contains("tidbcloud.com", StringComparison.OrdinalIgnoreCase)

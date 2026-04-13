@@ -49,9 +49,7 @@ namespace backend.Services.Implementations
             _cache = cache;
             _pipeline = pipeline;
             _logger = logger;
-            _connectionString =
-                Environment.GetEnvironmentVariable("SIGAFI_CONNECTION_STRING")
-                ?? configuration.GetConnectionString("SigafiConnection")
+            _connectionString = configuration.GetConnectionString("SigafiConnection")
                 ?? throw new InvalidOperationException("Falta SigafiConnection para leer SIGAFI.");
         }
 
