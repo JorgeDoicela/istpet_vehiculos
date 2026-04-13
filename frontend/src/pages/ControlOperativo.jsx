@@ -451,16 +451,31 @@ const ControlOperativo = () => {
                                             Identificación del estudiante
                                         </label>
                                         <div className="relative flex items-center gap-3">
-                                            <input
-                                                type="text"
-                                                inputMode="numeric"
-                                                pattern="[0-9]*"
-                                                placeholder="CÉDULA"
-                                                maxLength={10}
-                                                value={salidaIdAlumno}
-                                                onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
-                                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.2rem] px-4 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
-                                            />
+                                            <div className="relative flex-1 group/input">
+                                                <input
+                                                    type="text"
+                                                    inputMode="numeric"
+                                                    pattern="[0-9]*"
+                                                    placeholder="CÉDULA"
+                                                    maxLength={10}
+                                                    value={salidaIdAlumno}
+                                                    onChange={(e) => { const val = e.target.value.replace(/\D/g, ''); setSalidaIdAlumno(val); if (val.length < 10) { setEstudianteData(null); setVehiculoSeleccionado(null); setInstructorSeleccionado(null); } }}
+                                                    className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] px-4 pr-12 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/30 font-black text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] focus:bg-[var(--apple-card)] outline-none transition-all shadow-inner tracking-widest"
+                                                />
+                                                {salidaIdAlumno && !salidaLoading && (
+                                                    <button
+                                                        onClick={() => {
+                                                            setSalidaIdAlumno('');
+                                                            setEstudianteData(null);
+                                                            setVehiculoSeleccionado(null);
+                                                            setInstructorSeleccionado(null);
+                                                        }}
+                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-rose-500 transition-colors p-1"
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                )}
+                                            </div>
 
                                             {mostrarSugerencias && (
                                                 <div className="absolute left-0 right-0 top-full mt-2 bg-[var(--apple-card)] backdrop-blur-2xl border border-[var(--apple-border)] rounded-[2rem] shadow-2xl z-[100] overflow-hidden animate-apple-in p-2">
@@ -608,7 +623,7 @@ const ControlOperativo = () => {
                                                         placeholder="BUSCAR VEHÍCULO..."
                                                         value={filtroVehiculo}
                                                         onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-[11px] lg:text-xs font-bold tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
+                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-10 pr-10 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
                                                     />
                                                     {filtroVehiculo && (
                                                         <button onClick={() => setFiltroVehiculo('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--apple-text-sub)] hover:text-red-500 transition-colors">
