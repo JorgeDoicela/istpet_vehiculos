@@ -448,7 +448,7 @@ const ControlOperativo = () => {
 
                                 <div className="space-y-8">
                                     <div className="relative group">
-                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[7.5px] font-black text-[var(--apple-text-main)] tracking-[0.2em] uppercase transition-all group-focus-within:text-[var(--istpet-gold)] z-10">
+                                        <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[8px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] z-10">
                                             Identificación del estudiante
                                         </label>
                                         <div className="relative flex items-center gap-3">
@@ -521,35 +521,37 @@ const ControlOperativo = () => {
 
                                     {estudianteData ? (
                                         <div className="space-y-6 animate-apple-in">
-                                            <div className="apple-glass rounded-[2.5rem] p-4 lg:p-5 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 lg:gap-8 relative z-10">
-                                                    <div className="flex-1 min-w-0 text-left">
-                                                        <div className="flex items-center gap-3 mb-1">
-                                                            <h4 className="text-lg font-black text-[var(--apple-text-main)] uppercase tracking-tighter leading-none">
+                                            <div className="apple-glass rounded-[2.5rem] px-5 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 lg:gap-10 relative z-10">
+                                                    <div className="flex-1 min-w-0 text-left lg:max-w-[min(100%,42rem)]">
+                                                        <div className="flex flex-wrap items-start gap-x-3 gap-y-2 mb-2">
+                                                            <h4 className="text-[15px] sm:text-base lg:text-lg font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-snug break-words flex-1 min-w-[12rem]">
                                                                 {estudianteData.nombreCompleto}
                                                             </h4>
-                                                            <span className="shrink-0 px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
-                                                                {estudianteData.idPeriodo}
-                                                            </span>
-                                                            {estudianteData.isBusy && (
-                                                                <span className="shrink-0 px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
-                                                                    YA EN PISTA
+                                                            <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                                                <span className="px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
+                                                                    {estudianteData.idPeriodo}
                                                                 </span>
-                                                            )}
+                                                                {estudianteData.isBusy && (
+                                                                    <span className="px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
+                                                                        YA EN PISTA
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                         </div>
 
                                                         {/* Horario Granular Discovery Integration */}
-                                                        <div className="flex flex-wrap items-center gap-2 mt-2">
-                                                            <div className="flex flex-col gap-0.5 min-w-0 text-left w-fit max-w-full animate-apple-in">
+                                                        <div className="flex flex-wrap items-center gap-2 mt-1 pl-0.5">
+                                                            <div className="flex flex-col gap-0 min-w-0 text-left w-full max-w-full animate-apple-in leading-tight">
                                                                 {estudianteData.carrera?.trim() ? (
-                                                                    <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug break-words">
+                                                                    <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight break-words">
                                                                         {estudianteData.carrera}
                                                                     </span>
                                                                 ) : null}
-                                                                <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug break-words">
+                                                                <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight break-words">
                                                                     {`Nivel: ${estudianteData.nivel ?? ''}`.trim()}
                                                                 </span>
-                                                                <span className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug">
+                                                                <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight">
                                                                     {`Paralelo: ${estudianteData.paralelo ?? ''}`.trim()}
                                                                 </span>
                                                             </div>
@@ -592,9 +594,9 @@ const ControlOperativo = () => {
                                     )}
 
                                     <div className="pt-6">
-                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-3 px-1 group">
+                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-y-1 gap-x-3 lg:gap-x-6 px-1 group">
                                             <div className="flex-1 text-left min-w-0">
-                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-2 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Unidad</h3>
+                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-0 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Unidad</h3>
                                             </div>
 
                                             <div className="flex items-center gap-2 flex-[2]">
