@@ -13,7 +13,9 @@ namespace backend.Mappings
             CreateMap<Instructor, InstructorDto>();
 
             CreateMap<Vehiculo, VehiculoDto>()
-                .ForMember(dest => dest.activo, opt => opt.MapFrom(src => src.activo));
+                .ForMember(dest => dest.activo, opt => opt.MapFrom(src => src.activo))
+                .ForMember(dest => dest.estado_mecanico, opt => opt.MapFrom(src => src.Operacion != null ? src.Operacion.estado_mecanico : "OPERATIVO"))
+                .ForMember(dest => dest.id_instructor_fijo, opt => opt.MapFrom(src => src.Operacion != null ? src.Operacion.id_instructor_fijo : null));
 
             CreateMap<Matricula, EstudianteLogisticaResponse>()
                 .ForMember(dest => dest.idAlumno, opt => opt.MapFrom(src => src.idAlumno))
@@ -33,7 +35,9 @@ namespace backend.Mappings
 
             CreateMap<Vehiculo, VehiculoLogisticaResponse>()
                 .ForMember(dest => dest.numeroVehiculo, opt => opt.MapFrom(src => src.numero_vehiculo ?? "0"))
-                .ForMember(dest => dest.vehiculoStr, opt => opt.MapFrom(src => $"{src.placa} - #{src.numero_vehiculo}"));
+                .ForMember(dest => dest.vehiculoStr, opt => opt.MapFrom(src => $"{src.placa} - #{src.numero_vehiculo}"))
+                .ForMember(dest => dest.estadoMecanico, opt => opt.MapFrom(src => src.Operacion != null ? src.Operacion.estado_mecanico : "OPERATIVO"))
+                .ForMember(dest => dest.idInstructorFijo, opt => opt.MapFrom(src => src.Operacion != null ? src.Operacion.id_instructor_fijo : null));
         }
     }
 }

@@ -6,5 +6,6 @@ namespace backend.Services.Interfaces
     {
         Task<IEnumerable<Vehiculo>> GetVehiculosAsync();
         Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa);
+        Task<bool> UpdateOperacionAsync(VehiculoOperacion op);
     }
 }

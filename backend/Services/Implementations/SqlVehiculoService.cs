@@ -21,30 +21,47 @@ namespace backend.Services.Implementations
         {
             var central = await _central.GetAllVehiclesFromCentralAsync();
             await SigafiVehicleUpsert.MergeFromCentralAsync(_context, central);
-            return await _context.Vehiculos.ToListAsync();
+            
+            // Unimos con la tabla de operación para traer el estado mecánico e instructor fijo
+            return await _context.Vehiculos
+                .Include(v => v.Operacion)
+                .ToListAsync();
         }
 
         public async Task<Vehiculo?> GetVehiculoByPlacaAsync(string placa)
         {
             var key = placa.Trim();
 
-            // SIGAFI es fuente de verdad: siempre intentar actualizar desde allí primero.
-            // Si SIGAFI no responde se devuelve el espejo local como fallback.
             try
             {
                 var cv = await _central.GetVehicleByPlacaFromCentralAsync(key);
                 if (cv != null)
                 {
                     await SigafiVehicleUpsert.MergeFromCentralAsync(_context, new[] { cv });
-                    return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == key);
                 }
             }
-            catch (Exception)
+            catch (Exception) { /* Fallback a espejo local */ }
+
+            return await _context.Vehiculos
+                .Include(v => v.Operacion)
+                .FirstOrDefaultAsync(v => v.placa == key);
+        }
+
+        public async Task<bool> UpdateOperacionAsync(VehiculoOperacion op)
+        {
+            var existing = await _context.VehiculosOperacion.FindAsync(op.idVehiculo);
+            if (existing == null)
             {
-                // SIGAFI no disponible: continúa con espejo local.
+                _context.VehiculosOperacion.Add(op);
+            }
+            else
+            {
+                existing.estado_mecanico = op.estado_mecanico;
+                existing.id_instructor_fijo = op.id_instructor_fijo;
+                existing.id_tipo_licencia = op.id_tipo_licencia;
             }
 
-            return await _context.Vehiculos.FirstOrDefaultAsync(v => v.placa == key);
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

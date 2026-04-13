@@ -44,5 +44,16 @@ namespace backend.Controllers
 
             return Ok(ApiResponse<VehiculoDto>.Ok(dto));
         }
+
+        [HttpPatch("{id}/operacion")]
+        public async Task<ActionResult<ApiResponse<bool>>> UpdateOperacion(int id, [FromBody] VehiculoOperacion op)
+        {
+            if (id != op.idVehiculo) return BadRequest(ApiResponse<bool>.Fail("ID no coincide."));
+            
+            var success = await _vehiculoService.UpdateOperacionAsync(op);
+            return success 
+                ? Ok(ApiResponse<bool>.Ok(true, "Estado operativo actualizado."))
+                : BadRequest(ApiResponse<bool>.Fail("No se pudo actualizar el estado."));
+        }
     }
 }

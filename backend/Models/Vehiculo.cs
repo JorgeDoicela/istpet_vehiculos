@@ -39,5 +39,7 @@ namespace backend.Models
         [MaxLength(100)]
         public string? modelo { get; set; }
 
+        // Propiedad de Navegación Operativa (Relación 1 a 0..1)
+        public VehiculoOperacion? Operacion { get; set; }
     }
 }

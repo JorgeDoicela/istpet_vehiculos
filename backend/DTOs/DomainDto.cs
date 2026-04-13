@@ -43,5 +43,9 @@ namespace backend.DTOs
         public string modelo { get; set; } = string.Empty;
         public int? anio { get; set; }
         public bool activo { get; set; }
+
+        // Capa Operativa (Local)
+        public string? estado_mecanico { get; set; } = "OPERATIVO";
+        public string? id_instructor_fijo { get; set; }
     }
 }

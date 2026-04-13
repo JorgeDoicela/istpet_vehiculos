@@ -39,6 +39,7 @@ namespace backend.DTOs
         public string? idInstructorFijo { get; set; }
         public string instructorNombre { get; set; } = string.Empty;
         public int idTipoLicencia { get; set; }
+        public string estadoMecanico { get; set; } = "OPERATIVO";
     }
 
     public class InstructorLogisticaResponse

@@ -31,6 +31,7 @@ namespace backend.Controllers
             public string? placa { get; set; }
             public string? idInstructorFijo { get; set; }
             public int idTipoLicencia { get; set; }
+            public string estadoMecanico { get; set; } = "OPERATIVO";
         }
 
         private readonly AppDbContext _context;
@@ -452,7 +453,8 @@ namespace backend.Controllers
                 vehiculoStr = $"#{v.numero_vehiculo} ({v.placa})",
                 instructorNombre = "DOCENTE ASIGNADO",
                 idInstructorFijo = v.idInstructorFijo,
-                idTipoLicencia = v.idTipoLicencia
+                idTipoLicencia = v.idTipoLicencia,
+                estadoMecanico = v.estadoMecanico
             });
 
             return Ok(ApiResponse<IEnumerable<VehiculoLogisticaResponse>>.Ok(query));
@@ -460,19 +462,37 @@ namespace backend.Controllers
 
         private async Task<List<VehiculoLite>> GetVehiculosOperativosLocalesAsync()
         {
-            return await (from v in _context.Vehiculos
+            var list = await (from v in _context.Vehiculos
                           join vo in _context.VehiculosOperaciones on v.idVehiculo equals vo.idVehiculo into voJoin
                           from vo in voJoin.DefaultIfEmpty()
-                          where v.activo == 1 && (vo == null || vo.estado_mecanico == "OPERATIVO")
-                          && !_context.Practicas.Any(p => p.idvehiculo == v.idVehiculo && p.ensalida == 1 && p.cancelado == 0)
+                          where v.activo == 1 
+                          && !_context.Practicas.Any(p => p.idvehiculo == v.idVehiculo && p.ensalida == 1 && (p.cancelado ?? 0) == 0)
                           select new VehiculoLite
                           {
                               idVehiculo = v.idVehiculo,
                               numero_vehiculo = v.numero_vehiculo ?? "0",
                               placa = v.placa,
                               idInstructorFijo = vo != null ? vo.id_instructor_fijo : null,
-                              idTipoLicencia = vo != null && vo.id_tipo_licencia.HasValue ? vo.id_tipo_licencia.Value : 0
+                              idTipoLicencia = vo != null && vo.id_tipo_licencia.HasValue ? vo.id_tipo_licencia.Value : 0,
+                              estadoMecanico = vo != null ? vo.estado_mecanico : "OPERATIVO"
                           }).ToListAsync();
+
+            // Sugerencia inteligente de Instructor Fijo desde SIGAFI (si local está vacío)
+            foreach (var v in list.Where(x => string.IsNullOrEmpty(x.idInstructorFijo)))
+            {
+                var lastAsign = await _context.AsignacionesInstructores
+                    .Where(a => a.idVehiculo == v.idVehiculo && a.activo)
+                    .OrderByDescending(a => a.idAsignacion)
+                    .Select(a => a.idProfesor)
+                    .FirstOrDefaultAsync();
+
+                if (!string.IsNullOrEmpty(lastAsign))
+                {
+                    v.idInstructorFijo = lastAsign;
+                }
+            }
+
+            return list;
         }
 
         [HttpGet("instructores")]
