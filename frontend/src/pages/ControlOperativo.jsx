@@ -446,7 +446,7 @@ const ControlOperativo = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-8">
+                                <div className="space-y-4">
                                     <div className="relative group">
                                         <label className="absolute left-0 -top-4 px-2 bg-[var(--apple-card)] backdrop-blur-md text-[8px] font-black text-[var(--apple-text-main)] uppercase tracking-[0.2em] transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] z-10">
                                             Identificación del estudiante
