@@ -10,7 +10,7 @@ namespace backend.Models
     public class Usuario
     {
         [Key]
-        [MaxLength(50)]
+        [MaxLength(20)]
         public string usuario { get; set; } = string.Empty;
 
         [Required]

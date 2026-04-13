@@ -1,9 +1,9 @@
 /* ============================================================================
    SCRIPT DE INTEGRACIÓN DIRECTA: LOGÍSTICA -> SIGAFI_ES (ESCENARIO B)
    ============================================================================
-   Ejecutar este script DENTRO de la base de datos 'sigafi_es' solo si NO se 
+   Ejecutar este script DENTRO de la base de datos 'sigafi_es' solo si NO se
    permite la creación de la base de datos independiente 'istpet_vehiculos'.
-   
+
    Este script añade los 3 elementos mínimos que SIGAFI no tiene pero que el
    sistema de logística necesita para operar.
    ============================================================================ */
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS `vehiculos_operacion` (
 
 -- 3. Vista del Radar de Pista (Monitor de Clases Activas)
 CREATE OR REPLACE VIEW `v_clases_activas` AS
-SELECT 
+SELECT
     p.idPractica AS id_registro,
     p.idalumno AS idAlumno,
     CONCAT(a.apellidoPaterno, ' ', a.primerNombre) AS estudiante,

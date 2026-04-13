@@ -268,10 +268,14 @@ var app = builder.Build();
 // HEALER: Asegura que el esquema local esté alineado con el nuevo modelo 2026.
 await using (var scope = app.Services.CreateAsyncScope())
 {
+    var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
+    var dbMode = config["DatabaseSettings:Database_Mode"] ?? "Mirror";
+    bool isDirectMode = dbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase);
+
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     try
     {
-        var schemaCommands = new List<string>
+        var mirrorCommands = new List<string>
         {
             // -------------------------------------------------------------------------
             // 1. TABLAS DE CATÁLOGO (SI NO EXISTEN)
@@ -330,11 +334,11 @@ await using (var scope = app.Services.CreateAsyncScope())
             // 3. SANEAMIENTO DE CONSTRAINTS (NULLABILITY)
             // -------------------------------------------------------------------------
             "ALTER TABLE profesores MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idParroquiaNacimiento INT NULL, MODIFY idParroquiaResidencia INT NULL, MODIFY idDiscapacidad INT NULL, MODIFY tipoSangre VARCHAR(5) NULL",
-            "ALTER TABLE alumnos MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idDiscapacidad INT NULL",
+            "ALTER TABLE alumnos MODIFY idEtnia INT NULL, MODIFY idNacionalidad INT NULL, MODIFY idDiscapacidad INT NULL"
+        };
 
-            // -------------------------------------------------------------------------
-            // 4. TABLAS OPERATIVAS Y NUEVAS
-            // -------------------------------------------------------------------------
+        var operationalCommands = new List<string>
+        {
             @"CREATE TABLE IF NOT EXISTS vehiculos_operacion (
                 idVehiculo INT PRIMARY KEY,
                 id_tipo_licencia INT,
@@ -419,7 +423,12 @@ await using (var scope = app.Services.CreateAsyncScope())
             WHERE v.activo = 1 AND vo.estado_mecanico != 'OPERATIVO'"
         };
 
-        foreach (var cmd in schemaCommands)
+        // Ejecutar comandos
+        var finalCommands = new List<string>();
+        if (!isDirectMode) finalCommands.AddRange(mirrorCommands);
+        finalCommands.AddRange(operationalCommands);
+
+        foreach (var cmd in finalCommands)
         {
             try { await db.Database.ExecuteSqlRawAsync(cmd); }
             catch { /* Ignorar errores de columnas/índices ya existentes */ }
