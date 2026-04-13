@@ -341,7 +341,12 @@ namespace backend.Services.Implementations
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE COALESCE(p.cancelado, 0) = 0
+                    WHERE (p.fecha >= CURDATE() - INTERVAL 1 DAY)
+                    AND (
+                        -- Solo filtrar por cancelado si la columna existe o asumir 0
+                        NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'sigafi_es' AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado')
+                        OR p.cancelado = 0
+                    )
                       AND p.fecha >= CURDATE() - INTERVAL 1 DAY
                       AND NOT EXISTS (
                           SELECT 1 
@@ -396,9 +401,12 @@ namespace backend.Services.Implementations
                     JOIN alumnos a ON a.idAlumno = p.idalumno
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE COALESCE(p.cancelado, 0) = 0
-                    AND p.hora_llegada IS NULL
+                    WHERE p.hora_llegada IS NULL
                     AND p.fecha >= CURDATE()
+                    AND (
+                        NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'sigafi_es' AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado')
+                        OR p.cancelado = 0
+                    )
                     AND p.idalumno IN ({inClause})
                     ORDER BY p.idalumno ASC, p.fecha ASC, p.hora_salida ASC";
                 var rows = (await QueryListAsync(sql, ids, MapScheduledPractice)).ToList();

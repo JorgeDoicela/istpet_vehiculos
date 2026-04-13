@@ -85,14 +85,26 @@ namespace backend.Services.Implementations
         private async Task<List<ScheduledPracticeDto>> GetRecentSchedulesFromLocalMirrorAsync(int limit)
         {
             var take = Math.Clamp(limit, 1, 200);
-            var raw = await (
-                from p in _context.Practicas.AsNoTracking()
-                join e in _context.Estudiantes on p.idalumno equals e.idAlumno
-                join v in _context.Vehiculos on p.idvehiculo equals v.idVehiculo
-                join i in _context.Instructores on p.idProfesor equals i.idProfesor
-                where (p.cancelado ?? 0) == 0
-                orderby p.fecha descending, p.hora_salida descending
-                select new { p, e, v, i }).Take(take).ToListAsync();
+            
+            // Detectar si estamos en modo directo para saltar el filtro de cancelado si es necesario
+            var mode = Environment.GetEnvironmentVariable("DATABASE_MODE") ?? "Mirror";
+            bool isDirectMode = mode.Equals("Direct", StringComparison.OrdinalIgnoreCase);
+
+            var query = from p in _context.Practicas.AsNoTracking()
+                        join e in _context.Estudiantes on p.idalumno equals e.idAlumno
+                        join v in _context.Vehiculos on p.idvehiculo equals v.idVehiculo
+                        join i in _context.Instructores on p.idProfesor equals i.idProfesor
+                        select new { p, e, v, i };
+
+            if (!isDirectMode)
+            {
+                query = query.Where(r => (r.p.cancelado ?? 0) == 0);
+            }
+
+            var raw = await query.OrderByDescending(r => r.p.fecha)
+                                .ThenByDescending(r => r.p.hora_salida)
+                                .Take(take)
+                                .ToListAsync();
 
             return raw.Select(r => new ScheduledPracticeDto
             {
