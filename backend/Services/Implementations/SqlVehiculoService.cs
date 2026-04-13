@@ -49,10 +49,10 @@ namespace backend.Services.Implementations
 
         public async Task<bool> UpdateOperacionAsync(VehiculoOperacion op)
         {
-            var existing = await _context.VehiculosOperacion.FindAsync(op.idVehiculo);
+            var existing = await _context.VehiculosOperaciones.FindAsync(op.idVehiculo);
             if (existing == null)
             {
-                _context.VehiculosOperacion.Add(op);
+                _context.VehiculosOperaciones.Add(op);
             }
             else
             {
