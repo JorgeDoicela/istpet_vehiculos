@@ -13,30 +13,74 @@ using MySqlConnector;
 using System.Text;
 using System.Text.Json;
 using System.Threading.RateLimiting;
+using DotNetEnv;
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ENTORNO (.env)
+// ─────────────────────────────────────────────────────────────────────────────
+Env.TraversePath().Load();
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ─────────────────────────────────────────────────────────────────────────────
 // CADENAS DE CONEXIÓN
-// Prioridad: variable de entorno > appsettings (Development / Production)
+// Prioridad: 
+// 1. DATABASE_URL / SIGAFI_CONNECTION_STRING (Cadena completa)
+// 2. Construcción desde variables segmentadas del .env (LOCAL_DB_HOST, etc.)
+// 3. appsettings.json
 // ─────────────────────────────────────────────────────────────────────────────
-var connectionString =
-    Environment.GetEnvironmentVariable("DATABASE_URL")
-    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 
-var sigafiConnectionString =
-    Environment.GetEnvironmentVariable("SIGAFI_CONNECTION_STRING")
-    ?? builder.Configuration.GetConnectionString("SigafiConnection");
+string BuildLocalConnectionString()
+{
+    var url = Environment.GetEnvironmentVariable("DATABASE_URL");
+    if (!string.IsNullOrWhiteSpace(url)) return url;
+
+    var host = Environment.GetEnvironmentVariable("LOCAL_DB_HOST");
+    if (string.IsNullOrWhiteSpace(host)) return string.Empty;
+
+    var port = Environment.GetEnvironmentVariable("LOCAL_DB_PORT") ?? "3306";
+    var db = Environment.GetEnvironmentVariable("LOCAL_DB_NAME") ?? "istpet_vehiculos";
+    var user = Environment.GetEnvironmentVariable("LOCAL_DB_USER") ?? "root";
+    var pass = Environment.GetEnvironmentVariable("LOCAL_DB_PASS") ?? "";
+
+    return $"Server={host};Port={port};Database={db};Uid={user};Pwd={pass};Charset=utf8;AllowZeroDateTime=True;";
+}
+
+string BuildSigafiConnectionString()
+{
+    var url = Environment.GetEnvironmentVariable("SIGAFI_CONNECTION_STRING");
+    if (!string.IsNullOrWhiteSpace(url)) return url;
+
+    var host = Environment.GetEnvironmentVariable("REMOTE_SIGAFI_SERVER");
+    if (string.IsNullOrWhiteSpace(host)) return string.Empty;
+
+    var port = Environment.GetEnvironmentVariable("REMOTE_SIGAFI_PORT") ?? "3306";
+    var db = Environment.GetEnvironmentVariable("REMOTE_SIGAFI_DB") ?? "sigafi_es";
+    var user = Environment.GetEnvironmentVariable("REMOTE_SIGAFI_USER") ?? "root";
+    var pass = Environment.GetEnvironmentVariable("REMOTE_SIGAFI_PASS") ?? "";
+
+    return $"Server={host};Port={port};Database={db};Uid={user};Pwd={pass};Charset=utf8;AllowZeroDateTime=True;";
+}
+
+var connectionString = BuildLocalConnectionString();
+if (string.IsNullOrWhiteSpace(connectionString))
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+var sigafiConnectionString = BuildSigafiConnectionString();
+if (string.IsNullOrWhiteSpace(sigafiConnectionString))
+    sigafiConnectionString = builder.Configuration.GetConnectionString("SigafiConnection");
 
 if (string.IsNullOrWhiteSpace(connectionString))
     throw new InvalidOperationException(
         "❌ No se encontró la cadena de conexión local. " +
-        "Define DATABASE_URL o ConnectionStrings:DefaultConnection.");
+        "Define DATABASE_URL, LOCAL_DB_HOST o ConnectionStrings:DefaultConnection.");
 
 if (string.IsNullOrWhiteSpace(sigafiConnectionString))
     throw new InvalidOperationException(
         "❌ No se encontró la cadena de conexión SIGAFI. " +
-        "Define SIGAFI_CONNECTION_STRING o ConnectionStrings:SigafiConnection.");
+        "Define SIGAFI_CONNECTION_STRING, REMOTE_SIGAFI_SERVER o ConnectionStrings:SigafiConnection.");
+
 
 // TiDB Cloud: SSL obligatorio
 if (connectionString.Contains("tidbcloud.com", StringComparison.OrdinalIgnoreCase)
@@ -269,7 +313,9 @@ var app = builder.Build();
 await using (var scope = app.Services.CreateAsyncScope())
 {
     var config = scope.ServiceProvider.GetRequiredService<IConfiguration>();
-    var dbMode = config["DatabaseSettings:Database_Mode"] ?? "Mirror";
+    var dbMode = Environment.GetEnvironmentVariable("DATABASE_MODE")
+                 ?? config["DatabaseSettings:Database_Mode"] 
+                 ?? "Mirror";
     bool isDirectMode = dbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase);
 
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -280,7 +326,7 @@ await using (var scope = app.Services.CreateAsyncScope())
             // -------------------------------------------------------------------------
             // 1. TABLAS DE CATÁLOGO (SI NO EXISTEN)
             // -------------------------------------------------------------------------
-            "CREATE TABLE IF NOT EXISTS periodos (idPeriodo CHAR(7) PRIMARY KEY, detalle VARCHAR(100), fecha_inicial DATE, fecha_final DATE, activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS periodos (idPeriodo CHAR(7) PRIMARY KEY, detalle VARCHAR(100), fecha_inicial DATE, fecha_final DATE, activo TINYINT DEFAULT 1, fecha_matrucla_extraordinaria DATE NULL)",
             "CREATE TABLE IF NOT EXISTS carreras (idCarrera INT PRIMARY KEY, Carrera VARCHAR(100), activa TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS secciones (idSeccion INT PRIMARY KEY, seccion VARCHAR(50))",
             "CREATE TABLE IF NOT EXISTS modalidades (idModalidad INT PRIMARY KEY, modalidad VARCHAR(50))",
@@ -297,11 +343,10 @@ await using (var scope = app.Services.CreateAsyncScope())
             "CREATE TABLE IF NOT EXISTS matriculas (idMatricula INT PRIMARY KEY, idAlumno VARCHAR(14), idNivel INT, idSeccion INT, idModalidad INT, idPeriodo CHAR(7), paralelo VARCHAR(5) DEFAULT 'A', valida TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS vehiculos (idVehiculo INT PRIMARY KEY, numero_vehiculo VARCHAR(3), placa VARCHAR(10), marca VARCHAR(50), anio INT, idCategoria INT, activo TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS cond_alumnos_practicas (idPractica INT PRIMARY KEY, idalumno VARCHAR(14), idvehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fecha DATE, hora_salida TIME, hora_llegada TIME, ensalida TINYINT DEFAULT 0, cancelado TINYINT DEFAULT 0)",
-            "CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idVehiculo INT, idProfesor VARCHAR(14), fecha_asignacion DATETIME, fecha_salida DATETIME, activo TINYINT DEFAULT 1)",
+            "CREATE TABLE IF NOT EXISTS asignacion_instructores_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idVehiculo INT, idProfesor VARCHAR(14), fecha_asignacion DATETIME, fecha_salidad DATETIME, activo TINYINT DEFAULT 1)",
 
             "CREATE TABLE IF NOT EXISTS cond_alumnos_vehiculos (idAsignacion INT PRIMARY KEY AUTO_INCREMENT, idAlumno VARCHAR(14), idVehiculo INT, idProfesor VARCHAR(14), idPeriodo VARCHAR(7), fechaAsignacion DATETIME DEFAULT CURRENT_TIMESTAMP, activa TINYINT DEFAULT 1)",
             "CREATE TABLE IF NOT EXISTS cond_alumnos_horarios (idAsignacionHorario INT PRIMARY KEY, idAsignacion INT NOT NULL, idFecha INT NOT NULL, idHora INT NOT NULL, asiste TINYINT DEFAULT 0, activo TINYINT DEFAULT 1, observacion VARCHAR(100))",
-            "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
             "CREATE TABLE IF NOT EXISTS cond_practicas_horarios_alumnos (idPractica INT NOT NULL, idAsignacionHorario INT NOT NULL, PRIMARY KEY (idPractica, idAsignacionHorario))",
 
             // -------------------------------------------------------------------------
@@ -328,7 +373,7 @@ await using (var scope = app.Services.CreateAsyncScope())
             
             "ALTER TABLE alumnos ADD COLUMN IF NOT EXISTS email_institucional VARCHAR(255) NULL",
 
-            "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salida DATETIME NULL",
+            "ALTER TABLE asignacion_instructores_vehiculos ADD COLUMN IF NOT EXISTS fecha_salidad DATETIME NULL",
 
             // -------------------------------------------------------------------------
             // 3. SANEAMIENTO DE CONSTRAINTS (NULLABILITY)

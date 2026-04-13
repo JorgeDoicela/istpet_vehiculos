@@ -143,7 +143,18 @@ namespace backend.Controllers
 
         private async Task<Usuario> UpsertLocalUsuarioFromSigafiAsync(CentralUserDto src, string? plainPassword)
         {
+            var dbMode = _config["DatabaseSettings:Database_Mode"] ?? "Mirror";
+            bool isDirectMode = dbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase);
+
             var local = await _context.Usuarios.FindAsync(src.usuario);
+
+            // [SECURITY OPTIMIZATION] In Direct mode, the central table IS our local table.
+            // We only need to return the tracked entity or create a transient one for the session.
+            if (isDirectMode && local != null)
+            {
+                return local;
+            }
+
             var passwordToStore = src.password ?? string.Empty;
 
             if (local == null)
@@ -170,6 +181,7 @@ namespace backend.Controllers
                 local.esRrhh = src.esRrhh != 0;
             }
 
+            // Still save if not direct or if it's a new user (though in direct mode local shouldn't be null if found in central)
             await _context.SaveChangesAsync();
             return local;
         }

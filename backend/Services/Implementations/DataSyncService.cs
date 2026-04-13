@@ -35,12 +35,14 @@ namespace backend.Services.Implementations
         private readonly AppDbContext _context;
         private readonly ILogger<DataSyncService> _logger;
         private readonly ICentralStudentProvider _centralProvider;
+        private readonly IConfiguration _config;
 
-        public DataSyncService(AppDbContext context, ILogger<DataSyncService> logger, ICentralStudentProvider centralProvider)
+        public DataSyncService(AppDbContext context, ILogger<DataSyncService> logger, ICentralStudentProvider centralProvider, IConfiguration config)
         {
             _context = context;
             _logger = logger;
             _centralProvider = centralProvider;
+            _config = config;
         }
 
         public async Task<SyncLog> SyncInstructorsAsync()
@@ -162,6 +164,18 @@ namespace backend.Services.Implementations
 
         public async Task<SyncLog> MasterSyncAsync()
         {
+            var dbMode = _config["DatabaseSettings:Database_Mode"] ?? "Mirror";
+            if (dbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogInformation("MasterSync SIGAFI omitido: El sistema está en modo 'Direct'.");
+                return new SyncLog { 
+                    Modulo = "MasterSyncSIGAFI", 
+                    Estado = "OK", 
+                    Mensaje = "Sincronización omitida por modo Directo.",
+                    Fecha = DateTime.Now
+                };
+            }
+
             _logger.LogInformation("Iniciando Master Sync SIGAFI integral...");
 
             // Invalida el caché antes de leer para que todos los módulos
