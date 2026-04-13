@@ -90,7 +90,16 @@ var envDbMode = Environment.GetEnvironmentVariable("DATABASE_MODE");
 if (!string.IsNullOrEmpty(envDbMode))
     builder.Configuration["DatabaseSettings:Database_Mode"] = envDbMode;
 
-
+// ─────────────────────────────────────────────────────────────────────────────
+// REFINAMIENTO "CERO TOQUE" PARA MODO DIRECTO
+// Si el modo es Directo, forzamos que la conexión principal sea la de SIGAFI
+// ─────────────────────────────────────────────────────────────────────────────
+var finalDbMode = builder.Configuration["DatabaseSettings:Database_Mode"] ?? "Mirror";
+if (finalDbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase))
+{
+    connectionString = sigafiConnectionString;
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = sigafiConnectionString;
+}
 
 // TiDB Cloud: SSL obligatorio
 if (connectionString.Contains("tidbcloud.com", StringComparison.OrdinalIgnoreCase)
