@@ -260,5 +260,74 @@ namespace backend.Controllers
                 return StatusCode(500, ApiResponse<IEnumerable<ReportePracticasDTO>>.Fail($"Historial: {ex.Message}"));
             }
         }
+
+        [HttpGet("audit-logs")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<object>>>> GetAuditLogs(
+            [FromQuery] string? usuario = null,
+            [FromQuery] string? accion = null,
+            [FromQuery] string? fechaInicio = null,
+            [FromQuery] string? fechaFin = null,
+            [FromQuery] string? busqueda = null,
+            [FromQuery] int limit = 200)
+        {
+            try
+            {
+                var take = Math.Clamp(limit, 1, 500);
+
+                DateTime? desde = null;
+                DateTime? hasta = null;
+                if (!string.IsNullOrEmpty(fechaInicio) && DateTime.TryParse(fechaInicio, out var s))
+                    desde = s.Date;
+                if (!string.IsNullOrEmpty(fechaFin) && DateTime.TryParse(fechaFin, out var e))
+                    hasta = e.Date.AddDays(1).AddTicks(-1);
+
+                if (!desde.HasValue && !hasta.HasValue)
+                {
+                    desde = DateTime.Today.ToUniversalTime();
+                    hasta = DateTime.Today.AddDays(1).AddTicks(-1).ToUniversalTime();
+                }
+
+                var q = _context.AuditLogs.AsNoTracking().AsQueryable();
+
+                if (desde.HasValue)
+                    q = q.Where(l => l.fecha_hora >= desde.Value.ToUniversalTime());
+                if (hasta.HasValue)
+                    q = q.Where(l => l.fecha_hora <= hasta.Value.ToUniversalTime());
+                if (!string.IsNullOrWhiteSpace(usuario))
+                    q = q.Where(l => l.usuario == usuario.Trim());
+                if (!string.IsNullOrWhiteSpace(accion))
+                    q = q.Where(l => l.accion == accion.Trim());
+                if (!string.IsNullOrWhiteSpace(busqueda))
+                {
+                    var term = busqueda.Trim().ToUpperInvariant();
+                    q = q.Where(l =>
+                        l.usuario.ToUpper().Contains(term) ||
+                        l.accion.ToUpper().Contains(term) ||
+                        (l.entidad_id != null && l.entidad_id.ToUpper().Contains(term)) ||
+                        (l.detalles != null && l.detalles.ToUpper().Contains(term)));
+                }
+
+                var rows = await q
+                    .OrderByDescending(l => l.fecha_hora)
+                    .Take(take)
+                    .Select(l => new
+                    {
+                        id = l.id,
+                        usuario = l.usuario,
+                        accion = l.accion,
+                        entidad_id = l.entidad_id,
+                        detalles = l.detalles,
+                        ip_origen = l.ip_origen,
+                        fecha_hora = l.fecha_hora
+                    })
+                    .ToListAsync();
+
+                return Ok(ApiResponse<IEnumerable<object>>.Ok(rows, $"{rows.Count} registros de auditoría."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<IEnumerable<object>>.Fail($"Audit logs: {ex.Message}"));
+            }
+        }
     }
 }

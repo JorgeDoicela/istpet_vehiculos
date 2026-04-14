@@ -55,6 +55,23 @@ const dashboardService = {
     };
   },
 
+  getAuditLogs: async ({ usuario, accion, fechaInicio, fechaFin, busqueda, limit = 200 } = {}) => {
+    const params = new URLSearchParams();
+    if (usuario) params.append('usuario', usuario);
+    if (accion) params.append('accion', accion);
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    if (busqueda) params.append('busqueda', busqueda);
+    params.append('limit', String(limit));
+
+    const response = await api.get(`/Dashboard/audit-logs?${params.toString()}`);
+    const body = response?.data;
+    const ok = body?.success ?? body?.Success;
+    if (ok === false) throw new Error(body?.message ?? body?.Message ?? 'Logs no disponibles');
+    const data = body?.data ?? body?.Data;
+    return Array.isArray(data) ? data : [];
+  },
+
   getHistorialPracticas: async ({ fechaInicio, fechaFin, instructorId, busqueda, estado, limit = 200 } = {}) => {
     const params = new URLSearchParams();
     if (fechaInicio) params.append('fechaInicio', fechaInicio);
