@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback } from 'react';
 import dashboardService from '../../services/dashboardService';
 
 const hoy = () => new Date().toISOString().split('T')[0];
@@ -64,11 +64,6 @@ export default function LogsPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [cargado, setCargado] = useState(false);
-  const debounceRef = useRef(null);
-
-  useEffect(() => {
-    ejecutar(filtros);
-  }, []);
 
   const ejecutar = useCallback(async (f) => {
     setLoading(true);
@@ -87,22 +82,23 @@ export default function LogsPanel() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const next = { ...filtros, [name]: value };
-    setFiltros(next);
-    if (name !== 'busqueda') ejecutar(next);
+    setFiltros((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleBusqueda = (e) => {
-    const next = { ...filtros, busqueda: e.target.value };
-    setFiltros(next);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => ejecutar(next), 450);
+    setFiltros((prev) => ({ ...prev, busqueda: e.target.value }));
+  };
+
+  const buscar = () => {
+    ejecutar(filtros);
   };
 
   const limpiar = () => {
     const next = { fechaInicio: hoy(), fechaFin: hoy(), usuario: '', accion: '', busqueda: '' };
     setFiltros(next);
-    ejecutar(next);
+    setData([]);
+    setCargado(false);
+    setError('');
   };
 
   const hayFiltrosActivos = filtros.busqueda || filtros.usuario || filtros.accion ||
@@ -135,12 +131,7 @@ export default function LogsPanel() {
           </div>
           <div>
             <label className={labelCls}>Usuario</label>
-            <input type="text" name="usuario" value={filtros.usuario} onChange={(e) => {
-              const next = { ...filtros, usuario: e.target.value };
-              setFiltros(next);
-              clearTimeout(debounceRef.current);
-              debounceRef.current = setTimeout(() => ejecutar(next), 450);
-            }} placeholder="Cédula o login…" className={inputCls} />
+            <input type="text" name="usuario" value={filtros.usuario} onChange={handleChange} placeholder="Cédula o login…" className={inputCls} />
           </div>
         </div>
 
@@ -166,11 +157,22 @@ export default function LogsPanel() {
               )}
             </div>
           </div>
-          {hayFiltrosActivos && (
-            <button onClick={limpiar} className="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded-2xl border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all">
+          {(hayFiltrosActivos || cargado) && (
+            <button type="button" onClick={limpiar} className="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded-2xl border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all">
               Limpiar
             </button>
           )}
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+          <button
+            type="button"
+            onClick={buscar}
+            disabled={loading}
+            className="btn-apple-primary w-full sm:flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 disabled:pointer-events-none"
+          >
+            {loading ? 'Buscando…' : 'Buscar'}
+          </button>
         </div>
       </div>
 
@@ -198,6 +200,15 @@ export default function LogsPanel() {
                       <div className="w-8 h-8 rounded-full border-2 border-t-[var(--apple-primary)] border-transparent animate-spin" />
                       <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40">Cargando logs…</p>
                     </div>
+                  </td>
+                </tr>
+              )}
+              {!loading && !cargado && (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center">
+                    <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 max-w-sm mx-auto px-4">
+                      Ajusta los filtros y pulsa <span className="text-[var(--apple-primary)]">Buscar</span> para cargar los logs.
+                    </p>
                   </td>
                 </tr>
               )}
@@ -236,6 +247,11 @@ export default function LogsPanel() {
             <div className="flex justify-center py-12">
               <div className="w-8 h-8 rounded-full border-2 border-t-[var(--apple-primary)] border-transparent animate-spin" />
             </div>
+          )}
+          {!loading && !cargado && (
+            <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 py-12 px-4">
+              Ajusta los filtros y pulsa <span className="text-[var(--apple-primary)]">Buscar</span> para cargar los logs.
+            </p>
           )}
           {!loading && data.length === 0 && cargado && (
             <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40 py-12">Sin registros</p>
