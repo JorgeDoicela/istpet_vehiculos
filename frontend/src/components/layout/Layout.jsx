@@ -10,7 +10,13 @@ const logoImg = '/favicon.png';
 const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
     const { logout } = useAuth();
-    const { alertasExcesoRuta, limiteMinutosEnRuta } = useOperativeAlerts();
+    const {
+        alertasExcesoRuta,
+        limiteMinutosEnRuta,
+        systemNotificationsSupported,
+        systemNotifPermission,
+        requestSystemNotifications
+    } = useOperativeAlerts();
     const [notifOpen, setNotifOpen] = useState(false);
     const notifWrapRef = useRef(null);
 
@@ -24,6 +30,40 @@ const Layout = ({ children }) => {
         document.addEventListener('mousedown', close);
         return () => document.removeEventListener('mousedown', close);
     }, [notifOpen]);
+
+    /** Solicitud automática de permiso: primer toque o ~1 s (lo que ocurra antes). */
+    useEffect(() => {
+        if (!systemNotificationsSupported || systemNotifPermission !== 'default') return;
+
+        let done = false;
+        let timerId = null;
+
+        const ask = () => {
+            if (done) return;
+            done = true;
+            void requestSystemNotifications();
+        };
+
+        const onFirstPointer = () => {
+            if (timerId != null) {
+                clearTimeout(timerId);
+                timerId = null;
+            }
+            document.removeEventListener('pointerdown', onFirstPointer, true);
+            ask();
+        };
+
+        document.addEventListener('pointerdown', onFirstPointer, true);
+        timerId = setTimeout(() => {
+            document.removeEventListener('pointerdown', onFirstPointer, true);
+            ask();
+        }, 1000);
+
+        return () => {
+            if (timerId != null) clearTimeout(timerId);
+            document.removeEventListener('pointerdown', onFirstPointer, true);
+        };
+    }, [systemNotificationsSupported, systemNotifPermission, requestSystemNotifications]);
 
     const nAlertas = alertasExcesoRuta.length;
 
@@ -90,12 +130,44 @@ const Layout = ({ children }) => {
                             </button>
                             {notifOpen ? (
                                 <div
-                                    className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,24rem)] overflow-y-auto rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] shadow-2xl backdrop-blur-xl z-[120] py-2 px-1 animate-apple-in"
+                                    className={`absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,24rem)] overflow-y-auto rounded-2xl border border-[var(--apple-border)] shadow-2xl z-[120] py-2 px-1 animate-apple-in ${
+                                        theme === 'dark' ? 'bg-slate-900' : 'bg-white'
+                                    }`}
                                     role="menu"
                                 >
                                     <p className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] border-b border-[var(--apple-border)]/50">
                                         Más de {limiteMinutosEnRuta / 60} h en ruta
                                     </p>
+                                    {systemNotificationsSupported ? (
+                                        <div className="px-3 py-2.5 border-b border-[var(--apple-border)]/50 space-y-2">
+                                            {systemNotifPermission === 'granted' ? (
+                                                <p className="text-[10px] font-bold text-emerald-600 leading-snug">
+                                                    Avisos del sistema activados (también con la app en segundo plano, según el navegador).
+                                                </p>
+                                            ) : systemNotifPermission === 'denied' ? (
+                                                <p className="text-[10px] font-semibold text-[var(--apple-text-sub)] leading-snug">
+                                                    Las notificaciones están bloqueadas. Actívalas en los ajustes del navegador para verlas en el teléfono.
+                                                </p>
+                                            ) : (
+                                                <>
+                                                    <p className="text-[10px] font-semibold text-[var(--apple-text-sub)] leading-snug">
+                                                        Recibe avisos de rutas largas en la barra del sistema o en el teléfono (Chrome/Android; en iPhone suele requerir añadir la web a inicio).
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => requestSystemNotifications()}
+                                                        className="w-full py-2.5 rounded-xl bg-[var(--istpet-navy)] text-white text-[10px] font-black uppercase tracking-widest touch-manipulation"
+                                                    >
+                                                        Activar notificaciones del navegador
+                                                    </button>
+                                                </>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="px-3 py-2 text-[10px] text-[var(--apple-text-sub)] border-b border-[var(--apple-border)]/50">
+                                            Este navegador no admite notificaciones del sistema.
+                                        </p>
+                                    )}
                                     {nAlertas === 0 ? (
                                         <p className="px-3 py-6 text-center text-xs font-semibold text-[var(--apple-text-sub)]">
                                             No hay vehículos con ruta prolongada.

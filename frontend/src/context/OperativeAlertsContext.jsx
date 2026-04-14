@@ -9,6 +9,12 @@ import React, {
 } from 'react';
 import { useToast } from './ToastContext';
 import { minutosEnRuta } from '../utils/agendaUi';
+import {
+    systemNotificationsSupported,
+    getSystemNotificationPermission,
+    requestSystemNotificationPermission,
+    showSystemNotification
+} from '../utils/browserNotifications';
 
 const OperativeAlertsContext = createContext(null);
 
@@ -18,7 +24,33 @@ export function OperativeAlertsProvider({ children }) {
     const { warning } = useToast();
     const [clasesActivas, setClasesActivas] = useState([]);
     const [tick, setTick] = useState(0);
+    const [systemNotifPermission, setSystemNotifPermission] = useState(() =>
+        getSystemNotificationPermission()
+    );
     const notificadosRef = useRef(new Set());
+
+    const requestSystemNotifications = useCallback(async () => {
+        await requestSystemNotificationPermission();
+        const p = getSystemNotificationPermission();
+        setSystemNotifPermission(p);
+        return p;
+    }, []);
+
+    useEffect(() => {
+        const sync = () => setSystemNotifPermission(getSystemNotificationPermission());
+        window.addEventListener('focus', sync);
+        return () => window.removeEventListener('focus', sync);
+    }, []);
+
+    useEffect(() => {
+        const onVis = () => {
+            if (document.visibilityState === 'visible') {
+                setSystemNotifPermission(getSystemNotificationPermission());
+            }
+        };
+        document.addEventListener('visibilitychange', onVis);
+        return () => document.removeEventListener('visibilitychange', onVis);
+    }, []);
 
     useEffect(() => {
         const id = setInterval(() => setTick((t) => t + 1), 30000);
@@ -57,10 +89,13 @@ export function OperativeAlertsProvider({ children }) {
             const placa = (a.placa || '').trim();
             const sufijo = placa ? ` (${placa})` : '';
             const alumno = (a.estudiante || '').trim();
-            warning(
-                `${veh}${sufijo}: lleva más de 2 h en ruta${alumno ? ` — ${alumno}` : ''}.`,
-                9000
-            );
+            const msg = `${veh}${sufijo}: lleva más de 2 h en ruta${alumno ? ` — ${alumno}` : ''}.`;
+            warning(msg, 9000);
+            showSystemNotification({
+                title: 'ISTPET — Ruta prolongada',
+                body: msg,
+                tag: `istpet-ruta-larga-${id}`
+            });
         }
     }, [alertasExcesoRuta, warning]);
 
@@ -68,9 +103,17 @@ export function OperativeAlertsProvider({ children }) {
         () => ({
             publishClasesActivas,
             alertasExcesoRuta,
-            limiteMinutosEnRuta: LIMITE_MINUTOS_EN_RUTA
+            limiteMinutosEnRuta: LIMITE_MINUTOS_EN_RUTA,
+            systemNotificationsSupported: systemNotificationsSupported(),
+            systemNotifPermission,
+            requestSystemNotifications
         }),
-        [publishClasesActivas, alertasExcesoRuta]
+        [
+            publishClasesActivas,
+            alertasExcesoRuta,
+            systemNotifPermission,
+            requestSystemNotifications
+        ]
     );
 
     return (
