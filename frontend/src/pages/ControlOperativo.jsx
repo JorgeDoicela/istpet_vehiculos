@@ -391,7 +391,7 @@ const ControlOperativo = () => {
             setInstructorSeleccionado(null);
             setFiltroLicencia(null);
             cargarVehiculosDisponibles();
-            cargarClasesActivas(); // 🚀 Refrescar pestaña Llegada inmediatamente
+            cargarClasesActivas(); // Refrescar pestaña Llegada inmediatamente
             cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
 
         } catch (err) {

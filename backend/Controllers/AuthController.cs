@@ -201,6 +201,7 @@ namespace backend.Controllers
             return string.IsNullOrWhiteSpace(s) ? null : s;
         }
 
+        /// <param name="usuario">Cédula del usuario.</param>
         /// <param name="sigafiNoDisponibleEnLogin">
         /// Si ya falló <see cref="ICentralStudentProvider.GetWebUserFromSigafiAsync"/> con excepción,
         /// no volvemos a llamar a SIGAFI aquí (evita esperas largas en cadena).

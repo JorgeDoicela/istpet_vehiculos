@@ -100,7 +100,7 @@ namespace backend.Services.Implementations
                                 fecha_ingreso = ci.fecha_ingreso,
                                 fechaIngresoIess = ci.fechaIngresoIess,
                                 fecha_retiro = ci.fecha_retiro,
-                                tipoSangre = ci.tipoSangre,
+                                tipoSangre = ci.tipoSangre ?? "S/T",
                                 esReal = ci.esReal ?? 1
                             });
                             log.RegistrosProcesados++;
@@ -134,7 +134,7 @@ namespace backend.Services.Implementations
                             existing.fecha_ingreso = ci.fecha_ingreso;
                             existing.fechaIngresoIess = ci.fechaIngresoIess;
                             existing.fecha_retiro = ci.fecha_retiro;
-                            existing.tipoSangre = ci.tipoSangre;
+                            existing.tipoSangre = ci.tipoSangre ?? existing.tipoSangre ?? "S/T";
                             existing.esReal = ci.esReal ?? existing.esReal;
                             log.RegistrosProcesados++;
                         }
@@ -559,7 +559,7 @@ namespace backend.Services.Implementations
                         fecha_ingreso = ci.fecha_ingreso,
                         fechaIngresoIess = ci.fechaIngresoIess,
                         fecha_retiro = ci.fecha_retiro,
-                        tipoSangre = ci.tipoSangre,
+                        tipoSangre = ci.tipoSangre ?? "S/T",
                         esReal = ci.esReal ?? 1
                     };
                     _context.Instructores.Add(nuevo);
@@ -594,7 +594,7 @@ namespace backend.Services.Implementations
                     existing.fecha_ingreso = ci.fecha_ingreso;
                     existing.fechaIngresoIess = ci.fechaIngresoIess;
                     existing.fecha_retiro = ci.fecha_retiro;
-                    existing.tipoSangre = ci.tipoSangre;
+                    existing.tipoSangre = ci.tipoSangre ?? existing.tipoSangre ?? "S/T";
                     existing.esReal = ci.esReal ?? existing.esReal;
                 }
                 processed++;

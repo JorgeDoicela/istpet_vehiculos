@@ -467,16 +467,50 @@ await using (var scope = app.Services.CreateAsyncScope())
               EXECUTE stmt;
               DEALLOCATE PREPARE stmt;",
 
+            // -------------------------------------------------------------------------
+            // 5. SEEDING DE DATOS MAESTROS (BOOTSTRAP)
+            // -------------------------------------------------------------------------
+            @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'vehiculos_operacion' AND COLUMN_NAME = 'id_tipo_licencia');
+              SET @addItem = IF(@colExists = 0, 'ALTER TABLE vehiculos_operacion ADD COLUMN id_tipo_licencia INT', 'SELECT 1');
+              PREPARE stmt FROM @addItem;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'observaciones');
+              SET @addItem = IF(@colExists = 0, 'ALTER TABLE cond_alumnos_practicas ADD COLUMN observaciones TEXT NULL', 'SELECT 1');
+              PREPARE stmt FROM @addItem;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
             @"SET @colExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'alumnos' AND COLUMN_NAME = 'email_institucional');
               SET @addItem = IF(@colExists = 0, 'ALTER TABLE alumnos ADD COLUMN email_institucional VARCHAR(255) NULL, ADD COLUMN primerIngreso TINYINT DEFAULT 1, ADD COLUMN tipo_sangre VARCHAR(10) NULL', 'SELECT 1');
               PREPARE stmt FROM @addItem;
               EXECUTE stmt;
               DEALLOCATE PREPARE stmt;",
 
-            "CREATE INDEX IF NOT EXISTS idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)",
-            "CREATE INDEX IF NOT EXISTS idx_practicas_alumno ON cond_alumnos_practicas (idalumno)",
-            "CREATE INDEX IF NOT EXISTS idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)",
-            "CREATE INDEX IF NOT EXISTS idx_practicas_fecha ON cond_alumnos_practicas (fecha)",
+            @"SET @indexExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND INDEX_NAME = 'idx_practicas_ensalida');
+              SET @addIndex = IF(@indexExists = 0, 'CREATE INDEX idx_practicas_ensalida ON cond_alumnos_practicas (ensalida, cancelado)', 'SELECT 1');
+              PREPARE stmt FROM @addIndex;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @indexExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND INDEX_NAME = 'idx_practicas_alumno');
+              SET @addIndex = IF(@indexExists = 0, 'CREATE INDEX idx_practicas_alumno ON cond_alumnos_practicas (idalumno)', 'SELECT 1');
+              PREPARE stmt FROM @addIndex;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @indexExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND INDEX_NAME = 'idx_practicas_vehiculo');
+              SET @addIndex = IF(@indexExists = 0, 'CREATE INDEX idx_practicas_vehiculo ON cond_alumnos_practicas (idvehiculo)', 'SELECT 1');
+              PREPARE stmt FROM @addIndex;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
+
+            @"SET @indexExists = (SELECT COUNT(*) FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'cond_alumnos_practicas' AND INDEX_NAME = 'idx_practicas_fecha');
+              SET @addIndex = IF(@indexExists = 0, 'CREATE INDEX idx_practicas_fecha ON cond_alumnos_practicas (fecha)', 'SELECT 1');
+              PREPARE stmt FROM @addIndex;
+              EXECUTE stmt;
+              DEALLOCATE PREPARE stmt;",
 
             @"CREATE OR REPLACE VIEW v_clases_activas AS
             SELECT
@@ -521,14 +555,13 @@ await using (var scope = app.Services.CreateAsyncScope())
         // 5. SEEDING DE DATOS MAESTROS (BOOTSTRAP)
         // -------------------------------------------------------------------------
 
-        try
-        {
-            // Tipos de Licencia
-            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (1, 'C', 'CONDUCCIÓN NO PROFESIONAL TIPO C', 1)");
-            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (2, 'D', 'CONDUCCIÓN PROFESIONAL TIPO D', 1)");
-            await db.Database.ExecuteSqlRawAsync(@"INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (3, 'E', 'CONDUCCIÓN PROFESIONAL TIPO E', 1)");
-        }
-        catch { /* Ignorar fallos de seeding */ }
+            // Tipos de Licencia (Bootstrap resiliente)
+            string[] seedLicencias = {
+                "INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (1, 'C', 'CONDUCCIÓN NO PROFESIONAL TIPO C', 1)",
+                "INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (2, 'D', 'CONDUCCIÓN PROFESIONAL TIPO D', 1)",
+                "INSERT IGNORE INTO tipo_licencia (id_tipo, codigo, descripcion, activo) VALUES (3, 'E', 'CONDUCCIÓN PROFESIONAL TIPO E', 1)"
+            };
+            foreach (var sql in seedLicencias) { try { await db.Database.ExecuteSqlRawAsync(sql); } catch { /* Silencioso en seeding prioritario */ } }
     }
     catch (Exception ex)
     {

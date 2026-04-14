@@ -41,6 +41,11 @@ namespace backend.Controllers
         private readonly ISigafiMirrorPersistenceService _mirrorPersist;
         private readonly ILogger<LogisticaController> _logger;
 
+        /// <param name="usuario">Cédula del usuario.</param>
+        /// <param name="sigafiNoDisponibleEnLogin">
+        /// Si ya falló <see cref="ICentralStudentProvider.GetWebUserFromSigafiAsync"/> con excepción,
+        /// no volvemos a llamar a SIGAFI aquí (evita esperas largas en cadena).
+        /// </param>
         public LogisticaController(
             AppDbContext context,
             ILogisticaService logisticaService,
@@ -190,9 +195,9 @@ namespace backend.Controllers
             }
             else
             {
-                eBase.primerNombre = (centralData.primerNombre ?? eBase.primerNombre).ToUpper();
+                eBase.primerNombre = (centralData.primerNombre ?? eBase.primerNombre ?? "S/N").ToUpper();
                 eBase.segundoNombre = (centralData.segundoNombre ?? "").ToUpper();
-                eBase.apellidoPaterno = (centralData.apellidoPaterno ?? eBase.apellidoPaterno).ToUpper();
+                eBase.apellidoPaterno = (centralData.apellidoPaterno ?? eBase.apellidoPaterno ?? "S/N").ToUpper();
                 eBase.apellidoMaterno = (centralData.apellidoMaterno ?? "").ToUpper();
                 if (!string.IsNullOrEmpty(centralData.idPeriodo) && centralData.idPeriodo != "SIN_MAT")
                     eBase.idPeriodo = centralData.idPeriodo;
@@ -630,12 +635,14 @@ namespace backend.Controllers
                     primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
                     nombres = (centralData.nombres ?? "").ToUpper(),
                     apellidos = (centralData.apellidos ?? "").ToUpper(),
+                    tipoSangre = centralData.tipoSangre ?? "S/T",
                     activo = centralData.activo
                 };
                 _context.Instructores.Add(existing);
             }
             else
             {
+                existing.tipoSangre = centralData.tipoSangre ?? existing.tipoSangre ?? "S/T";
                 existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre ?? "S/N").ToUpper();
                 existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido ?? "S/N").ToUpper();
                 existing.nombres = (centralData.nombres ?? existing.nombres ?? "").ToUpper();

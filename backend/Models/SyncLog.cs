@@ -1,13 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace backend.Models
 {
-    /**
-     * Bitácora de Sincronización Profesional
-     * Registra cada trago de datos externos para auditoría.
-     */
-    using System.ComponentModel.DataAnnotations.Schema;
-
+    /// <summary>
+    /// Bitácora de Sincronización Profesional
+    /// Registra cada trago de datos externos para auditoría.
+    /// </summary>
     public class SyncLog
     {
         [Key]
