@@ -343,16 +343,13 @@ const ControlOperativo = () => {
                 ? String(data.idPracticaInstructor).trim()
                 : '';
             const tieneSugerencia =
-                !!idInstr || data.idPracticaCentral != null;
+                source === 'agenda' && (!!idInstr || data.idPracticaCentral != null);
+
             if (tieneSugerencia) {
                 await aplicarSugerenciaManual(data);
-                showNotification(
-                    source === 'agenda'
-                        ? 'Alumno, vehículo e instructor según la fila de agenda'
-                        : 'Sugerencia de práctica aplicada (SIGAFI)'
-                );
+                showNotification('Alumno, vehículo e instructor cargados desde agenda');
             } else {
-                showNotification('Estudiante localizado');
+                showNotification(source === 'agenda' ? 'Datos de agenda cargados' : 'Estudiante localizado');
             }
         } catch (err) {
             const d = err.response?.data;
