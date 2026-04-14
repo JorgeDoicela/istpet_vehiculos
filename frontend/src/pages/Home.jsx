@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import ActiveClasses from '../components/features/ActiveClasses';
 import SkeletonLoader from '../components/features/SkeletonLoader';
@@ -6,11 +6,54 @@ import dashboardService from '../services/dashboardService';
 import { fmtDuracionSalidaLlegada, fmtHoraPractica } from '../utils/agendaUi';
 import { useOperativeAlerts } from '../context/OperativeAlertsContext';
 
+const MAX_RETORNOS_VISIBLE = 3;
+
 const Home = () => {
     const { publishClasesActivas } = useOperativeAlerts();
     const [activeClasses, setActiveClasses] = useState([]);
     const [completedPack, setCompletedPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
+    const [retornosListMaxPx, setRetornosListMaxPx] = useState(null);
+    const retornosListRef = useRef(null);
+
+    const retornosCount = completedPack.practicas?.length ?? 0;
+
+    useLayoutEffect(() => {
+        const root = retornosListRef.current;
+        if (!root || retornosCount === 0) {
+            setRetornosListMaxPx(null);
+            return;
+        }
+
+        const measure = () => {
+            const el = retornosListRef.current;
+            if (!el) return;
+            const cards = [...el.querySelectorAll('[data-retorno-card]')];
+            if (cards.length === 0) {
+                setRetornosListMaxPx(null);
+                return;
+            }
+            const m = Math.min(cards.length, MAX_RETORNOS_VISIBLE);
+            let top = Infinity;
+            let bottom = -Infinity;
+            for (let i = 0; i < m; i++) {
+                const r = cards[i].getBoundingClientRect();
+                top = Math.min(top, r.top);
+                bottom = Math.max(bottom, r.bottom);
+            }
+            if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
+            setRetornosListMaxPx(Math.max(48, Math.ceil(bottom - top)));
+        };
+
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(root);
+        window.addEventListener('resize', measure);
+        return () => {
+            ro.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, [retornosCount]);
 
     useEffect(() => {
         fetchInitialData();
@@ -70,22 +113,36 @@ const Home = () => {
                     </div>
 
                     {!loading && completedPack.practicas.length > 0 && (
-                        <div className="apple-card p-6 lg:p-8 bg-[var(--apple-card)] border border-[var(--apple-border)] animate-apple-in">
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
-                                <div>
-                                    <h2 className="text-lg font-black uppercase tracking-tight text-[var(--apple-text-main)]">Retornos Recientes</h2>
-                                    <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-1">
+                        <div className="apple-card space-y-6 lg:space-y-8 p-4 lg:p-8 min-h-0 flex flex-col transition-all animate-apple-in">
+                            <div className="flex items-start gap-4 border-b border-[var(--apple-border)]/70 pb-4 lg:pb-6">
+                                <div className="flex-1 min-w-0">
+                                    <h2 className="text-xl lg:text-2xl font-black tracking-tight uppercase text-[var(--apple-text-main)] leading-none">
+                                        Retornos Recientes
+                                    </h2>
+                                    <p className="text-[8px] lg:text-[10px] font-black uppercase tracking-[0.18em] text-[var(--apple-text-sub)] mt-1.5 opacity-60 leading-snug">
                                         Estudiantes que ya completaron sus prácticas hoy
                                     </p>
                                 </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden />
+                                    <span className="text-lg font-black tabular-nums text-[var(--apple-text-main)] tracking-tight leading-none">
+                                        {completedPack.practicas.length}
+                                    </span>
+                                </div>
                             </div>
-                            <ul className="space-y-2.5">
+
+                            <div
+                                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain pr-2 custom-scrollbar"
+                                style={retornosListMaxPx != null ? { maxHeight: retornosListMaxPx } : undefined}
+                            >
+                                <ul ref={retornosListRef} className="space-y-2.5 list-none p-0 m-0">
                                 {completedPack.practicas.map((ag) => {
                                     const duracion = fmtDuracionSalidaLlegada(ag.hora_salida, ag.SigafiHoraLlegada);
                                     return (
                                         <li
                                             key={ag.idPractica}
-                                            className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] px-4 py-3 hover:border-emerald-500/30 transition-colors space-y-2"
+                                            data-retorno-card
+                                            className="rounded-2xl border border-[var(--apple-border)]/80 bg-[var(--apple-card)] px-4 py-3 hover:border-emerald-500/30 transition-colors space-y-2"
                                         >
                                             {/* Fila 1: nombre */}
                                             <p className="text-sm font-black text-[var(--apple-text-main)] uppercase leading-snug line-clamp-1">
@@ -135,7 +192,8 @@ const Home = () => {
                                         </li>
                                     );
                                 })}
-                            </ul>
+                                </ul>
+                            </div>
                         </div>
                     )}
                 </div>
