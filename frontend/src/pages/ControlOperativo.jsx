@@ -1124,13 +1124,28 @@ const ControlOperativo = () => {
                                         </svg>
                                     </button>
                                 </div>
-                                <input
-                                    type="search"
-                                    value={filtroAgenda}
-                                    onChange={(e) => setFiltroAgenda(e.target.value)}
-                                    placeholder="Buscar cédula, nombre, instructor o vehículo…"
-                                    className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-xl px-3 py-2 text-[11px] font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/50 outline-none focus:border-[var(--istpet-gold)]"
-                                />
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        inputMode="search"
+                                        autoComplete="off"
+                                        value={filtroAgenda}
+                                        onChange={(e) => setFiltroAgenda(e.target.value)}
+                                        placeholder="Buscar cédula, nombre, instructor o vehículo…"
+                                        className="w-full rounded-full border border-[var(--apple-border)] bg-[var(--apple-card)] backdrop-blur-md px-5 py-2.5 pr-12 text-[11px] font-black tracking-wide text-[var(--apple-text-main)] shadow-[0_2px_10px_rgba(26,37,68,0.08)] outline-none transition-all placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/35 focus:border-[var(--istpet-gold)] focus:shadow-[0_2px_14px_rgba(212,166,74,0.14)]"
+                                    />
+                                    {filtroAgenda ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => setFiltroAgenda('')}
+                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-colors"
+                                            title="Limpiar"
+                                            aria-label="Limpiar búsqueda de agenda"
+                                        >
+                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    ) : null}
+                                </div>
                                 <div className="flex flex-wrap items-center gap-2 text-[8px] font-black uppercase tracking-wider text-[var(--apple-text-sub)]">
                                     <span className="text-[var(--apple-primary)] bg-[var(--apple-primary)]/10 px-2 py-0.5 rounded-full">{agendaFiltrada.length} vista</span>
                                     <span>{agendadosHoy.length} cargados</span>
@@ -1251,8 +1266,8 @@ const ControlOperativo = () => {
                 <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end animate-apple-in">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowAgendaDrawer(false)} />
                     <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-                        <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
-                        <div className="flex items-center justify-between px-5 py-3 gap-3">
+                        <div className="flex justify-center pt-2 pb-0.5"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
+                        <div className="flex items-center justify-between px-5 pt-1 pb-1 gap-3">
                             <div className="min-w-0 flex-1">
                                 <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3>
                             </div>
@@ -1269,14 +1284,29 @@ const ControlOperativo = () => {
                             </button>
                             <button type="button" onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
-                        <div className="px-5 pt-3 pb-3 shrink-0">
-                            <input
-                                type="search"
-                                value={filtroAgenda}
-                                onChange={(e) => setFiltroAgenda(e.target.value)}
-                                placeholder="Buscar cédula, nombre…"
-                                className="w-full bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--apple-text-main)] outline-none focus:border-[var(--istpet-gold)]"
-                            />
+                        <div className="px-5 pt-0 pb-3 shrink-0">
+                            <div className="relative">
+                                <input
+                                    type="text"
+                                    inputMode="search"
+                                    autoComplete="off"
+                                    value={filtroAgenda}
+                                    onChange={(e) => setFiltroAgenda(e.target.value)}
+                                    placeholder="Buscar cédula, nombre…"
+                                    className="w-full rounded-full border border-[var(--apple-border)] bg-[var(--apple-card)] backdrop-blur-md px-5 py-3 pr-12 text-[13px] font-black tracking-wide text-[var(--apple-text-main)] shadow-[0_2px_10px_rgba(26,37,68,0.08)] outline-none transition-all placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/35 focus:border-[var(--istpet-gold)] focus:shadow-[0_2px_14px_rgba(212,166,74,0.14)]"
+                                />
+                                {filtroAgenda ? (
+                                    <button
+                                        type="button"
+                                        onClick={() => setFiltroAgenda('')}
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-colors"
+                                        title="Limpiar"
+                                        aria-label="Limpiar búsqueda de agenda"
+                                    >
+                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                    </button>
+                                ) : null}
+                            </div>
                         </div>
                         <div className="overflow-y-auto flex-1 custom-scrollbar pb-10 min-h-0">
                             {agendadosHoy.length === 0 && !agendadosLoading ? (
