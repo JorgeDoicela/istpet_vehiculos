@@ -139,30 +139,20 @@ const Layout = ({ children }) => {
                                         Más de {limiteMinutosEnRuta / 60} h en ruta
                                     </p>
                                     {systemNotificationsSupported ? (
-                                        <div className="px-3 py-2.5 border-b border-[var(--apple-border)]/50 space-y-2">
-                                            {systemNotifPermission === 'granted' ? (
-                                                <p className="text-[10px] font-bold text-emerald-600 leading-snug">
-                                                    Avisos del sistema activados (también con la app en segundo plano, según el navegador).
-                                                </p>
-                                            ) : systemNotifPermission === 'denied' ? (
+                                        systemNotifPermission === 'default' ? (
+                                            <div className="px-3 py-2.5 border-b border-[var(--apple-border)]/50 space-y-2">
                                                 <p className="text-[10px] font-semibold text-[var(--apple-text-sub)] leading-snug">
-                                                    Las notificaciones están bloqueadas. Actívalas en los ajustes del navegador para verlas en el teléfono.
+                                                    Recibe avisos de rutas largas en la barra del sistema o en el teléfono (Chrome/Android; en iPhone suele requerir añadir la web a inicio).
                                                 </p>
-                                            ) : (
-                                                <>
-                                                    <p className="text-[10px] font-semibold text-[var(--apple-text-sub)] leading-snug">
-                                                        Recibe avisos de rutas largas en la barra del sistema o en el teléfono (Chrome/Android; en iPhone suele requerir añadir la web a inicio).
-                                                    </p>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => requestSystemNotifications()}
-                                                        className="w-full py-2.5 rounded-xl bg-[var(--istpet-navy)] text-white text-[10px] font-black uppercase tracking-widest touch-manipulation"
-                                                    >
-                                                        Activar notificaciones del navegador
-                                                    </button>
-                                                </>
-                                            )}
-                                        </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => requestSystemNotifications()}
+                                                    className="w-full py-2.5 rounded-xl bg-[var(--istpet-navy)] text-white text-[10px] font-black uppercase tracking-widest touch-manipulation"
+                                                >
+                                                    Activar notificaciones del navegador
+                                                </button>
+                                            </div>
+                                        ) : null
                                     ) : (
                                         <p className="px-3 py-2 text-[10px] text-[var(--apple-text-sub)] border-b border-[var(--apple-border)]/50">
                                             Este navegador no admite notificaciones del sistema.
