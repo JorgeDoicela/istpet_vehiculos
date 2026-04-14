@@ -13,7 +13,15 @@ export function normalizeAgendaPractica(ag) {
     estadoOperativo: ag.estadoOperativo ?? ag.EstadoOperativo ?? 'sin_sincronizar',
     HoraPlanificadaInicio: ag.horaPlanificadaInicio ?? ag.HoraPlanificadaInicio,
     HoraPlanificadaFin: ag.horaPlanificadaFin ?? ag.HoraPlanificadaFin,
-    EsPlanificado: ag.esPlanificado ?? ag.EsPlanificado ?? false
+    EsPlanificado: ag.esPlanificado ?? ag.EsPlanificado ?? false,
+    SigafiHoraLlegada: ag.sigafiHoraLlegada ?? ag.SigafiHoraLlegada,
+    hora_salida: ag.hora_salida ?? ag.horaSalida ?? ag.HoraSalida,
+    idPractica: ag.idPractica ?? ag.IdPractica,
+    idalumno: ag.idalumno ?? ag.Idalumno ?? ag.IdAlumno ?? '',
+    fecha: ag.fecha ?? ag.Fecha,
+    idPeriodo: ag.idPeriodo ?? ag.IdPeriodo,
+    idvehiculo: ag.idvehiculo ?? ag.idVehiculo ?? ag.Idvehiculo,
+    idProfesor: ag.idProfesor ?? ag.idprofesor ?? ''
   };
 }
 
@@ -81,6 +89,19 @@ export function fmtTimeSpan(val) {
   return s.substring(0, 5);
 }
 
+/** Hora de práctica (TimeSpan serializado como string o objeto `{ hours, minutes }` del API .NET). */
+export function fmtHoraPractica(val) {
+  if (val == null || val === '') return '—';
+  if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+    const h = val.hours ?? val.Hours;
+    const m = val.minutes ?? val.Minutes;
+    if (h != null || m != null) {
+      return `${String(Number(h) || 0).padStart(2, '0')}:${String(Number(m) || 0).padStart(2, '0')}`;
+    }
+  }
+  return fmtTimeSpan(val);
+}
+
 /** Minutos desde medianoche para ordenar / comparar horas de salida (TimeSpan string u objeto del API). */
 export function salidaToMinutes(val) {
   if (val == null) return NaN;
@@ -97,6 +118,20 @@ export function salidaToMinutes(val) {
     if (parts && parts.length >= 2) return Number(parts[0]) * 60 + Number(parts[1]);
   }
   return NaN;
+}
+
+/** Duración entre hora de salida y hora de llegada (mismo día; si llegada es menor que salida se asume cruce de medianoche). */
+export function fmtDuracionSalidaLlegada(salida, llegada) {
+  const sm = salidaToMinutes(salida);
+  const lm = salidaToMinutes(llegada);
+  if (Number.isNaN(sm) || Number.isNaN(lm)) return '';
+  let d = lm - sm;
+  if (d < 0) d += 24 * 60;
+  if (d < 1) return '< 1 min';
+  if (d < 60) return `${d} min`;
+  const h = Math.floor(d / 60);
+  const min = d % 60;
+  return min ? `${h} h ${min} min` : `${h} h`;
 }
 
 /** Minutos desde la hora de salida hasta ahora (mismo criterio que `fmtTiempoEnRuta`, mismo día); null si no aplica. */
