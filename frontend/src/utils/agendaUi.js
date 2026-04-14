@@ -81,6 +81,39 @@ export function fmtTimeSpan(val) {
   return s.substring(0, 5);
 }
 
+/** Minutos desde medianoche para ordenar / comparar horas de salida (TimeSpan string u objeto del API). */
+export function salidaToMinutes(val) {
+  if (val == null) return NaN;
+  if (typeof val === 'object' && val !== null) {
+    const h = val.hours ?? val.Hours;
+    const m = val.minutes ?? val.Minutes;
+    if (h != null || m != null) return (Number(h) || 0) * 60 + (Number(m) || 0);
+  }
+  const s = String(val);
+  const matches = s.match(/^(\d{1,2}):(\d{2})/);
+  if (matches) return Number(matches[1]) * 60 + Number(matches[2]);
+  if (s.includes('T')) {
+    const parts = s.split('T')[1]?.split(':');
+    if (parts && parts.length >= 2) return Number(parts[0]) * 60 + Number(parts[1]);
+  }
+  return NaN;
+}
+
+/** Etiqueta “X min / h en ruta” respecto a la hora local actual; null si no aplica. */
+export function fmtTiempoEnRuta(val) {
+  if (val == null) return null;
+  const now = new Date();
+  const ahoraMinutos = now.getHours() * 60 + now.getMinutes();
+  const salidaMinutos = salidaToMinutes(val);
+  if (Number.isNaN(salidaMinutos)) return null;
+  const diferencia = ahoraMinutos - salidaMinutos;
+  if (diferencia < 0) return null;
+  if (diferencia < 60) return `${diferencia} min en ruta`;
+  const horas = Math.floor(diferencia / 60);
+  const minutos = diferencia % 60;
+  return minutos === 0 ? `${horas} h en ruta` : `${horas} h ${minutos} min en ruta`;
+}
+
 export function fmtUltimaCargaAgenda(iso) {
   if (!iso) return '';
   const d = new Date(iso);
