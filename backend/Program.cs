@@ -571,20 +571,21 @@ await using (var scope = app.Services.CreateAsyncScope())
 
 
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ISTPET API v1");
-    c.RoutePrefix = "swagger"; // Asegura acceso en /swagger
-});
-
-app.UseMiddleware<backend.Middleware.ErrorHandlingMiddleware>();
-
-// CORS: permisivo en desarrollo, restrictivo en producción
+// CORS debe ser lo primero para que las solicitudes preflight OPTIONS
+// reciban los headers correctos antes de cualquier otro middleware.
 if (app.Environment.IsDevelopment())
     app.UseCors("DevelopmentPolicy");
 else
     app.UseCors("ProductionPolicy");
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "ISTPET API v1");
+    c.RoutePrefix = "swagger";
+});
+
+app.UseMiddleware<backend.Middleware.ErrorHandlingMiddleware>();
 
 app.UseRateLimiter();
 
