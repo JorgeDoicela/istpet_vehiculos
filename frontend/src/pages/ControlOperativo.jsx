@@ -401,7 +401,9 @@ const ControlOperativo = () => {
     };
 
     const handleSeleccionarVehiculo = (veh) => {
-        setVehiculoSeleccionado(veh);
+        setVehiculoSeleccionado((prev) =>
+            prev?.idVehiculo === veh?.idVehiculo ? null : veh
+        );
     };
 
     const procesarSalida = async () => {
@@ -894,7 +896,7 @@ const ControlOperativo = () => {
                                             value={filtroLlegada}
                                             onChange={(e) => setFiltroLlegada(e.target.value)}
                                             placeholder="Buscar estudiante, cédula, vehículo o instructor…"
-                                            className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/40 outline-none transition-colors focus:border-[var(--istpet-gold)] focus:ring-1 focus:ring-[var(--istpet-gold)]/20"
+                                            className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-full pl-10 pr-4 py-2.5 text-xs font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/40 outline-none transition-colors shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] focus:border-[var(--istpet-gold)] focus:ring-1 focus:ring-[var(--istpet-gold)]/20"
                                         />
                                     </div>
                                     <p className="mt-2 text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.1em] px-1 tabular-nums">
@@ -918,8 +920,13 @@ const ControlOperativo = () => {
                                                     return (
                                                     <div
                                                         key={c.idPractica}
-                                                        onClick={() => !llegadaSubmitting && setClaseSeleccionada(c)}
-                                                        className={`group relative rounded-2xl border px-5 py-4 transition-all duration-200 ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
+                                                        onClick={() => {
+                                                            if (llegadaSubmitting) return;
+                                                            setClaseSeleccionada(prev =>
+                                                                prev?.idPractica === c.idPractica ? null : c
+                                                            );
+                                                        }}
+                                                        className={`group relative rounded-[1.65rem] border px-5 py-4 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
                                                     >
                                                         {/* Fila 1: Estudiante + Hora */}
                                                         <div className="flex items-start justify-between gap-4 mb-3">
@@ -972,7 +979,7 @@ const ControlOperativo = () => {
 
                                     {claseSeleccionada && (
                                         <div className="mt-6 animate-apple-in">
-                                            <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl p-4 space-y-4">
+                                            <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-[1.65rem] p-4 space-y-4 shadow-[inset_0_1px_1px_rgba(0,0,0,0.04)]">
                                                 <div className="text-center space-y-1">
                                                     <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide">Registrar llegada de</p>
                                                     <p className="text-sm font-black text-[var(--apple-text-main)] uppercase leading-snug">{claseSeleccionada.estudiante || '—'}</p>
@@ -985,7 +992,7 @@ const ControlOperativo = () => {
                                                     type="button"
                                                     onClick={procesarLlegada}
                                                     disabled={llegadaSubmitting}
-                                                    className={`w-full py-3.5 rounded-xl text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
+                                                    className={`w-full py-3.5 rounded-full text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
                                                 >
                                                     {llegadaSubmitting ? (
                                                         <>

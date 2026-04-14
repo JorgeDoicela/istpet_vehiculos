@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { fmtTimeSpan } from '../../utils/agendaUi';
+import { fmtTimeSpan, fmtTiempoEnRuta } from '../../utils/agendaUi';
 
 /**
  * Active Classes Component: Absolute SIGAFI Parity 2026.
@@ -15,24 +15,6 @@ const ActiveClasses = ({ classes }) => {
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
     }, []);
-
-    const fmtTiempoEnRuta = (salida) => {
-        if (!salida) return null;
-
-        const now = new Date();
-        const ahoraMinutos = now.getHours() * 60 + now.getMinutes();
-        const salidaMinutos = salida.hours * 60 + salida.minutes;
-        const diferencia = ahoraMinutos - salidaMinutos;
-
-        if (Number.isNaN(diferencia) || diferencia < 0) return null;
-        if (diferencia < 60) return `${diferencia} min en ruta`;
-
-        const horas = Math.floor(diferencia / 60);
-        const minutos = diferencia % 60;
-        return minutos === 0
-            ? `${horas} h en ruta`
-            : `${horas} h ${minutos} min en ruta`;
-    };
 
     return (
         <div className="apple-card space-y-6 lg:space-y-8 p-4 lg:p-8 min-h-[400px] flex flex-col transition-all">
@@ -88,7 +70,7 @@ const ActiveClasses = ({ classes }) => {
                                         </span>
                                     </div>
                                     {tiempoEnRuta && (
-                                        <span className="text-[7px] font-black uppercase tracking-[0.12em] text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full shrink-0">
+                                        <span className="text-[7px] font-black uppercase tracking-[0.12em] text-emerald-600 shrink-0">
                                             {tiempoEnRuta}
                                         </span>
                                     )}
