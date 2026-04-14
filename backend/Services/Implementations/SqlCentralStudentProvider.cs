@@ -390,7 +390,7 @@ namespace backend.Services.Implementations
                         av.idProfesor AS idProfesor,
                         av.idPeriodo AS idPeriodo,
                         fh.fecha AS fecha,
-                        p.hora_salida AS hora_salida,
+                        COALESCE(p.hora_salida, hc.hora_inicio) AS hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
                         CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
