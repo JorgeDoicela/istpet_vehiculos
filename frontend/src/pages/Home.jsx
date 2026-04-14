@@ -39,10 +39,12 @@ const Home = () => {
             <div className="space-y-8">
                 <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
                     <div>
-                        <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
-                            Pista & Monitoreo
+                        <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-0">
+                            Visión de flota en tiempo real
+                        </p>
+                        <h1 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
+                            Pista &amp; Monitoreo
                         </h1>
-                        <p className="text-[var(--apple-text-sub)] font-bold text-[10px] lg:text-sm uppercase tracking-widest opacity-70 mt-1">Visión de flota en tiempo real</p>
                     </div>
 
                 </div>

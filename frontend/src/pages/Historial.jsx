@@ -7,12 +7,9 @@ const Historial = () => {
         <Layout>
             <div className="space-y-5">
                 <div className="px-1">
-                    <h1 className="text-3xl lg:text-5xl font-black tracking-tighter text-[var(--apple-text-main)] uppercase bg-clip-text text-transparent bg-gradient-to-b from-[var(--apple-text-main)] to-[var(--apple-text-sub)]">
+                    <h1 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
                         Historial
                     </h1>
-                    <p className="text-[var(--apple-text-sub)] font-bold text-[10px] lg:text-sm uppercase tracking-widest opacity-70 mt-1">
-                        Prácticas · Estudiantes · Instructores · Vehículos
-                    </p>
                 </div>
                 <HistorialPanel />
             </div>

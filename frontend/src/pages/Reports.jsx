@@ -21,8 +21,6 @@ const Reports = () => {
         fechaFin: new Date().toISOString().split('T')[0],
         instructorId: ''
     });
-    const [statusMsg, setStatusMsg] = useState('');
-
     useEffect(() => {
         cargarInstructores();
         ejecutarReporte();
@@ -111,12 +109,12 @@ const Reports = () => {
                 <div className="reports-header mb-6 sm:mb-8">
                     <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0">
-                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--apple-text-main)] tracking-tighter break-words">Reporte de Prácticas</h1>
-                            {statusMsg && (
-                                <p className="text-[10px] font-bold text-[var(--apple-primary)] mt-2 uppercase tracking-wide opacity-80 bg-[var(--apple-primary)]/10 inline-block px-3 py-1 rounded-full">
-                                    {statusMsg}
-                                </p>
-                            )}
+                            <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-0">
+                                Administración
+                            </p>
+                            <h1 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
+                                Reporte de Prácticas
+                            </h1>
                         </div>
 
                         <div className="flex w-full sm:w-auto shrink-0">
