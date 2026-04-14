@@ -568,7 +568,7 @@ const ControlOperativo = () => {
                         </div>
 
                         {activeTab === 'salida' ? (
-                            <div id="ficha-salida" className="apple-card !pt-9 lg:!pt-12 pb-32 scroll-mt-20">
+                            <div id="ficha-salida" className="apple-card !pt-9 lg:!pt-12 pb-20 lg:pb-10 scroll-mt-20">
                                 <div className="mb-6 px-2 flex items-start justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
