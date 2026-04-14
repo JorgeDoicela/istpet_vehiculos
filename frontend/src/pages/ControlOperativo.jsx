@@ -20,6 +20,8 @@ import {
     fmtTiempoEnRuta
 } from '../utils/agendaUi';
 
+const idVehiculoKey = (id) => (id == null || id === '' ? '' : String(id));
+
 /**
  * Control Operativo: Absolute SIGAFI Parity Edition 2026.
  * Guaranteed 1:1 naming with central database for idAlumno, idProfesor, idVehiculo.
@@ -824,7 +826,30 @@ const ControlOperativo = () => {
                                                             return matchLicencia && matchFiltro;
                                                         });
 
-                                                        if (filtered.length === 0) {
+                                                        const sel = vehiculoSeleccionado;
+                                                        const selKey = sel?.idVehiculo != null ? idVehiculoKey(sel.idVehiculo) : '';
+                                                        const selectedInFiltered = selKey !== '' && filtered.some(
+                                                            (v) => idVehiculoKey(v.idVehiculo) === selKey
+                                                        );
+                                                        const selTipoLic =
+                                                            selKey !== ''
+                                                                ? (vehiculos.find((v) => idVehiculoKey(v.idVehiculo) === selKey)?.idTipoLicencia ?? sel?.idTipoLicencia)
+                                                                : undefined;
+                                                        /** Solo mostrar pin / borde dorado en la pestaña C/D/E que corresponda al tipo del vehículo. */
+                                                        const seleccionCoincideConPestañaLicencia =
+                                                            !filtroLicencia ||
+                                                            (selTipoLic != null && licIdMap[filtroLicencia]?.includes(selTipoLic));
+
+                                                        let vehiculosParaGrid = filtered;
+                                                        if (selKey !== '' && !selectedInFiltered && seleccionCoincideConPestañaLicencia) {
+                                                            const fromCatalog = vehiculos.find(
+                                                                (v) => idVehiculoKey(v.idVehiculo) === selKey
+                                                            );
+                                                            const pinned = fromCatalog || sel;
+                                                            if (pinned) vehiculosParaGrid = [pinned, ...filtered];
+                                                        }
+
+                                                        if (vehiculosParaGrid.length === 0) {
                                                             return (
                                                                 <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border border-dashed border-[var(--apple-border)] shadow-inner">
                                                                     <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">SIN UNIDADES DISPONIBLES</p>
@@ -832,12 +857,27 @@ const ControlOperativo = () => {
                                                             );
                                                         }
 
-                                                        return filtered.map(v => (
+                                                        const sugKey = idVehiculoKey(estudianteData?.idPracticaCentral);
+                                                        const sugTipoLic =
+                                                            sugKey !== ''
+                                                                ? vehiculos.find((x) => idVehiculoKey(x.idVehiculo) === sugKey)?.idTipoLicencia
+                                                                : undefined;
+                                                        const sugerenciaCoincideConPestaña =
+                                                            !filtroLicencia ||
+                                                            (sugTipoLic != null && licIdMap[filtroLicencia]?.includes(sugTipoLic));
+
+                                                        return vehiculosParaGrid.map(v => (
                                                             <VehicleCard
-                                                                key={v.idVehiculo}
+                                                                key={idVehiculoKey(v.idVehiculo)}
                                                                 vehiculo={v}
-                                                                isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
-                                                                isSuggested={estudianteData?.idPracticaCentral === v.idVehiculo}
+                                                                isSelected={
+                                                                    seleccionCoincideConPestañaLicencia &&
+                                                                    selKey === idVehiculoKey(v.idVehiculo)
+                                                                }
+                                                                isSuggested={
+                                                                    sugerenciaCoincideConPestaña &&
+                                                                    sugKey === idVehiculoKey(v.idVehiculo)
+                                                                }
                                                                 onSelect={handleSeleccionarVehiculo}
                                                             />
                                                         ));
