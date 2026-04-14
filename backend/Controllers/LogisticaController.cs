@@ -701,6 +701,24 @@ namespace backend.Controllers
             return BadRequest(ApiResponse<string>.Fail($"Error: {result}"));
         }
 
+        [HttpPost("llegada")]
+        public async Task<ActionResult<ApiResponse<string>>> RegistrarLlegada([FromBody] LlegadaRequest req)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var usuarioLogin = User.Identity?.Name ?? req.registradoPor.ToString();
+            var result = await _logisticaService.RegistrarLlegadaAsync(
+                req.idPractica, usuarioLogin);
+
+            if (result == "EXITO")
+            {
+                await _audit.LogAsync(
+                    usuarioLogin, "LLEGADA",
+                    entidadId: $"practica:{req.idPractica}",
+                    detalles: $"Salió: OK.",
+                    ipOrigen: ip);
+                return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
+            }
+
             return BadRequest(ApiResponse<string>.Fail($"Alerta: {result}"));
         }
 
