@@ -691,12 +691,12 @@ const ControlOperativo = () => {
                                             <div className="grid grid-cols-3 gap-2">
                                                 {vehiculos.length > 0 ? (
                                                     (() => {
-                                                        const licIdMap = { 'C': 1, 'D': 2, 'E': 3 };
+                                                        const licIdMap = { 'C': [1, 3], 'D': [4], 'E': [5] };
                                                         const filtered = vehiculos.filter(v => {
                                                             const term = filtroVehiculo.toLowerCase().trim();
                                                             const matchLicencia = filtroLicencia
-                                                                ? v.idTipoLicencia === licIdMap[filtroLicencia]
-                                                                : (!estudianteData || v.idTipoLicencia <= (estudianteData.idTipoLicencia || 3));
+                                                                ? licIdMap[filtroLicencia].includes(v.idTipoLicencia)
+                                                                : true;
                                                             const matchFiltro = !term ||
                                                                 v.vehiculoStr?.toLowerCase().includes(term) ||
                                                                 v.numeroVehiculo?.toString().includes(term);

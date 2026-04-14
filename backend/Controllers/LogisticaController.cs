@@ -40,19 +40,16 @@ namespace backend.Controllers
         private readonly IAuditService _audit;
         private readonly ISigafiMirrorPersistenceService _mirrorPersist;
         private readonly ILogger<LogisticaController> _logger;
+        private readonly IConfiguration _config;
 
-        /// <param name="usuario">Cédula del usuario.</param>
-        /// <param name="sigafiNoDisponibleEnLogin">
-        /// Si ya falló <see cref="ICentralStudentProvider.GetWebUserFromSigafiAsync"/> con excepción,
-        /// no volvemos a llamar a SIGAFI aquí (evita esperas largas en cadena).
-        /// </param>
         public LogisticaController(
             AppDbContext context,
             ILogisticaService logisticaService,
             ICentralStudentProvider centralProvider,
             IAuditService audit,
             ISigafiMirrorPersistenceService mirrorPersist,
-            ILogger<LogisticaController> logger)
+            ILogger<LogisticaController> logger,
+            IConfiguration config)
         {
             _context = context;
             _logisticaService = logisticaService;
@@ -60,6 +57,7 @@ namespace backend.Controllers
             _audit = audit;
             _mirrorPersist = mirrorPersist;
             _logger = logger;
+            _config = config;
         }
 
         [HttpGet("estudiante/{idAlumno}")]
@@ -463,8 +461,11 @@ namespace backend.Controllers
                         apellidos = (cp.apellidos ?? "").ToUpper(),
                         activo = 1
                     };
-                    _context.Instructores.Add(localProf);
-                    await _context.SaveChangesAsync();
+                    if (!IsDirectMode())
+                    {
+                        _context.Instructores.Add(localProf);
+                        await _context.SaveChangesAsync();
+                    }
                 }
             }
 
@@ -564,7 +565,7 @@ namespace backend.Controllers
                               numero_vehiculo = v.numero_vehiculo ?? "0",
                               placa = v.placa,
                               idInstructorFijo = vo != null ? vo.id_instructor_fijo : null,
-                              idTipoLicencia = vo != null && vo.id_tipo_licencia.HasValue ? vo.id_tipo_licencia.Value : 0,
+                              idTipoLicencia = v.idCategoria ?? 0,
                               estadoMecanico = vo != null ? vo.estado_mecanico : "OPERATIVO"
                           }).ToListAsync();
 
@@ -626,8 +627,36 @@ namespace backend.Controllers
             }
 
             var existing = await _context.Instructores.FirstOrDefaultAsync(i => i.idProfesor == centralData.idProfesor);
-            if (existing == null)
+            if (!IsDirectMode())
             {
+                if (existing == null)
+                {
+                    existing = new Instructor
+                    {
+                        idProfesor = centralData.idProfesor,
+                        primerNombre = (centralData.primerNombre ?? "S/N").ToUpper(),
+                        primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
+                        nombres = (centralData.nombres ?? "").ToUpper(),
+                        apellidos = (centralData.apellidos ?? "").ToUpper(),
+                        tipoSangre = centralData.tipoSangre ?? "S/T",
+                        activo = centralData.activo
+                    };
+                    _context.Instructores.Add(existing);
+                }
+                else
+                {
+                    existing.tipoSangre = centralData.tipoSangre ?? existing.tipoSangre ?? "S/T";
+                    existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre ?? "S/N").ToUpper();
+                    existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido ?? "S/N").ToUpper();
+                    existing.nombres = (centralData.nombres ?? existing.nombres ?? "").ToUpper();
+                    existing.apellidos = (centralData.apellidos ?? existing.apellidos ?? "").ToUpper();
+                    existing.activo = centralData.activo;
+                }
+                await _context.SaveChangesAsync();
+            }
+            else if (existing == null)
+            {
+                // En modo Direct: construir objeto en memoria desde SIGAFI sin persistir
                 existing = new Instructor
                 {
                     idProfesor = centralData.idProfesor,
@@ -635,22 +664,9 @@ namespace backend.Controllers
                     primerApellido = (centralData.primerApellido ?? "S/N").ToUpper(),
                     nombres = (centralData.nombres ?? "").ToUpper(),
                     apellidos = (centralData.apellidos ?? "").ToUpper(),
-                    tipoSangre = centralData.tipoSangre ?? "S/T",
                     activo = centralData.activo
                 };
-                _context.Instructores.Add(existing);
             }
-            else
-            {
-                existing.tipoSangre = centralData.tipoSangre ?? existing.tipoSangre ?? "S/T";
-                existing.primerNombre = (centralData.primerNombre ?? existing.primerNombre ?? "S/N").ToUpper();
-                existing.primerApellido = (centralData.primerApellido ?? existing.primerApellido ?? "S/N").ToUpper();
-                existing.nombres = (centralData.nombres ?? existing.nombres ?? "").ToUpper();
-                existing.apellidos = (centralData.apellidos ?? existing.apellidos ?? "").ToUpper();
-                existing.activo = centralData.activo;
-            }
-
-            await _context.SaveChangesAsync();
 
             return Ok(ApiResponse<InstructorLogisticaResponse>.Ok(new InstructorLogisticaResponse
             {
@@ -828,9 +844,10 @@ namespace backend.Controllers
 
         private bool IsDirectMode()
         {
-            // Detectamos si estamos apuntando a la IP de SIGAFI directamente
-            var conn = _context.Database.GetDbConnection().ConnectionString;
-            return conn.Contains("192.168.7.50");
+            var mode = Environment.GetEnvironmentVariable("DATABASE_MODE")
+                       ?? _config["DatabaseSettings:Database_Mode"]
+                       ?? "Mirror";
+            return mode.Equals("Direct", StringComparison.OrdinalIgnoreCase);
         }
     }
 }
