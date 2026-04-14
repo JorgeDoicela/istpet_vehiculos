@@ -47,6 +47,7 @@ namespace backend.Models
         public string? user_llegada { get; set; }
 
         public byte? cancelado { get; set; } = 0;
+        public string? observaciones { get; set; }
 
         // Navigation (Local Logic)
         [ForeignKey("idalumno")]

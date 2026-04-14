@@ -296,6 +296,7 @@ namespace backend.Services.Implementations
                     WHERE TRIM(av.idAlumno) = TRIM(@p0) 
                     AND fh.fecha = CURDATE() 
                     AND COALESCE(h.activo, 1) = 1 
+                    AND COALESCE(h.asiste, 0) = 0
                     AND (p.idPractica IS NULL OR p.hora_llegada IS NULL)
                     ORDER BY hc.hora_inicio ASC
                     LIMIT 1";
@@ -347,7 +348,8 @@ namespace backend.Services.Implementations
                         WHERE TRIM(av.idAlumno) = TRIM(@p0)
                         AND fh.fecha = CURDATE()
                         AND av.idVehiculo = @p1
-                        AND COALESCE(h.activo, 1) = 1";
+                        AND COALESCE(h.activo, 1) = 1
+                        AND COALESCE(h.asiste, 0) = 0";
 
                     using var conn = new MySqlConnection(_connectionString);
                     await conn.OpenAsync();
@@ -407,7 +409,10 @@ namespace backend.Services.Implementations
                     JOIN alumnos a ON a.idAlumno = av.idAlumno
                     JOIN vehiculos v ON v.idVehiculo = av.idVehiculo
                     JOIN profesores pr ON pr.idProfesor = av.idProfesor
-                    WHERE fh.fecha = CURDATE() AND COALESCE(h.activo, 1) = 1 AND COALESCE(av.activa, 1) = 1
+                    WHERE fh.fecha = CURDATE() 
+                    AND COALESCE(h.activo, 1) = 1 
+                    AND COALESCE(h.asiste, 0) = 0
+                    AND COALESCE(av.activa, 1) = 1
 
                     UNION
 
@@ -598,6 +603,7 @@ namespace backend.Services.Implementations
                     LEFT JOIN profesores pr ON pr.idProfesor = a.idProfesor
                     WHERE TRIM(a.idAlumno) = TRIM(@p0) 
                     AND COALESCE(h.activo, 1) = 1
+                    AND COALESCE(h.asiste, 0) = 0
                     AND fh.fecha >= CURDATE()
                     ORDER BY 
                         (CASE 
@@ -621,7 +627,8 @@ namespace backend.Services.Implementations
                         JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
                         WHERE h.idAsignacion = @p0
                         AND fh.fecha = CURDATE()
-                        AND COALESCE(h.activo, 1) = 1";
+                        AND COALESCE(h.activo, 1) = 1
+                        AND COALESCE(h.asiste, 0) = 0";
 
                     using var conn = new MySqlConnection(_connectionString);
                     await conn.OpenAsync();

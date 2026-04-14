@@ -23,11 +23,13 @@ namespace backend.Services.Implementations
         }
 
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, IEnumerable<int>? idsAsignacionHorario = null)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, IEnumerable<int>? idsAsignacionHorario = null, string? observaciones = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // ... (existing logging and matricula fetch logic assumed to be above)
+                // Need to see where the actual code starts to replace correctly.
                 // 1. Validar que el vehículo exista y esté operativo (con JIT SYNC)
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
                 if (vehiculo == null)
@@ -119,7 +121,8 @@ namespace backend.Services.Implementations
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
-                    cancelado = 0
+                    cancelado = 0,
+                    observaciones = observaciones // 🚀 Guardamos observación en la práctica
                 };
 
                 _context.Practicas.Add(practica);
@@ -130,12 +133,27 @@ namespace backend.Services.Implementations
                 {
                     foreach (var idH in idsAsignacionHorario)
                     {
+                        // 1. Vincular práctica con el slot de agenda
                         var vinculacion = new PracticaHorarioAlumno
                         {
                             idPractica = practica.idPractica,
                             idAsignacionHorario = idH
                         };
                         _context.PracticasHorarios.Add(vinculacion);
+
+                        // 2. Marcar Asistencia y Registrar Observación en la agenda central
+                        var horario = await _context.HorariosAlumnos.FindAsync(idH);
+                        if (horario != null)
+                        {
+                            horario.asiste = 1;
+                            // Sincronizamos la observación si existe para trazabilidad total
+                            if (!string.IsNullOrEmpty(observaciones))
+                            {
+                                horario.observacion = observaciones.Length > 100 
+                                    ? observaciones.Substring(0, 97) + "..." 
+                                    : observaciones;
+                            }
+                        }
                     }
                     await _context.SaveChangesAsync();
                 }

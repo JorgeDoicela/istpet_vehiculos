@@ -658,7 +658,7 @@ namespace backend.Controllers
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             var result = await _logisticaService.RegistrarSalidaAsync(
                 req.idMatricula, req.idVehiculo, req.idInstructor,
-                req.registradoPor, req.idsAsignacionHorario);
+                req.registradoPor, req.idsAsignacionHorario, req.observaciones);
 
             if (result == "EXITO")
             {
