@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { fmtTimeSpan, fmtTiempoEnRuta } from '../../utils/agendaUi';
+
+const MAX_VISIBLE_CARDS = 3;
 
 /**
  * Active Classes Component: Absolute SIGAFI Parity 2026.
@@ -9,6 +11,9 @@ const ActiveClasses = ({ classes }) => {
     const safeClasses = Array.isArray(classes) ? classes : [];
 
     const [horaActual, setHoraActual] = useState('');
+    const [listMaxPx, setListMaxPx] = useState(null);
+    const gridRef = useRef(null);
+
     useEffect(() => {
         const tick = () => setHoraActual(new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
         tick();
@@ -16,8 +21,48 @@ const ActiveClasses = ({ classes }) => {
         return () => clearInterval(id);
     }, []);
 
+    const classCount = Array.isArray(classes) ? classes.length : 0;
+
+    useLayoutEffect(() => {
+        const grid = gridRef.current;
+        if (!grid || classCount === 0) {
+            setListMaxPx(null);
+            return;
+        }
+
+        const measure = () => {
+            const g = gridRef.current;
+            if (!g) return;
+            const cards = [...g.querySelectorAll('[data-active-class-card]')];
+            if (cards.length === 0) {
+                setListMaxPx(null);
+                return;
+            }
+            const m = Math.min(cards.length, MAX_VISIBLE_CARDS);
+            let top = Infinity;
+            let bottom = -Infinity;
+            for (let i = 0; i < m; i++) {
+                const r = cards[i].getBoundingClientRect();
+                top = Math.min(top, r.top);
+                bottom = Math.max(bottom, r.bottom);
+            }
+            if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
+            const px = Math.ceil(bottom - top);
+            setListMaxPx(Math.max(48, px));
+        };
+
+        measure();
+        const ro = new ResizeObserver(measure);
+        ro.observe(grid);
+        window.addEventListener('resize', measure);
+        return () => {
+            ro.disconnect();
+            window.removeEventListener('resize', measure);
+        };
+    }, [classCount]);
+
     return (
-        <div className="apple-card space-y-6 lg:space-y-8 p-4 lg:p-8 min-h-[400px] flex flex-col transition-all">
+        <div className="apple-card space-y-6 lg:space-y-8 p-4 lg:p-8 min-h-0 flex flex-col transition-all">
             <div className="flex items-start gap-4 border-b border-[var(--apple-border)]/70 pb-4 lg:pb-6">
                 <div className="flex-1">
                     <h3 className="text-xl lg:text-2xl font-black tracking-tight uppercase text-[var(--apple-text-main)] leading-none">En Ruta</h3>
@@ -29,20 +74,27 @@ const ActiveClasses = ({ classes }) => {
                 </div>
             </div>
 
-            <div className="flex-1 space-y-3 lg:space-y-4 overflow-y-auto max-h-[600px] pr-2 custom-scrollbar">
+            <div
+                className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden overscroll-y-contain pr-2 custom-scrollbar"
+                style={listMaxPx != null ? { maxHeight: listMaxPx } : undefined}
+            >
                 {safeClasses.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full py-12 text-[var(--apple-text-sub)] gap-3 opacity-30">
+                    <div className="flex flex-col items-center justify-center min-h-[220px] py-12 text-[var(--apple-text-sub)] gap-3 opacity-30">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                         </svg>
                         <p className="text-[10px] font-black uppercase tracking-[0.2em]">Sin clases activas</p>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
+                    <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
                         {safeClasses.map((c, idx) => {
                             const tiempoEnRuta = fmtTiempoEnRuta(c.salida);
                             return (
-                            <div key={c.idRegistro || c.idPractica || idx} className="group flex flex-col gap-3 p-4 lg:p-5 rounded-3xl transition-all duration-500 border border-[var(--apple-border)]/80 bg-[var(--apple-card)] hover:border-[var(--istpet-gold)]/30 hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)]">
+                            <div
+                                key={c.idRegistro || c.idPractica || idx}
+                                data-active-class-card
+                                className="group flex flex-col gap-3 p-4 lg:p-5 rounded-3xl transition-all duration-500 border border-[var(--apple-border)]/80 bg-[var(--apple-card)] hover:border-[var(--istpet-gold)]/30 hover:shadow-[0_8px_24px_rgba(0,0,0,0.07)]"
+                            >
 
                                 {/* Fila 1: Nombre + Hora */}
                                 <div className="flex justify-between items-start gap-2">
