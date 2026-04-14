@@ -42,10 +42,10 @@ const Reports = () => {
         setStatusMsg('');
         try {
             const res = await reportService.getReportePracticas(filtros);
-            
+
             // Extraer lista con soporte para mayúsculas/minúsculas de forma limpia
             const rawData = res?.Data || res?.data || (Array.isArray(res) ? res : []);
-            
+
             const listaNormalizada = rawData.map(item => ({
                 idPractica: item.idPractica || item.IdPractica,
                 idProfesor: item.idProfesor || item.IdProfesor,
@@ -64,7 +64,7 @@ const Reports = () => {
             }));
 
             setData(listaNormalizada);
-            
+
             if (listaNormalizada.length > 0) {
                 setStatusMsg(`Se encontraron ${listaNormalizada.length} registros totales.`);
             } else {
@@ -111,7 +111,6 @@ const Reports = () => {
                 <div className="reports-header mb-6 sm:mb-8">
                     <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
                         <div className="min-w-0">
-                            <p className="text-[10px] font-black tracking-[0.3em] text-[var(--istpet-gold)] uppercase mb-1">Administración Zenith</p>
                             <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-[var(--apple-text-main)] tracking-tighter break-words">Reporte de Prácticas</h1>
                             {statusMsg && (
                                 <p className="text-[10px] font-bold text-[var(--apple-primary)] mt-2 uppercase tracking-wide opacity-80 bg-[var(--apple-primary)]/10 inline-block px-3 py-1 rounded-full">
@@ -119,9 +118,9 @@ const Reports = () => {
                                 </p>
                             )}
                         </div>
-                        
+
                         <div className="flex w-full sm:w-auto shrink-0">
-                            <button 
+                            <button
                                 onClick={exportToExcel}
                                 disabled={data.length === 0}
                                 className="w-full sm:w-auto justify-center px-6 py-3 bg-[var(--istpet-gold)] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30"
@@ -139,8 +138,8 @@ const Reports = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 items-end">
                         <div className="space-y-2">
                             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Desde</label>
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 name="fechaInicio"
                                 value={filtros.fechaInicio}
                                 onChange={handleFiltroChange}
@@ -149,8 +148,8 @@ const Reports = () => {
                         </div>
                         <div className="space-y-2">
                             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Hasta</label>
-                            <input 
-                                type="date" 
+                            <input
+                                type="date"
                                 name="fechaFin"
                                 value={filtros.fechaFin}
                                 onChange={handleFiltroChange}
@@ -159,7 +158,7 @@ const Reports = () => {
                         </div>
                         <div className="space-y-2">
                             <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Filtro Instructor</label>
-                            <select 
+                            <select
                                 name="instructorId"
                                 value={filtros.instructorId}
                                 onChange={handleFiltroChange}
@@ -171,7 +170,7 @@ const Reports = () => {
                                 ))}
                             </select>
                         </div>
-                        <button 
+                        <button
                             onClick={ejecutarReporte}
                             className="bg-[var(--apple-text-main)] text-[var(--apple-bg)] h-12 sm:col-span-2 xl:col-span-1 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2"
                         >

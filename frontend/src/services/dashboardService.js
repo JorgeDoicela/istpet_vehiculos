@@ -53,6 +53,23 @@ const dashboardService = {
       fuenteDatos: data?.fuenteDatos ?? data?.FuenteDatos ?? 'sigafi',
       obtenidoEn: data?.obtenidoEn ?? data?.ObtenidoEn ?? null
     };
+  },
+
+  getHistorialPracticas: async ({ fechaInicio, fechaFin, instructorId, busqueda, estado, limit = 200 } = {}) => {
+    const params = new URLSearchParams();
+    if (fechaInicio) params.append('fechaInicio', fechaInicio);
+    if (fechaFin) params.append('fechaFin', fechaFin);
+    if (instructorId) params.append('instructorId', instructorId);
+    if (busqueda) params.append('busqueda', busqueda);
+    if (estado) params.append('estado', estado);
+    params.append('limit', String(limit));
+
+    const response = await api.get(`/Dashboard/historial-practicas?${params.toString()}`, { timeout: 30000 });
+    const body = response?.data;
+    const ok = body?.success ?? body?.Success;
+    if (ok === false) throw new Error(body?.message ?? body?.Message ?? 'Historial no disponible');
+    const data = body?.data ?? body?.Data;
+    return Array.isArray(data) ? data : [];
   }
 };
 

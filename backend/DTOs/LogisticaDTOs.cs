@@ -100,6 +100,9 @@ namespace backend.DTOs
         public string tiempo { get; set; } = string.Empty;
         public string? observaciones { get; set; }
         public int cancelado { get; set; }
+        public string? userSalida { get; set; }
+        public string? userLlegada { get; set; }
+        public bool enSalida { get; set; }
     }
 
     public class CentralUserDto

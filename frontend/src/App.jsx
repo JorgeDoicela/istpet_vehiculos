@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Home from './pages/Home';
 import ControlOperativo from './pages/ControlOperativo';
 import Reports from './pages/Reports';
+import Historial from './pages/Historial';
 import Students from './pages/Students';
 import Vehicles from './pages/Vehicles';
 
@@ -42,6 +43,11 @@ function App() {
                         <Route path="/vehiculos" element={
                             <ProtectedRoute allowedRoles={['admin', 'logistica', 'guardia']}>
                                 <Vehicles />
+                            </ProtectedRoute>
+                        } />
+                        <Route path="/historial" element={
+                            <ProtectedRoute allowedRoles={['admin', 'logistica', 'guardia']}>
+                                <Historial />
                             </ProtectedRoute>
                         } />
                         <Route path="/reportes" element={
