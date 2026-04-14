@@ -680,80 +680,71 @@ const ControlOperativo = () => {
 
                                     {estudianteData ? (
                                         <div className="space-y-6 animate-apple-in">
-                                            <div className="apple-glass rounded-[2.5rem] px-5 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
-                                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 lg:gap-10 relative z-10">
-                                                    <div className="flex-1 min-w-0 text-left lg:max-w-[min(100%,42rem)]">
-                                                        <div className="flex flex-wrap items-start gap-x-3 gap-y-2 mb-2">
-                                                            <h4 className="text-[15px] sm:text-base lg:text-lg font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-snug break-words flex-1 min-w-[12rem]">
+                                            <div className="apple-glass rounded-[2.5rem] px-6 py-5 sm:px-7 sm:py-6 shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
+                                                <div className="flex items-start justify-between gap-6 relative z-10">
+
+                                                    {/* Bloque principal */}
+                                                    <div className="flex-1 min-w-0 space-y-2.5">
+
+                                                        {/* Nombre + badges */}
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <h4 className="text-base lg:text-lg font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-none">
                                                                 {estudianteData.nombreCompleto}
                                                             </h4>
-                                                            <div className="flex flex-wrap items-center gap-2 shrink-0">
-                                                                <span className="px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
-                                                                    {estudianteData.idPeriodo}
+                                                            <span className="px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
+                                                                {estudianteData.idPeriodo}
+                                                            </span>
+                                                            {estudianteData.isBusy && (
+                                                                <span className="px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
+                                                                    YA EN PISTA
                                                                 </span>
-                                                                {estudianteData.isBusy && (
-                                                                    <span className="px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
-                                                                        YA EN PISTA
-                                                                    </span>
-                                                                )}
-                                                            </div>
+                                                            )}
                                                         </div>
 
-                                                        {/* Horario Granular Discovery Integration */}
-                                                        <div className="flex flex-wrap items-center gap-2 mt-1 pl-0.5">
-                                                            <div className="flex flex-col gap-0 min-w-0 text-left w-full max-w-full animate-apple-in leading-tight">
-                                                                {estudianteData.carrera?.trim() ? (
-                                                                    <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight break-words">
-                                                                        {estudianteData.carrera}
-                                                                    </span>
-                                                                ) : null}
-                                                                <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight break-words">
-                                                                    {`Nivel: ${estudianteData.nivel ?? ''}`.trim()}
-                                                                </span>
-                                                                <span className="text-[10px] sm:text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-tight">
-                                                                    {`Paralelo: ${estudianteData.paralelo ?? ''}`.trim()}
-                                                                </span>
-                                                            </div>
-                                                            {estudianteData.horarioProximo && (
-                                                                <div className="flex items-center gap-2 px-2 py-0.5 bg-[var(--apple-primary)]/10 rounded-full border border-[var(--apple-primary)]/20 animate-apple-in">
-                                                                    <svg className="h-3 w-3 text-[var(--apple-primary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                    <span className="text-[9px] font-black text-[var(--apple-primary)] uppercase">
-                                                                        {estudianteData.horarioFecha && `${estudianteData.horarioFecha} | `}PLAN: {estudianteData.horarioProximo}
-                                                                    </span>
-                                                                </div>
-                                                            )}
+                                                        {/* Carrera */}
+                                                        {estudianteData.carrera?.trim() && (
+                                                            <p className="text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-70 leading-none">
+                                                                {estudianteData.carrera}
+                                                            </p>
+                                                        )}
 
-                                                            {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
-                                                                <div className="flex items-center gap-2 px-2 py-0.5 bg-slate-500/5 rounded-full border border-slate-500/10 animate-apple-in" title="Información sugerida por SIGAFI">
-                                                                    <span className="text-[8px] font-bold text-slate-400 uppercase">Sugerido:</span>
-                                                                    <span className="text-[9px] font-black text-slate-600 uppercase">
-                                                                        {estudianteData.vehiculoPlanificado} {estudianteData.instructorPlanificado && `| ${estudianteData.instructorPlanificado}`}
-                                                                    </span>
-                                                                </div>
-                                                            )}
-
-                                                            {/* {estudianteData.asistenciaHoy && (
-                                                                <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                                                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
-                                                                    <span className="text-[9px] font-black text-emerald-600 uppercase">ASISTENCIA OK</span>
-                                                                </div>
-                                                            )} */}
+                                                        {/* Nivel + Paralelo como chips */}
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
+                                                                Nivel {estudianteData.nivel ?? ''}
+                                                            </span>
+                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
+                                                                Paralelo {estudianteData.paralelo ?? ''}
+                                                            </span>
                                                         </div>
+
+                                                        {/* Planificación */}
+                                                        {(estudianteData.horarioProximo || estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
+                                                            <div className="flex items-start gap-2.5 px-3 py-2.5 bg-[var(--apple-primary)]/10 rounded-2xl animate-apple-in">
+                                                                <svg className="h-3.5 w-3.5 text-[var(--apple-primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                                                </svg>
+                                                                <div className="space-y-0.5">
+                                                                    <p className="text-[8px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em] leading-none">Planificación</p>
+                                                                    {estudianteData.horarioProximo && (
+                                                                        <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase leading-snug">
+                                                                            {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}{estudianteData.horarioProximo}
+                                                                        </p>
+                                                                    )}
+                                                                    {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
+                                                                        <p className="text-[10px] font-bold text-[var(--apple-primary)]/65 uppercase leading-snug">
+                                                                            {estudianteData.vehiculoPlanificado}{estudianteData.instructorPlanificado && ` · ${estudianteData.instructorPlanificado}`}
+                                                                        </p>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
 
-                                                    <div className="flex items-center justify-around lg:justify-end gap-5 lg:gap-7 py-2 lg:py-0 lg:pl-7">
-                                                        {/* <div className="text-center group/stat">
-                                                            <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50 group-hover/stat:text-[var(--istpet-gold)] transition-colors">Asistencia</span>
-                                                            <span className={`block text-[10px] font-black leading-none uppercase ${estudianteData.asistenciaHoy ? 'text-emerald-500' : (estudianteData.horarioProximo === 'SIN CITA AGENDADA' ? 'text-slate-400' : 'text-amber-500')}`}>
-                                                                {estudianteData.asistenciaHoy ? 'PRESENTE' : (estudianteData.horarioProximo === 'SIN CITA AGENDADA' ? 'N/A' : 'PENDIENTE')}
-                                                            </span>
-
-                                                        </div> */}
-                                                        <div className="h-5 w-px bg-[var(--apple-border)]/30"></div>
-                                                        <div className="text-center">
-                                                            <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50">Jornada</span>
-                                                            <span className="block text-[9px] font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
-                                                        </div>
+                                                    {/* Jornada */}
+                                                    <div className="shrink-0 text-right">
+                                                        <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50 mb-1">Jornada</span>
+                                                        <span className="block text-[10px] font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
                                                     </div>
                                                 </div>
                                                 <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[var(--apple-primary)]/[0.03] to-transparent skew-x-12 translate-x-12 group-hover:translate-x-8 transition-transform duration-700"></div>
