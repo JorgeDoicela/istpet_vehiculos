@@ -104,6 +104,19 @@ const ControlOperativo = () => {
         return { agendaBloqueHoy: hoy, agendaBloqueAnteriores: ant };
     }, [agendaFiltrada]);
 
+    // Auto-scroll al vehículo seleccionado (especialmente útil para carga desde Agenda)
+    useEffect(() => {
+        if (vehiculoSeleccionado && activeTab === 'salida') {
+            const timer = setTimeout(() => {
+                const el = document.getElementById(`veh-card-${vehiculoSeleccionado.idVehiculo}`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
+                }
+            }, 350); 
+            return () => clearTimeout(timer);
+        }
+    }, [vehiculoSeleccionado, activeTab]);
+
     const clasesActivasParaLlegada = useMemo(() => {
         const q = filtroLlegada.trim().toLowerCase().replace(/\s+/g, ' ');
         let list = Array.isArray(clasesActivas) ? [...clasesActivas] : [];

@@ -24,6 +24,7 @@ const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
 
     return (
         <div
+            id={`veh-card-${vehiculo.idVehiculo}`}
             onClick={() => isOperativo ? onSelect(vehiculo) : null}
             className={`
                 group relative p-1.5 rounded-[2rem] border-2 transition-all duration-500 cursor-pointer overflow-hidden
