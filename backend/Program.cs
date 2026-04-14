@@ -313,7 +313,7 @@ builder.Services.AddSingleton<IAuditService, SqlAuditService>();
 // Sincronización automática SIGAFI → local
 builder.Services.Configure<SigafiMirrorSyncOptions>(
     builder.Configuration.GetSection(SigafiMirrorSyncOptions.SectionName));
-builder.Services.AddHostedService<SigafiMirrorBackgroundService>();
+// builder.Services.AddHostedService<SigafiMirrorBackgroundService>();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // PUERTO (Render / Docker)

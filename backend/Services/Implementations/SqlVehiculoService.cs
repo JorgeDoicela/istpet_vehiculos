@@ -19,8 +19,8 @@ namespace backend.Services.Implementations
 
         public async Task<IEnumerable<Vehiculo>> GetVehiculosAsync()
         {
-            var central = await _central.GetAllVehiclesFromCentralAsync();
-            await SigafiVehicleUpsert.MergeFromCentralAsync(_context, central);
+            // [DIRECT MODE] En modo directo el contexto local ya es SIGAFI. El merge es redundante.
+            // await SigafiVehicleUpsert.MergeFromCentralAsync(_context, central);
             
             // Unimos con la tabla de operación para traer el estado mecánico e instructor fijo
             return await _context.Vehiculos
@@ -34,13 +34,15 @@ namespace backend.Services.Implementations
 
             try
             {
+                /*
                 var cv = await _central.GetVehicleByPlacaFromCentralAsync(key);
                 if (cv != null)
                 {
                     await SigafiVehicleUpsert.MergeFromCentralAsync(_context, new[] { cv });
                 }
+                */
             }
-            catch (Exception) { /* Fallback a espejo local */ }
+            catch (Exception) { /* En modo directo el error vendría de la red hacia la BD central */ }
 
             return await _context.Vehiculos
                 .Include(v => v.Operacion)

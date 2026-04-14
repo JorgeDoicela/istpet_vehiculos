@@ -29,16 +29,19 @@ namespace backend.Services.Implementations
             var take = Math.Clamp(limit, 1, 200);
             var fromSigafi = true;
             var list = (await _central.GetRecentSchedulesAsync(take)).ToList();
+            /* 
+            // COMENTADO: Ahora la fuente es 100% SIGAFI (Directo), se omite el fallback al espejo local.
             if (list.Count == 0)
             {
                 list = await GetRecentSchedulesFromLocalMirrorAsync(take);
                 fromSigafi = false;
             }
+            */
 
-            await EnrichAgendaEstadoOperativoAsync(list);
+            // await EnrichAgendaEstadoOperativoAsync(list);
 
-            if (fromSigafi && list.Count > 0)
-                await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(list);
+            // if (fromSigafi && list.Count > 0)
+            //     await _mirrorPersist.PersistPracticesFromScheduleDtosAsync(list);
 
             return new AgendaLogisticaResponseDto
             {
@@ -59,6 +62,7 @@ namespace backend.Services.Implementations
             return "pendiente";
         }
 
+/* 
         private async Task EnrichAgendaEstadoOperativoAsync(List<ScheduledPracticeDto> list)
         {
             if (list.Count == 0)
@@ -81,7 +85,9 @@ namespace backend.Services.Implementations
                 row.SigafiHoraLlegada = st.hora_llegada;
             }
         }
+*/
 
+/*
         private async Task<List<ScheduledPracticeDto>> GetRecentSchedulesFromLocalMirrorAsync(int limit)
         {
             var take = Math.Clamp(limit, 1, 200);
@@ -125,5 +131,6 @@ namespace backend.Services.Implementations
                 EsPlanificado = false
             }).ToList();
         }
+*/
     }
 }

@@ -48,6 +48,11 @@ namespace backend.Services.Implementations
 
             try
             {
+                // [DIRECT MODE] En modo directo, simplemente leemos del contexto. 
+                // La lógica de "materialización" (copiar de _central a _context) se comenta ya que ambos son SIGAFI.
+                return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
+                
+                /*
                 var local = await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
                 if (local == null)
                 {
@@ -74,10 +79,11 @@ namespace backend.Services.Implementations
 
                 await _context.SaveChangesAsync();
                 return local;
+                */
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "No se pudo persistir alumno {Id} desde SIGAFI.", idAlumno);
+                _logger.LogWarning(ex, "Error al leer alumno {Id} en modo directo.", idAlumno);
                 return await _context.Estudiantes.FirstOrDefaultAsync(e => e.idAlumno == idAlumno);
             }
         }

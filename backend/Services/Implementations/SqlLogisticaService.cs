@@ -32,6 +32,7 @@ namespace backend.Services.Implementations
                 // Need to see where the actual code starts to replace correctly.
                 // 1. Validar que el vehículo exista y esté operativo (con JIT SYNC)
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
+                /*
                 if (vehiculo == null)
                 {
                     // [JIT RESILIENCE] Si el vehículo no está en el espejo local, lo traemos de SIGAFI al instante.
@@ -39,6 +40,7 @@ namespace backend.Services.Implementations
                     await Helpers.SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
                     vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
                 }
+                */
 
                 if (vehiculo == null || vehiculo.activo == 0)
                     return "ERROR: Vehículo no disponible u operativo (no hallado localmente).";
@@ -66,7 +68,9 @@ namespace backend.Services.Implementations
                     return "ESTUDIANTE_EN_PISTA";
 
                 // 4.5 Asegurar que el instructor y el periodo existen localmente (JIT SYNC)
+                // 4.5 Asegurar que el instructor y el periodo existen (Solo validación, el sync se comenta)
                 var instructorLocal = await _context.Instructores.AnyAsync(i => i.idProfesor == idInstructor);
+                /*
                 if (!instructorLocal)
                 {
                     var cp = await _central.GetInstructorFromCentralAsync(idInstructor);
@@ -85,11 +89,13 @@ namespace backend.Services.Implementations
                         await _context.SaveChangesAsync();
                     }
                 }
+                */
 
                 // Asegurar que el periodo existe para evitar violación de FK
                 if (matricula.idPeriodo != null && matricula.idPeriodo != "S/P")
                 {
                     var periodoLocal = await _context.Periodos.AnyAsync(p => p.idPeriodo == matricula.idPeriodo);
+                    /*
                     if (!periodoLocal)
                     {
                         var periods = await _central.GetAllPeriodosFromCentralAsync();
@@ -106,7 +112,9 @@ namespace backend.Services.Implementations
                         }
                         await _context.SaveChangesAsync();
                     }
+                    */
                 }
+                if (!instructorLocal) return "ERROR: Instructor no encontrado en la base central.";
 
                 // 5. Registrar salida (Usando modelo Practica que mapea a cond_alumnos_practicas)
 
