@@ -1252,13 +1252,9 @@ const ControlOperativo = () => {
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowAgendaDrawer(false)} />
                     <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
                         <div className="flex justify-center pt-3 pb-1"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
-                        <div className="flex items-center justify-between px-5 py-4 gap-3 border-b border-[var(--apple-border)]/40">
+                        <div className="flex items-center justify-between px-5 py-3 gap-3">
                             <div className="min-w-0 flex-1">
                                 <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3>
-                                <p className="text-[8px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-0.5 truncate">
-                                    {agendaFuente === 'local' ? 'Espejo local' : 'SIGAFI'}
-                                    {agendaObtenidoEn ? ` · ${fmtUltimaCargaAgenda(agendaObtenidoEn)}` : ''}
-                                </p>
                             </div>
                             <button
                                 type="button"
@@ -1273,7 +1269,7 @@ const ControlOperativo = () => {
                             </button>
                             <button type="button" onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
-                        <div className="px-5 pt-3 pb-2 space-y-2 shrink-0">
+                        <div className="px-5 pt-3 pb-3 shrink-0">
                             <input
                                 type="search"
                                 value={filtroAgenda}
@@ -1281,7 +1277,6 @@ const ControlOperativo = () => {
                                 placeholder="Buscar cédula, nombre…"
                                 className="w-full bg-[var(--apple-card)] border border-[var(--apple-border)] rounded-xl px-3 py-2.5 text-[13px] font-semibold text-[var(--apple-text-main)] outline-none focus:border-[var(--istpet-gold)]"
                             />
-                            <p className="text-[8px] font-black uppercase text-[var(--apple-text-sub)] tracking-wider">{agendaFiltrada.length} mostrados · {agendaBloqueHoy.length} hoy</p>
                         </div>
                         <div className="overflow-y-auto flex-1 custom-scrollbar pb-10 min-h-0">
                             {agendadosHoy.length === 0 && !agendadosLoading ? (
@@ -1292,7 +1287,11 @@ const ControlOperativo = () => {
                             ) : null}
                             {agendaBloqueHoy.length > 0 ? (
                                 <div className="px-5 pt-2">
-                                    <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-widest mb-2">Hoy</p>
+                                    <div className="flex items-baseline gap-2 mb-2">
+                                        <p className="text-[9px] font-black text-[var(--apple-primary)] uppercase tracking-widest">Hoy</p>
+                                        <span className="text-[10px] font-black tabular-nums text-[var(--istpet-gold)]">{agendaBloqueHoy.length}</span>
+                                    </div>
+                                    <div className="border-b border-[var(--apple-border)]/50 mb-3" aria-hidden />
                                     {agendaBloqueHoy.map((ag, idx) => {
                                         const chip = estadoAgendaChip(ag.estadoOperativo);
                                         const itemKey = ag.idPractica > 0 ? `p-${ag.idPractica}` : `h-${ag.idAsignacionHorario}`;
@@ -1309,6 +1308,12 @@ const ControlOperativo = () => {
                                                             <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
                                                             <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[9rem]">{ag.VehiculoDetalle}</span>
                                                         </div>
+                                                        {ag.ProfesorNombre && (
+                                                            <div className="flex items-center gap-1 mt-1.5">
+                                                                <svg className="w-3 h-3 text-[var(--apple-text-sub)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                                                <span className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase truncate">{ag.ProfesorNombre}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <button type="button" onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag)); }} className="px-4 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shrink-0">Cargar</button>
                                                 </div>
@@ -1336,6 +1341,12 @@ const ControlOperativo = () => {
                                                             <span className="text-[10px] font-black text-[var(--istpet-gold)] bg-[var(--istpet-gold)]/10 px-2 py-0.5 rounded-md">{ag.hora_salida != null ? String(ag.hora_salida).substring(0, 5) : '—'}</span>
                                                             <span className="px-2 py-0.5 bg-[var(--apple-border)]/40 rounded-md text-[9px] font-bold text-[var(--apple-text-main)] uppercase truncate max-w-[9rem]">{ag.VehiculoDetalle}</span>
                                                         </div>
+                                                        {ag.ProfesorNombre && (
+                                                            <div className="flex items-center gap-1 mt-1.5">
+                                                                <svg className="w-3 h-3 text-[var(--apple-text-sub)] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" /></svg>
+                                                                <span className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase truncate">{ag.ProfesorNombre}</span>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                     <button type="button" onClick={() => { setSalidaIdAlumno(ag.idalumno); setShowAgendaDrawer(false); ejecutarBusquedaEstudiante(ag.idalumno, 'agenda', buildAgendaCtx(ag)); }} className="px-4 py-3 bg-[var(--istpet-navy)] text-white rounded-2xl text-[9px] font-black uppercase tracking-widest shrink-0">Cargar</button>
                                                 </div>
