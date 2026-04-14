@@ -473,7 +473,7 @@ const ControlOperativo = () => {
         setConfirmState({
             isOpen: true,
             title: 'Confirmar Salida',
-            message: `¿Iniciar práctica con ${estudianteData.fullName} en el vehículo #${vehiculoSeleccionado.numero}?`,
+            message: `¿Iniciar práctica con ${estudianteData.nombreCompleto} en el vehículo #${vehiculoSeleccionado.numeroVehiculo}?`,
             confirmText: 'Sí, Registrar Salida',
             onConfirm: procesarSalida,
             type: 'info'
