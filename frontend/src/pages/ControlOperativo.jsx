@@ -1062,25 +1062,25 @@ const ControlOperativo = () => {
                                     </div>
 
                                     {claseSeleccionada && (
-                                        <div className="mt-6 animate-apple-in">
-                                            <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-[1.65rem] p-4 space-y-4 shadow-[inset_0_1px_1px_rgba(0,0,0,0.04)]">
-                                                <div className="text-center space-y-1">
-                                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide">Registrar llegada de</p>
-                                                    <p className="text-sm font-black text-[var(--apple-text-main)] uppercase leading-snug">{claseSeleccionada.estudiante || '—'}</p>
-                                                    <p className="text-[10px] text-[var(--apple-text-sub)] font-bold tabular-nums">
-                                                        {claseSeleccionada.idAlumno} · Vehículo #{claseSeleccionada.numeroVehiculo}
+                                        <div className="mt-4 animate-apple-in">
+                                            <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-[1.65rem] px-4 py-3 space-y-2.5 shadow-[inset_0_1px_1px_rgba(0,0,0,0.04)]">
+                                                <div className="text-center space-y-0.5">
+                                                    <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.15em]">Registrar llegada de</p>
+                                                    <p className="text-xs font-black text-[var(--apple-text-main)] uppercase leading-tight tracking-tight">{claseSeleccionada.estudiante || '—'}</p>
+                                                    <p className="text-[9px] text-[var(--apple-text-sub)] font-bold tabular-nums leading-snug">
+                                                        {claseSeleccionada.idAlumno} · #{claseSeleccionada.numeroVehiculo}
                                                         {(claseSeleccionada.placa || '').trim() ? ` · ${(claseSeleccionada.placa || '').trim()}` : ''}
                                                     </p>
                                                 </div>
-                                                <div className="grid grid-cols-5 gap-3">
+                                                <div className="grid grid-cols-5 gap-2 items-stretch">
                                                     <button
                                                         type="button"
                                                         onClick={handleEliminarSalidaConfirm}
                                                         disabled={llegadaSubmitting}
                                                         title="Eliminar por error"
-                                                        className={`col-span-1 flex items-center justify-center p-3.5 rounded-full border-2 transition-all ${llegadaSubmitting ? 'border-slate-100 text-slate-200 cursor-not-allowed' : 'border-rose-100 text-rose-400 hover:bg-rose-50 hover:border-rose-200 active:scale-95'}`}
+                                                        className={`col-span-1 flex items-center justify-center p-2 rounded-full border-2 transition-all ${llegadaSubmitting ? 'border-slate-100 text-slate-200 cursor-not-allowed' : 'border-rose-100 text-rose-400 hover:bg-rose-50 hover:border-rose-200 active:scale-95'}`}
                                                     >
-                                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
@@ -1089,15 +1089,15 @@ const ControlOperativo = () => {
                                                         type="button"
                                                         onClick={handleProcesarLlegada}
                                                         disabled={llegadaSubmitting}
-                                                        className={`col-span-4 py-3.5 rounded-full text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
+                                                        className={`col-span-4 py-2.5 rounded-full text-[11px] font-black shadow-md transition-all duration-200 flex items-center justify-center gap-2 min-h-0 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
                                                     >
                                                         {llegadaSubmitting ? (
                                                             <>
-                                                                <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                                                                <svg className="animate-spin h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
                                                                 <span>Registrando…</span>
                                                             </>
                                                         ) : (
-                                                            <span>Confirmar llegada de {(claseSeleccionada.estudiante || '').split(' ')[0] || 'estudiante'}</span>
+                                                            <span className="truncate px-1">Confirmar llegada</span>
                                                         )}
                                                     </button>
                                                 </div>
