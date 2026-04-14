@@ -198,5 +198,49 @@ namespace backend.Services.Implementations
                 return $"ERROR: {ex.Message}";
             }
         }
+    
+        public async Task<string> EliminarSalidaAsync(int idPractica, string usuarioLogin)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                // 1. Obtener registro de la práctica
+                var practica = await _context.Practicas.FindAsync(idPractica);
+                if (practica == null)
+                    return "ERROR: Registro de práctica no encontrado.";
+
+                // 2. Liberar agenda (si estaba vinculada)
+                var vinculos = await _context.PracticasHorarios
+                    .Where(vh => vh.idPractica == idPractica)
+                    .ToListAsync();
+
+                foreach (var v in vinculos)
+                {
+                    var horario = await _context.HorariosAlumnos.FindAsync(v.idAsignacionHorario);
+                    if (horario != null)
+                    {
+                        horario.asiste = 0; // Restaurar a pendiente
+                    }
+                }
+
+                // 3. Eliminar vínculos y la práctica (Cascada manual por precaución)
+                if (vinculos.Any())
+                {
+                    _context.PracticasHorarios.RemoveRange(vinculos);
+                }
+
+                _context.Practicas.Remove(practica);
+                
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "EXITO";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                return $"ERROR: {ex.Message}";
+            }
+        }
     }
 }

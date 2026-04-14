@@ -701,25 +701,29 @@ namespace backend.Controllers
             return BadRequest(ApiResponse<string>.Fail($"Error: {result}"));
         }
 
-        [HttpPost("llegada")]
-        public async Task<ActionResult<ApiResponse<string>>> RegistrarLlegada([FromBody] LlegadaRequest req)
+            return BadRequest(ApiResponse<string>.Fail($"Alerta: {result}"));
+        }
+
+        [HttpDelete("eliminar-salida/{idPractica}")]
+        public async Task<ActionResult<ApiResponse<string>>> EliminarSalida(int idPractica)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            var usuarioLogin = User.Identity?.Name ?? req.registradoPor.ToString();
-            var result = await _logisticaService.RegistrarLlegadaAsync(
-                req.idPractica, usuarioLogin);
+            var usuarioLogin = User.Identity?.Name ?? "SISTEMA";
+            
+            var result = await _logisticaService.EliminarSalidaAsync(idPractica, usuarioLogin);
 
             if (result == "EXITO")
             {
                 await _audit.LogAsync(
-                    usuarioLogin, "LLEGADA",
-                    entidadId: $"practica:{req.idPractica}",
-                    detalles: $"Salió: OK.",
+                    usuarioLogin, "ELIMINAR_SALIDA",
+                    entidadId: $"practica:{idPractica}",
+                    detalles: $"Eliminación por error/corrección.",
                     ipOrigen: ip);
-                return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
+
+                return Ok(ApiResponse<string>.Ok(result, "Registro eliminado y agenda liberada."));
             }
 
-            return BadRequest(ApiResponse<string>.Fail($"Alerta: {result}"));
+            return BadRequest(ApiResponse<string>.Fail(result));
         }
 
         [HttpGet("buscar")]

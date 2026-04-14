@@ -67,6 +67,10 @@ export const logisticaService = {
     const response = await api.post('/logistica/llegada', data);
     return unwrap(response);
   },
+  eliminarSalida: async (idPractica) => {
+    const response = await api.delete(`/logistica/eliminar-salida/${idPractica}`);
+    return unwrap(response);
+  },
   buscarSugerencias: async (query) => {
     try {
       const response = await api.get(`/logistica/buscar?query=${encodeURIComponent(query)}`);

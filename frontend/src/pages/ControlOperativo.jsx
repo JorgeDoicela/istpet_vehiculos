@@ -5,6 +5,7 @@ import Layout from '../components/layout/Layout';
 import { logisticaService } from '../services/logisticaService';
 import dashboardService from '../services/dashboardService';
 import StatusBadge from '../components/common/StatusBadge';
+import ConfirmModal from '../components/common/ConfirmModal';
 import VehicleCard from '../components/logistica/VehicleCard';
 import {
     agendaYmdFromApi,
@@ -66,6 +67,14 @@ const ControlOperativo = () => {
     const [isSearchingInstructor, setIsSearchingInstructor] = useState(false);
     const [filtroLlegada, setFiltroLlegada] = useState('');
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
+    const [confirmState, setConfirmState] = useState({
+        isOpen: false,
+        title: '',
+        message: '',
+        confirmText: 'Continuar',
+        onConfirm: () => { },
+        type: 'info'
+    });
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -435,6 +444,19 @@ const ControlOperativo = () => {
         }
     };
 
+    const handleProcesarSalida = () => {
+        if (!estudianteData || !vehiculoSeleccionado || !instructorSeleccionado) return;
+
+        setConfirmState({
+            isOpen: true,
+            title: 'Confirmar Salida',
+            message: `¿Iniciar práctica con ${estudianteData.fullName} en el vehículo #${vehiculoSeleccionado.numero}?`,
+            confirmText: 'Sí, Registrar Salida',
+            onConfirm: procesarSalida,
+            type: 'info'
+        });
+    };
+
     const procesarLlegada = async () => {
         if (!claseSeleccionada) {
             showNotification('Seleccione un vehículo en pista', 'error');
@@ -453,6 +475,50 @@ const ControlOperativo = () => {
         } finally {
             setLlegadaSubmitting(false);
         }
+    };
+
+    const handleProcesarLlegada = () => {
+        if (!claseSeleccionada) return;
+
+        setConfirmState({
+            isOpen: true,
+            title: 'Confirmar Llegada',
+            message: `¿Registrar el retorno de ${claseSeleccionada.estudiante}? El vehículo quedará disponible inmediatamente.`,
+            confirmText: 'Sí, Registrar Llegada',
+            onConfirm: procesarLlegada,
+            type: 'info'
+        });
+    };
+
+    const handleEliminarSalida = async () => {
+        if (!claseSeleccionada) return;
+
+        setLlegadaSubmitting(true);
+        try {
+            await logisticaService.eliminarSalida(claseSeleccionada.idPractica);
+            showNotification('Registro eliminado y agenda liberada');
+            setClaseSeleccionada(null);
+            cargarClasesActivas();
+            cargarAgendadosHoy();
+        } catch (err) {
+            const apiMsg = err.response?.data?.message || err.message;
+            showNotification(apiMsg, 'error');
+        } finally {
+            setTimeout(() => setLlegadaSubmitting(false), 500);
+        }
+    };
+
+    const handleEliminarSalidaConfirm = () => {
+        if (!claseSeleccionada) return;
+
+        setConfirmState({
+            isOpen: true,
+            title: '¿Eliminar registro?',
+            message: `Esta acción revertirá la salida de ${claseSeleccionada.estudiante} y liberará su cita en la agenda. Use esto solo para corregir errores.`,
+            confirmText: 'Eliminar permanentemente',
+            onConfirm: handleEliminarSalida,
+            type: 'danger'
+        });
     };
 
     return (
@@ -862,7 +928,7 @@ const ControlOperativo = () => {
 
                                     <div className="pt-6 border-t border-[var(--apple-border)] mt-4">
                                         <button
-                                            onClick={procesarSalida}
+                                            onClick={handleProcesarSalida}
                                             disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
                                             className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01]'}`}
                                         >
@@ -988,21 +1054,35 @@ const ControlOperativo = () => {
                                                         {(claseSeleccionada.placa || '').trim() ? ` · ${(claseSeleccionada.placa || '').trim()}` : ''}
                                                     </p>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={procesarLlegada}
-                                                    disabled={llegadaSubmitting}
-                                                    className={`w-full py-3.5 rounded-full text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
-                                                >
-                                                    {llegadaSubmitting ? (
-                                                        <>
-                                                            <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                                                            <span>Registrando…</span>
-                                                        </>
-                                                    ) : (
-                                                        <span>Confirmar llegada de {(claseSeleccionada.estudiante || '').split(' ')[0] || 'estudiante'}</span>
-                                                    )}
-                                                </button>
+                                                <div className="grid grid-cols-5 gap-3">
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleEliminarSalidaConfirm}
+                                                        disabled={llegadaSubmitting}
+                                                        title="Eliminar por error"
+                                                        className={`col-span-1 flex items-center justify-center p-3.5 rounded-full border-2 transition-all ${llegadaSubmitting ? 'border-slate-100 text-slate-200 cursor-not-allowed' : 'border-rose-100 text-rose-400 hover:bg-rose-50 hover:border-rose-200 active:scale-95'}`}
+                                                    >
+                                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                    
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleProcesarLlegada}
+                                                        disabled={llegadaSubmitting}
+                                                        className={`col-span-4 py-3.5 rounded-full text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
+                                                    >
+                                                        {llegadaSubmitting ? (
+                                                            <>
+                                                                <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                                                                <span>Registrando…</span>
+                                                            </>
+                                                        ) : (
+                                                            <span>Confirmar llegada de {(claseSeleccionada.estudiante || '').split(' ')[0] || 'estudiante'}</span>
+                                                        )}
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -1258,6 +1338,16 @@ const ControlOperativo = () => {
                     </div>
                 </div>
             )}
+
+            <ConfirmModal
+                isOpen={confirmState.isOpen}
+                onClose={() => setConfirmState(prev => ({ ...prev, isOpen: false }))}
+                onConfirm={confirmState.onConfirm}
+                title={confirmState.title}
+                message={confirmState.message}
+                confirmText={confirmState.confirmText}
+                type={confirmState.type}
+            />
         </Layout>
     );
 };
