@@ -392,6 +392,7 @@ const ControlOperativo = () => {
             setFiltroLicencia(null);
             cargarVehiculosDisponibles();
             cargarClasesActivas(); // 🚀 Refrescar pestaña Llegada inmediatamente
+            cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
 
         } catch (err) {
             showNotification(err.message, 'error');
@@ -503,25 +504,25 @@ const ControlOperativo = () => {
                                                                     </p>
                                                                     {s.esAgendado ? (
                                                                         <div className="flex items-center gap-2">
-                                                                        <div className="flex items-center gap-2.5 mt-1 bg-[var(--apple-primary)]/5 px-2.5 py-1.5 rounded-xl border border-[var(--apple-primary)]/10">
-                                                                            <span className="text-[10px] font-black text-[var(--apple-primary)] flex items-center gap-1.5">
-                                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                                {s.horaAgenda || 'Consultando Hora...'}
-                                                                            </span>
-                                                                            {s.vehiculoAgenda ? (
-                                                                                <span className="text-[9px] font-black text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 uppercase tracking-tighter">
-                                                                                    {s.vehiculoAgenda}
+                                                                            <div className="flex items-center gap-2.5 mt-1 bg-[var(--apple-primary)]/5 px-2.5 py-1.5 rounded-xl border border-[var(--apple-primary)]/10">
+                                                                                <span className="text-[10px] font-black text-[var(--apple-primary)] flex items-center gap-1.5">
+                                                                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                                                                    {s.horaAgenda || 'Consultando Hora...'}
                                                                                 </span>
-                                                                            ) : s.esAgendado && (
-                                                                                 <span className="text-[9px] font-bold text-[var(--apple-text-sub)] border-l border-[var(--apple-border)] pl-2.5 uppercase tracking-tighter">
-                                                                                    S/V
-                                                                                </span>
-                                                                            )}
+                                                                                {s.vehiculoAgenda ? (
+                                                                                    <span className="text-[9px] font-black text-white bg-slate-800 px-2 py-0.5 rounded border border-slate-700 uppercase tracking-tighter">
+                                                                                        {s.vehiculoAgenda}
+                                                                                    </span>
+                                                                                ) : s.esAgendado && (
+                                                                                    <span className="text-[9px] font-bold text-[var(--apple-text-sub)] border-l border-[var(--apple-border)] pl-2.5 uppercase tracking-tighter">
+                                                                                        S/V
+                                                                                    </span>
+                                                                                )}
 
-                                                                            <span className={`text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse uppercase ${s.isBusy ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
-                                                                                {s.isBusy ? 'EN PISTA' : 'AGENDADO'}
-                                                                            </span>
-                                                                        </div>
+                                                                                <span className={`text-[8px] font-black px-2 py-0.5 rounded-full shadow-sm animate-pulse uppercase ${s.isBusy ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'}`}>
+                                                                                    {s.isBusy ? 'EN PISTA' : 'AGENDADO'}
+                                                                                </span>
+                                                                            </div>
 
 
                                                                         </div>
