@@ -25,116 +25,100 @@ namespace backend.Services.Implementations
 
         public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, IEnumerable<int>? idsAsignacionHorario = null, string? observaciones = null)
         {
+            idInstructor = (idInstructor ?? "").Trim();
+            Console.WriteLine($"[Service] RegistrarSalidaAsync IN: Mat={idMatricula}, Veh={idVehiculo}, Ins='{idInstructor}'");
+            
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // ... (existing logging and matricula fetch logic assumed to be above)
-                // Need to see where the actual code starts to replace correctly.
                 // 1. Validar que el vehículo exista y esté operativo (con JIT SYNC)
                 var vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
-                /*
-                if (vehiculo == null)
-                {
-                    // [JIT RESILIENCE] Si el vehículo no está en el espejo local, lo traemos de SIGAFI al instante.
-                    var centralVehicles = await _central.GetAllVehiclesFromCentralAsync();
-                    await Helpers.SigafiVehicleUpsert.MergeFromCentralAsync(_context, centralVehicles);
-                    vehiculo = await _context.Vehiculos.FindAsync(idVehiculo);
-                }
-                */
-
                 if (vehiculo == null || vehiculo.activo == 0)
-                    return "ERROR: Vehículo no disponible u operativo (no hallado localmente).";
+                {
+                    Console.WriteLine($"[Service] ERROR: Vehículo {idVehiculo} no encontrado o inactivo.");
+                    return $"ERROR: Vehículo #{idVehiculo} no disponible u operativo en SIGAFI.";
+                }
 
                 var vehiculoOp = await _context.VehiculosOperaciones.FindAsync(idVehiculo);
                 if (vehiculoOp != null && vehiculoOp.estado_mecanico != "OPERATIVO")
-                    return "ERROR: Vehículo no operativo mecánicamente.";
+                {
+                    Console.WriteLine($"[Service] ERROR: Vehículo {idVehiculo} no operativo mecánicamente ({vehiculoOp.estado_mecanico}).");
+                    return $"ERROR: Vehículo #{idVehiculo} ({vehiculo.placa}) no operativo mecánicamente.";
+                }
 
                 // 2. Validar que el vehículo no esté ya en uso (ensalida = 1)
                 var vehiculoOcupado = await _context.Practicas
-                    .AnyAsync(p => p.idvehiculo == idVehiculo && p.ensalida == 1 && p.cancelado == 0);
+                    .AnyAsync(p => p.idvehiculo == idVehiculo && p.ensalida == 1 && (p.cancelado ?? 0) == 0);
 
                 if (vehiculoOcupado)
+                {
+                    Console.WriteLine($"[Service] ERROR: Vehículo {idVehiculo} ya está EN USO.");
                     return "VEHICULO_EN_USO";
+                }
 
                 // 3. Obtener datos de la matrícula para idAlumno
                 var matricula = await _context.Matriculas.FindAsync(idMatricula);
-                if (matricula == null) return "ERROR: Matrícula no encontrada.";
+                if (matricula == null) 
+                {
+                    Console.WriteLine($"[Service] ERROR: Matrícula {idMatricula} no encontrada.");
+                    return $"ERROR: Matrícula #{idMatricula} no encontrada en SIGAFI.";
+                }
+
+                Console.WriteLine($"[Service] Matrícula OK: idAlumno={matricula.idAlumno}, idPeriodo={matricula.idPeriodo}");
 
                 // 4. Validar que el estudiante no esté ya en pista
                 var estudianteOcupado = await _context.Practicas
-                    .AnyAsync(p => p.idalumno == matricula.idAlumno && p.ensalida == 1 && p.cancelado == 0);
+                    .AnyAsync(p => p.idalumno == matricula.idAlumno && p.ensalida == 1 && (p.cancelado ?? 0) == 0);
 
                 if (estudianteOcupado)
-                    return "ESTUDIANTE_EN_PISTA";
-
-                // 4.5 Asegurar que el instructor y el periodo existen localmente (JIT SYNC)
-                // 4.5 Asegurar que el instructor y el periodo existen (Solo validación, el sync se comenta)
-                var instructorLocal = await _context.Instructores.AnyAsync(i => i.idProfesor == idInstructor);
-                /*
-                if (!instructorLocal)
                 {
-                    var cp = await _central.GetInstructorFromCentralAsync(idInstructor);
-                    if (cp != null)
-                    {
-                        var ni = new Instructor
-                        {
-                            idProfesor = cp.idProfesor,
-                            primerNombre = (cp.primerNombre ?? cp.nombres ?? "S/N").ToUpper(),
-                            primerApellido = (cp.primerApellido ?? cp.apellidos ?? "S/N").ToUpper(),
-                            nombres = (cp.nombres ?? "").ToUpper(),
-                            apellidos = (cp.apellidos ?? "").ToUpper(),
-                            activo = 1
-                        };
-                        _context.Instructores.Add(ni);
-                        await _context.SaveChangesAsync();
-                    }
+                    Console.WriteLine($"[Service] ERROR: Estudiante {matricula.idAlumno} ya está EN PISTA.");
+                    return "ESTUDIANTE_EN_PISTA";
                 }
-                */
+
+                // 4.5 Asegurar que el instructor y el periodo existen (Solo validación)
+                // Usamos TRIM en la consulta para manejar el padding de CHAR(14) en SIGAFI
+                var instructorLocal = await _context.Instructores.AnyAsync(i => i.idProfesor.Trim() == idInstructor);
+                
+                if (!instructorLocal) 
+                {
+                    Console.WriteLine($"[Service] ERROR: Instructor '{idInstructor}' no localizado en tabla profesores (con Trim).");
+                    return $"ERROR: Instructor {idInstructor} no encontrado en tabla profesores de SIGAFI.";
+                }
 
                 // Asegurar que el periodo existe para evitar violación de FK
                 if (matricula.idPeriodo != null && matricula.idPeriodo != "S/P")
                 {
-                    var periodoLocal = await _context.Periodos.AnyAsync(p => p.idPeriodo == matricula.idPeriodo);
-                    /*
+                    var idPer = matricula.idPeriodo.Trim();
+                    var periodoLocal = await _context.Periodos.AnyAsync(p => p.idPeriodo.Trim() == idPer);
                     if (!periodoLocal)
                     {
-                        var periods = await _central.GetAllPeriodosFromCentralAsync();
-                        foreach (var p in periods)
-                        {
-                            if (!await _context.Periodos.AnyAsync(px => px.idPeriodo == p.idPeriodo))
-                            {
-                                _context.Periodos.Add(new Periodo { 
-                                    idPeriodo = p.idPeriodo, 
-                                    detalle = p.detalle, 
-                                    activo = p.activo == 1 
-                                });
-                            }
-                        }
-                        await _context.SaveChangesAsync();
+                        Console.WriteLine($"[Service] ADVERTENCIA: Periodo '{idPer}' no encontrado en tabla periodos.");
                     }
-                    */
                 }
-                if (!instructorLocal) return "ERROR: Instructor no encontrado en la base central.";
 
                 // 5. Registrar salida (Usando modelo Practica que mapea a cond_alumnos_practicas)
-
                 var practica = new Practica
                 {
                     idalumno = matricula.idAlumno,
                     idvehiculo = idVehiculo,
                     idProfesor = idInstructor,
-                    idPeriodo = matricula.idPeriodo ?? "S/P",
+                    idPeriodo = (matricula.idPeriodo ?? "S/P").Trim(),
                     fecha = DateTime.Today,
                     dia = DateTime.Today.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToLower(),
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
                     cancelado = 0,
-                    observaciones = observaciones // 🚀 Guardamos observación en la práctica
+                    observaciones = observaciones
                 };
+
+                Console.WriteLine($"[Service] Intentando guardar práctica para Alumno={practica.idalumno}, Veh={practica.idvehiculo}, Ins={practica.idProfesor}");
 
                 _context.Practicas.Add(practica);
                 await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[Service] Práctica guardada con ID={practica.idPractica}");
 
                 // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo) - Soporte para múltiples horas
                 if (idsAsignacionHorario != null && idsAsignacionHorario.Any())

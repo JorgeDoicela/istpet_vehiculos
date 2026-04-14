@@ -663,9 +663,13 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<string>>> RegistrarSalida([FromBody] SalidaRequest req)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            Console.WriteLine($"[API] RegistrarSalida: Mat={req.idMatricula}, Veh={req.idVehiculo}, Ins={req.idInstructor}, User={req.registradoPor}");
+            
             var result = await _logisticaService.RegistrarSalidaAsync(
                 req.idMatricula, req.idVehiculo, req.idInstructor,
                 req.registradoPor, req.idsAsignacionHorario, req.observaciones);
+
+            Console.WriteLine($"[API] Resultado RegistrarSalida: {result}");
 
             if (result == "EXITO")
             {

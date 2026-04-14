@@ -395,7 +395,8 @@ const ControlOperativo = () => {
             cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
 
         } catch (err) {
-            showNotification(err.message, 'error');
+            const apiMsg = err.response?.data?.message || err.message;
+            showNotification(apiMsg, 'error');
         }
     };
 
@@ -410,7 +411,8 @@ const ControlOperativo = () => {
             setClaseSeleccionada(null);
             cargarClasesActivas();
         } catch (err) {
-            showNotification(err.message, 'error');
+            const apiMsg = err.response?.data?.message || err.message;
+            showNotification(apiMsg, 'error');
         }
     };
 
