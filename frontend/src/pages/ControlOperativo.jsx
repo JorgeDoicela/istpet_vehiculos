@@ -21,6 +21,8 @@ import {
 } from '../utils/agendaUi';
 
 const idVehiculoKey = (id) => (id == null || id === '' ? '' : String(id));
+const idPracticaKey = (id) => (id == null || id === '' ? '' : String(id));
+const LLEGADA_EXIT_MS = 520;
 
 /**
  * Control Operativo: Absolute SIGAFI Parity Edition 2026.
@@ -72,6 +74,8 @@ const ControlOperativo = () => {
     const [isSearchingInstructor, setIsSearchingInstructor] = useState(false);
     const [filtroLlegada, setFiltroLlegada] = useState('');
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
+    /** Salida animada tras confirmar llegada o eliminar salida: { idPractica, mode } */
+    const [llegadaExit, setLlegadaExit] = useState(null);
     const [confirmState, setConfirmState] = useState({
         isOpen: false,
         title: '',
@@ -497,15 +501,20 @@ const ControlOperativo = () => {
         }
         if (llegadaSubmitting) return;
         setLlegadaSubmitting(true);
+        const idPractica = claseSeleccionada.idPractica;
         try {
-            await logisticaService.registrarLlegada({ idPractica: claseSeleccionada.idPractica });
+            await logisticaService.registrarLlegada({ idPractica });
             showNotification('¡Llegada confirmada!');
-            setClaseSeleccionada(null);
-            cargarClasesActivas();
+            setLlegadaExit({ idPractica, mode: 'success' });
+            window.setTimeout(() => {
+                setLlegadaExit(null);
+                setClaseSeleccionada(null);
+                cargarClasesActivas();
+                setLlegadaSubmitting(false);
+            }, LLEGADA_EXIT_MS);
         } catch (err) {
             const apiMsg = err.response?.data?.message || err.message;
             showNotification(apiMsg, 'error');
-        } finally {
             setLlegadaSubmitting(false);
         }
     };
@@ -527,17 +536,22 @@ const ControlOperativo = () => {
         if (!claseSeleccionada) return;
 
         setLlegadaSubmitting(true);
+        const idPractica = claseSeleccionada.idPractica;
         try {
-            await logisticaService.eliminarSalida(claseSeleccionada.idPractica);
+            await logisticaService.eliminarSalida(idPractica);
             showNotification('Registro eliminado y agenda liberada');
-            setClaseSeleccionada(null);
-            cargarClasesActivas();
-            cargarAgendadosHoy();
+            setLlegadaExit({ idPractica, mode: 'remove' });
+            window.setTimeout(() => {
+                setLlegadaExit(null);
+                setClaseSeleccionada(null);
+                cargarClasesActivas();
+                cargarAgendadosHoy();
+                setLlegadaSubmitting(false);
+            }, LLEGADA_EXIT_MS);
         } catch (err) {
             const apiMsg = err.response?.data?.message || err.message;
             showNotification(apiMsg, 'error');
-        } finally {
-            setTimeout(() => setLlegadaSubmitting(false), 500);
+            setLlegadaSubmitting(false);
         }
     };
 
@@ -1028,7 +1042,7 @@ const ControlOperativo = () => {
                                     </p>
                                 </div>
 
-                                <div>
+                                <div className={llegadaExit ? 'pointer-events-none' : ''}>
                                     <div className="max-h-[480px] overflow-y-auto pr-1 custom-scrollbar">
                                         <div className="space-y-3">
                                             {clasesActivas.length > 0 && clasesActivasParaLlegada.length === 0 ? (
@@ -1041,6 +1055,10 @@ const ControlOperativo = () => {
                                                     const sel = claseSeleccionada?.idPractica === c.idPractica;
                                                     const enRuta = fmtTiempoEnRuta(c.salida);
                                                     const placaTxt = (c.placa || '').trim();
+                                                    const exitAnim =
+                                                        llegadaExit && idPracticaKey(llegadaExit.idPractica) === idPracticaKey(c.idPractica)
+                                                            ? (llegadaExit.mode === 'success' ? 'animate-llegada-exit-success' : 'animate-llegada-exit-remove')
+                                                            : '';
                                                     return (
                                                         <div
                                                             key={c.idPractica}
@@ -1050,7 +1068,7 @@ const ControlOperativo = () => {
                                                                     prev?.idPractica === c.idPractica ? null : c
                                                                 );
                                                             }}
-                                                            className={`group relative rounded-[1.65rem] border px-5 py-4 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
+                                                            className={`group relative rounded-[1.65rem] border px-5 py-4 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ${exitAnim} ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
                                                         >
                                                             {/* Fila 1: Estudiante + Hora */}
                                                             <div className="flex items-start justify-between gap-4 mb-3">
@@ -1102,7 +1120,13 @@ const ControlOperativo = () => {
                                     </div>
 
                                     {claseSeleccionada && (
-                                        <div className="mt-4 animate-apple-in">
+                                        <div
+                                            className={`mt-4 ${
+                                                llegadaExit && idPracticaKey(llegadaExit.idPractica) === idPracticaKey(claseSeleccionada.idPractica)
+                                                    ? (llegadaExit.mode === 'success' ? 'animate-llegada-exit-success' : 'animate-llegada-exit-remove')
+                                                    : 'animate-apple-in'
+                                            }`}
+                                        >
                                             <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-[1.65rem] px-4 py-3 space-y-2.5 shadow-[inset_0_1px_1px_rgba(0,0,0,0.04)]">
                                                 <div className="text-center space-y-0.5">
                                                     <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.15em]">Registrar llegada de</p>

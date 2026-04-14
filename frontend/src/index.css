@@ -108,6 +108,46 @@
   animation: apple-fade-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+@keyframes llegada-exit-success {
+  0% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    box-shadow: 0 0 0 0 rgba(181, 148, 74, 0.25);
+  }
+  35% {
+    opacity: 1;
+    transform: scale(1.02) translateY(-3px);
+    box-shadow: 0 10px 28px rgba(181, 148, 74, 0.18);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-14px);
+    filter: blur(0.4px);
+  }
+}
+
+@keyframes llegada-exit-remove {
+  0% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(22px) scale(0.93);
+    filter: blur(1px);
+  }
+}
+
+.animate-llegada-exit-success {
+  animation: llegada-exit-success 0.52s cubic-bezier(0.33, 1, 0.68, 1) forwards;
+  pointer-events: none;
+}
+
+.animate-llegada-exit-remove {
+  animation: llegada-exit-remove 0.52s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  pointer-events: none;
+}
+
 /* Scrollbar Personalizado Zenith 2026 */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
