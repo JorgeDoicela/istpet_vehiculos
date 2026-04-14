@@ -37,13 +37,9 @@ const Reports = () => {
 
     const ejecutarReporte = async () => {
         setLoading(true);
-        setStatusMsg('');
         try {
             const res = await reportService.getReportePracticas(filtros);
-
-            // Extraer lista con soporte para mayúsculas/minúsculas de forma limpia
             const rawData = res?.Data || res?.data || (Array.isArray(res) ? res : []);
-
             const listaNormalizada = rawData.map(item => ({
                 idPractica: item.idPractica || item.IdPractica,
                 idProfesor: item.idProfesor || item.IdProfesor,
@@ -60,17 +56,9 @@ const Reports = () => {
                 observaciones: item.observaciones || item.Observaciones,
                 cancelado: item.cancelado || item.Cancelado || 0
             }));
-
             setData(listaNormalizada);
-
-            if (listaNormalizada.length > 0) {
-                setStatusMsg(`Se encontraron ${listaNormalizada.length} registros totales.`);
-            } else {
-                setStatusMsg('No se encontraron registros para el periodo seleccionado.');
-            }
         } catch (error) {
             console.error('Error al generar reporte:', error);
-            setStatusMsg('Error de conexión con el servidor de reportes.');
         } finally {
             setLoading(false);
         }
