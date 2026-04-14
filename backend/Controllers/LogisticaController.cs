@@ -503,9 +503,9 @@ namespace backend.Controllers
                 student.vehiculoPlanificado = nextSched.VehiculoPlanificado;
                 student.instructorPlanificado = nextSched.InstructorPlanificado;
 
-                // Lógica de asistencia: Reflejamos el estado del registro encontrado (asiste = 1)
-                // O el estado operativo (ensalida = 1)
-                student.asistenciaHoy = (nextSched.asiste == 1) || (scheduled?.SigafiEnsalida == 1);
+                // Lógica de asistencia comentada a petición:
+                // student.asistenciaHoy = (nextSched.asiste == 1) || (scheduled?.SigafiEnsalida == 1);
+                student.asistenciaHoy = false;
 
                 // Si SIGAFI dice que es fin de semana según fechas_horarios, ajustamos etiqueta
                 if (nextSched.FinSemana == 1 && !student.jornada.Contains("FIN DE SEMANA"))
@@ -516,7 +516,7 @@ namespace backend.Controllers
             else
             {
                 student.horarioProximo = "SIN CITA AGENDADA";
-                student.asistenciaHoy = false;
+                // student.asistenciaHoy = false;
             }
 
 

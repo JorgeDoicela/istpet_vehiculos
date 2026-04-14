@@ -732,23 +732,23 @@ const ControlOperativo = () => {
                                                                 </div>
                                                             )}
 
-                                                            {estudianteData.asistenciaHoy && (
+                                                            {/* {estudianteData.asistenciaHoy && (
                                                                 <div className="flex items-center gap-1 px-2 py-0.5 bg-emerald-500/10 rounded-full border border-emerald-500/20">
                                                                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
                                                                     <span className="text-[9px] font-black text-emerald-600 uppercase">ASISTENCIA OK</span>
                                                                 </div>
-                                                            )}
+                                                            )} */}
                                                         </div>
                                                     </div>
 
                                                     <div className="flex items-center justify-around lg:justify-end gap-5 lg:gap-7 py-2 lg:py-0 lg:pl-7">
-                                                        <div className="text-center group/stat">
+                                                        {/* <div className="text-center group/stat">
                                                             <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50 group-hover/stat:text-[var(--istpet-gold)] transition-colors">Asistencia</span>
                                                             <span className={`block text-[10px] font-black leading-none uppercase ${estudianteData.asistenciaHoy ? 'text-emerald-500' : (estudianteData.horarioProximo === 'SIN CITA AGENDADA' ? 'text-slate-400' : 'text-amber-500')}`}>
                                                                 {estudianteData.asistenciaHoy ? 'PRESENTE' : (estudianteData.horarioProximo === 'SIN CITA AGENDADA' ? 'N/A' : 'PENDIENTE')}
                                                             </span>
 
-                                                        </div>
+                                                        </div> */}
                                                         <div className="h-5 w-px bg-[var(--apple-border)]/30"></div>
                                                         <div className="text-center">
                                                             <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase mb-0.5 opacity-50">Jornada</span>
