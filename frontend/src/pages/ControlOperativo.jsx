@@ -886,24 +886,27 @@ const ControlOperativo = () => {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4 mb-6">
-                                    <input
-                                        type="search"
-                                        value={filtroLlegada}
-                                        onChange={(e) => setFiltroLlegada(e.target.value)}
-                                        placeholder="Buscar cédula, estudiante, instructor, # vehículo o placa…"
-                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.25rem] px-4 py-2.5 text-xs font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/50 outline-none focus:border-[var(--istpet-gold)]"
-                                    />
-                                    <div className="flex flex-wrap items-center gap-2 text-[8px] font-black uppercase tracking-wider text-[var(--apple-text-sub)] px-1">
-                                        <span>{clasesActivas.length} en pista</span>
+                                <div className="mb-4">
+                                    <div className="relative">
+                                        <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-[var(--apple-text-sub)] opacity-40 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><circle cx="11" cy="11" r="8" /><path strokeLinecap="round" d="m21 21-4.35-4.35" /></svg>
+                                        <input
+                                            type="search"
+                                            value={filtroLlegada}
+                                            onChange={(e) => setFiltroLlegada(e.target.value)}
+                                            placeholder="Buscar estudiante, cédula, vehículo o instructor…"
+                                            className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/40 outline-none transition-colors focus:border-[var(--istpet-gold)] focus:ring-1 focus:ring-[var(--istpet-gold)]/20"
+                                        />
                                     </div>
+                                    <p className="mt-2 text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.1em] px-1 tabular-nums">
+                                        {clasesActivas.length} vehículo{clasesActivas.length !== 1 ? 's' : ''} en pista
+                                    </p>
                                 </div>
 
-                                <div className="space-y-8">
-                                    <div className="max-h-[440px] overflow-y-auto pr-2 custom-scrollbar">
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <div className="max-h-[480px] overflow-y-auto pr-1 custom-scrollbar">
+                                        <div className="space-y-3">
                                             {clasesActivas.length > 0 && clasesActivasParaLlegada.length === 0 ? (
-                                                <div className="col-span-full py-12 text-center opacity-50 apple-glass rounded-3xl border border-dashed border-[var(--apple-border)]">
+                                                <div className="py-12 text-center opacity-50 apple-glass rounded-3xl border border-dashed border-[var(--apple-border)]">
                                                     <p className="text-[var(--apple-text-sub)] font-bold tracking-widest text-xs uppercase text-center">Sin coincidencias con el filtro</p>
                                                 </div>
                                             ) : null}
@@ -916,40 +919,51 @@ const ControlOperativo = () => {
                                                     <div
                                                         key={c.idPractica}
                                                         onClick={() => !llegadaSubmitting && setClaseSeleccionada(c)}
-                                                        className={`relative p-4 rounded-[2.5rem] border-2 transition-all ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer'} ${sel ? 'bg-[var(--istpet-gold)]/10 border-[var(--istpet-gold)] shadow-lg' : 'bg-[var(--apple-bg)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]'}`}
+                                                        className={`group relative rounded-2xl border px-5 py-4 transition-all duration-200 ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
                                                     >
-                                                        <div className="flex justify-between items-start mb-3 gap-2">
-                                                            <div className="flex flex-wrap items-center gap-1.5 min-w-0 flex-1">
-                                                                <div className="text-[10px] font-black text-[var(--apple-text-main)] shrink-0">#{c.numeroVehiculo}</div>
-                                                                {placaTxt ? (
-                                                                    <div className="text-[9px] font-black text-[var(--apple-text-main)] uppercase tracking-tight truncate max-w-[7rem]" title={placaTxt}>{placaTxt}</div>
-                                                                ) : null}
+                                                        {/* Fila 1: Estudiante + Hora */}
+                                                        <div className="flex items-start justify-between gap-4 mb-3">
+                                                            <div className="min-w-0 flex-1">
+                                                                <p className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-snug line-clamp-1">{c.estudiante}</p>
+                                                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] tracking-[0.08em] mt-1">
+                                                                    {c.idAlumno}
+                                                                    {enRuta ? <span className="ml-2 text-emerald-600 font-black">{enRuta}</span> : null}
+                                                                </p>
                                                             </div>
-                                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                                {sel ? (
-                                                                    <div className="h-7 w-7 rounded-full bg-[var(--istpet-gold)] text-white flex items-center justify-center shadow-md" title="Seleccionado" aria-hidden>
-                                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                                    </div>
-                                                                ) : null}
-                                                                <StatusBadge status="Pista" />
+                                                            <div className="text-right shrink-0 flex flex-col items-end gap-0.5">
+                                                                <p className="text-lg font-black text-[var(--istpet-gold)] tabular-nums leading-none">{fmtTimeSpan(c.salida)}</p>
+                                                                <p className="text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.15em]">Salida</p>
                                                             </div>
                                                         </div>
-                                                        <h5 className="font-black text-xs text-[var(--apple-text-main)] uppercase mb-1 line-clamp-2">{c.instructor}</h5>
-                                                        <p className="text-[10px] text-[var(--apple-text-sub)] truncate mb-3" title={c.estudiante}>Estudiante: {c.estudiante}</p>
-                                                        <div className="flex flex-wrap items-center gap-2 text-[9px] font-black text-[var(--apple-text-sub)] uppercase">
-                                                            <span className="inline-flex items-center gap-1.5">
-                                                                <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                                Salida: {fmtTimeSpan(c.salida)}
-                                                            </span>
-                                                            {enRuta ? (
-                                                                <span className="text-emerald-600 bg-emerald-500/10 px-2 py-0.5 rounded-full normal-case tracking-tight font-bold">{enRuta}</span>
+
+                                                        {/* Divisor */}
+                                                        <div className="h-px bg-[var(--apple-border)]/40 mb-3"></div>
+
+                                                        {/* Fila 2: Vehículo */}
+                                                        <div className="flex items-center justify-between gap-3 mb-2">
+                                                            <div className="flex items-center gap-2 min-w-0">
+                                                                <svg className="h-4 w-4 text-[var(--istpet-gold)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
+                                                                <span className="text-xs font-black text-[var(--apple-text-main)] uppercase tracking-tight">
+                                                                    #{c.numeroVehiculo}{placaTxt ? ` · ${placaTxt}` : ''}
+                                                                </span>
+                                                            </div>
+                                                            {sel ? (
+                                                                <div className="h-6 w-6 rounded-full bg-[var(--istpet-gold)] text-white flex items-center justify-center shadow-sm shrink-0" aria-hidden>
+                                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                                </div>
                                                             ) : null}
+                                                        </div>
+
+                                                        {/* Fila 3: Instructor */}
+                                                        <div className="flex items-center gap-1.5">
+                                                            <span className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.12em] opacity-50 shrink-0">Instructor</span>
+                                                            <span className="text-[10px] font-black text-[var(--apple-text-main)] uppercase tracking-tight truncate">{c.instructor}</span>
                                                         </div>
                                                     </div>
                                                     );
                                                 })
                                             ) : clasesActivas.length === 0 ? (
-                                                <div className="col-span-full py-12 text-center opacity-40 apple-glass rounded-3xl">
+                                                <div className="py-12 text-center opacity-40 apple-glass rounded-3xl">
                                                     <p className="text-[var(--apple-text-sub)] font-bold tracking-widest text-xs uppercase text-center">Sin registros activos</p>
                                                 </div>
                                             ) : null}
@@ -957,33 +971,32 @@ const ControlOperativo = () => {
                                     </div>
 
                                     {claseSeleccionada && (
-                                        <div className="mt-6 border-t border-[var(--apple-border)] pt-6 animate-apple-in space-y-3">
-                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide text-center px-2">
-                                                Vas a registrar la llegada de{' '}
-                                                <span className="text-[var(--apple-text-main)] font-black">{claseSeleccionada.estudiante || '—'}</span>
-                                                {' '}· vehículo{' '}
-                                                <span className="text-[var(--apple-text-main)] font-black">#{claseSeleccionada.numeroVehiculo}</span>
-                                                {(claseSeleccionada.placa || '').trim() ? (
-                                                    <> · placa <span className="text-[var(--apple-text-main)] font-black">{(claseSeleccionada.placa || '').trim()}</span></>
-                                                ) : null}
-                                                {' '}· práctica <span className="text-[var(--apple-text-main)] font-black tabular-nums">P{claseSeleccionada.idPractica}</span>
-                                            </p>
-                                            <button
-                                                type="button"
-                                                onClick={procesarLlegada}
-                                                disabled={llegadaSubmitting}
-                                                className={`w-full py-4 rounded-full text-sm sm:text-base font-black shadow-xl shadow-amber-500/20 transition-all flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:scale-[1.01]'}`}
-                                            >
-                                                {llegadaSubmitting ? (
-                                                    <>
-                                                        <svg className="animate-spin h-5 w-5 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
-                                                        <span>Registrando…</span>
-                                                    </>
-                                                ) : (
-                                                    <span>Confirmar llegada de {(claseSeleccionada.estudiante || '').split(' ')[0] || 'estudiante'}</span>
-                                                )}
-                                            </button>
-                                            <p className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest text-center tabular-nums">Cédula {claseSeleccionada.idAlumno}</p>
+                                        <div className="mt-6 animate-apple-in">
+                                            <div className="bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-2xl p-4 space-y-4">
+                                                <div className="text-center space-y-1">
+                                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wide">Registrar llegada de</p>
+                                                    <p className="text-sm font-black text-[var(--apple-text-main)] uppercase leading-snug">{claseSeleccionada.estudiante || '—'}</p>
+                                                    <p className="text-[10px] text-[var(--apple-text-sub)] font-bold tabular-nums">
+                                                        {claseSeleccionada.idAlumno} · Vehículo #{claseSeleccionada.numeroVehiculo}
+                                                        {(claseSeleccionada.placa || '').trim() ? ` · ${(claseSeleccionada.placa || '').trim()}` : ''}
+                                                    </p>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={procesarLlegada}
+                                                    disabled={llegadaSubmitting}
+                                                    className={`w-full py-3.5 rounded-xl text-sm font-black shadow-lg transition-all duration-200 flex items-center justify-center gap-2 ${llegadaSubmitting ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-wait opacity-80' : 'bg-[var(--istpet-gold)] text-white hover:brightness-105 shadow-amber-500/15'}`}
+                                                >
+                                                    {llegadaSubmitting ? (
+                                                        <>
+                                                            <svg className="animate-spin h-4 w-4 shrink-0" viewBox="0 0 24 24" aria-hidden><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>
+                                                            <span>Registrando…</span>
+                                                        </>
+                                                    ) : (
+                                                        <span>Confirmar llegada de {(claseSeleccionada.estudiante || '').split(' ')[0] || 'estudiante'}</span>
+                                                    )}
+                                                </button>
+                                            </div>
                                         </div>
                                     )}
                                 </div>
