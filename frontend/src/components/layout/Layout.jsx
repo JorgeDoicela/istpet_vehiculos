@@ -69,7 +69,7 @@ const Layout = ({ children }) => {
                     </div>
                 </header>
 
-                <div className="p-3 lg:p-12 pt-16 lg:pt-28">
+                <div className="p-3 lg:p-12 pt-16 lg:pt-28 pb-24 lg:pb-12">
                     {children}
                 </div>
             </main>

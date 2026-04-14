@@ -12,7 +12,8 @@ import {
     fmtFechaAgenda,
     fmtUltimaCargaAgenda,
     estadoAgendaChip,
-    agendaPracticaVigenteParaSugerencia
+    agendaPracticaVigenteParaSugerencia,
+    fmtTimeSpan
 } from '../utils/agendaUi';
 
 /**
@@ -867,7 +868,7 @@ const ControlOperativo = () => {
                                                         <p className="text-[10px] text-[var(--apple-text-sub)] truncate mb-3">Estudiante: {c.estudiante}</p>
                                                         <div className="flex items-center gap-2 text-[9px] font-black text-[var(--apple-text-sub)] uppercase">
                                                             <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                                            Salida: {new Date(c.salida).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            Salida: {fmtTimeSpan(c.salida)}
                                                         </div>
                                                     </div>
                                                 ))
