@@ -663,18 +663,19 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<string>>> RegistrarSalida([FromBody] SalidaRequest req)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
-            Console.WriteLine($"[API] RegistrarSalida: Mat={req.idMatricula}, Veh={req.idVehiculo}, Ins={req.idInstructor}, User={req.registradoPor}");
-            
+            var usuarioLogin = User.Identity?.Name ?? req.registradoPor.ToString();
+            Console.WriteLine($"[API] RegistrarSalida: Mat={req.idMatricula}, Veh={req.idVehiculo}, Ins={req.idInstructor}, User={usuarioLogin}");
+
             var result = await _logisticaService.RegistrarSalidaAsync(
                 req.idMatricula, req.idVehiculo, req.idInstructor,
-                req.registradoPor, req.idsAsignacionHorario, req.observaciones);
+                usuarioLogin, req.idsAsignacionHorario, req.observaciones);
 
             Console.WriteLine($"[API] Resultado RegistrarSalida: {result}");
 
             if (result == "EXITO")
             {
                 await _audit.LogAsync(
-                    req.registradoPor.ToString(), "SALIDA",
+                    usuarioLogin, "SALIDA",
                     entidadId: $"mat:{req.idMatricula}/veh:{req.idVehiculo}",
                     detalles: $"Instructor: {req.idInstructor}.",
                     ipOrigen: ip);
@@ -688,13 +689,14 @@ namespace backend.Controllers
         public async Task<ActionResult<ApiResponse<string>>> RegistrarLlegada([FromBody] LlegadaRequest req)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            var usuarioLogin = User.Identity?.Name ?? req.registradoPor.ToString();
             var result = await _logisticaService.RegistrarLlegadaAsync(
-                req.idPractica, req.registradoPor);
+                req.idPractica, usuarioLogin);
 
             if (result == "EXITO")
             {
                 await _audit.LogAsync(
-                    req.registradoPor.ToString(), "LLEGADA",
+                    usuarioLogin, "LLEGADA",
                     entidadId: $"practica:{req.idPractica}",
                     detalles: $"Salió: OK.",
                     ipOrigen: ip);

@@ -23,7 +23,7 @@ namespace backend.Services.Implementations
         }
 
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, IEnumerable<int>? idsAsignacionHorario = null, string? observaciones = null)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, string usuarioLogin, IEnumerable<int>? idsAsignacionHorario = null, string? observaciones = null)
         {
             idInstructor = (idInstructor ?? "").Trim();
             Console.WriteLine($"[Service] RegistrarSalidaAsync IN: Mat={idMatricula}, Veh={idVehiculo}, Ins='{idInstructor}'");
@@ -108,7 +108,7 @@ namespace backend.Services.Implementations
                     dia = DateTime.Today.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToLower(),
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
-                    user_asigna = registradoPor.ToString(),
+                    user_asigna = usuarioLogin,
                     cancelado = 0,
                     observaciones = observaciones
                 };
@@ -161,7 +161,7 @@ namespace backend.Services.Implementations
             }
         }
 
-        public async Task<string> RegistrarLlegadaAsync(int idPractica, int registradoPor)
+        public async Task<string> RegistrarLlegadaAsync(int idPractica, string usuarioLogin)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -178,7 +178,7 @@ namespace backend.Services.Implementations
                 // 3. Registrar Llegada
                 practica.hora_llegada = DateTime.Now.TimeOfDay;
                 practica.ensalida = 0;
-                practica.user_llegada = registradoPor.ToString();
+                practica.user_llegada = usuarioLogin;
 
                 if (practica.hora_salida.HasValue)
                 {
