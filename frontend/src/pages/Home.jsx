@@ -4,8 +4,10 @@ import ActiveClasses from '../components/features/ActiveClasses';
 import SkeletonLoader from '../components/features/SkeletonLoader';
 import dashboardService from '../services/dashboardService';
 import { fmtTimeSpan } from '../utils/agendaUi';
+import { useOperativeAlerts } from '../context/OperativeAlertsContext';
 
 const Home = () => {
+    const { publishClasesActivas } = useOperativeAlerts();
     const [activeClasses, setActiveClasses] = useState([]);
     const [completedPack, setCompletedPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
@@ -13,6 +15,11 @@ const Home = () => {
     useEffect(() => {
         fetchInitialData();
     }, []);
+
+    useEffect(() => {
+        publishClasesActivas(activeClasses);
+        return () => publishClasesActivas([]);
+    }, [activeClasses, publishClasesActivas]);
 
     const fetchInitialData = async () => {
         setLoading(true);

@@ -99,8 +99,8 @@ export function salidaToMinutes(val) {
   return NaN;
 }
 
-/** Etiqueta “X min / h en ruta” respecto a la hora local actual; null si no aplica. */
-export function fmtTiempoEnRuta(val) {
+/** Minutos desde la hora de salida hasta ahora (mismo criterio que `fmtTiempoEnRuta`, mismo día); null si no aplica. */
+export function minutosEnRuta(val) {
   if (val == null) return null;
   const now = new Date();
   const ahoraMinutos = now.getHours() * 60 + now.getMinutes();
@@ -108,6 +108,13 @@ export function fmtTiempoEnRuta(val) {
   if (Number.isNaN(salidaMinutos)) return null;
   const diferencia = ahoraMinutos - salidaMinutos;
   if (diferencia < 0) return null;
+  return diferencia;
+}
+
+/** Etiqueta “X min / h en ruta” respecto a la hora local actual; null si no aplica. */
+export function fmtTiempoEnRuta(val) {
+  const diferencia = minutosEnRuta(val);
+  if (diferencia == null) return null;
   if (diferencia < 60) return `${diferencia} min en ruta`;
   const horas = Math.floor(diferencia / 60);
   const minutos = diferencia % 60;

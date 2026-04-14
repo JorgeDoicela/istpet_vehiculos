@@ -7,6 +7,7 @@ import dashboardService from '../services/dashboardService';
 import StatusBadge from '../components/common/StatusBadge';
 import ConfirmModal from '../components/common/ConfirmModal';
 import VehicleCard from '../components/logistica/VehicleCard';
+import { useOperativeAlerts } from '../context/OperativeAlertsContext';
 import {
     agendaYmdFromApi,
     ymdLocalHoy,
@@ -25,6 +26,7 @@ import {
  */
 const ControlOperativo = () => {
     const { theme } = useTheme();
+    const { publishClasesActivas } = useOperativeAlerts();
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
@@ -344,6 +346,11 @@ const ControlOperativo = () => {
             showNotification('Error cargando vehículos en pista', 'error');
         }
     };
+
+    useEffect(() => {
+        publishClasesActivas(clasesActivas);
+        return () => publishClasesActivas([]);
+    }, [clasesActivas, publishClasesActivas]);
 
     const buildAgendaCtx = (ag) => {
         if (!ag) return null;

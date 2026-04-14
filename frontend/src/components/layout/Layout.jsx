@@ -1,12 +1,32 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Sidebar from './Sidebar';
 import { useTheme } from '../common/ThemeContext';
 import { useAuth } from '../../context/AuthContext';
+import { useOperativeAlerts } from '../../context/OperativeAlertsContext';
+import { fmtTiempoEnRuta, fmtTimeSpan } from '../../utils/agendaUi';
+
 const logoImg = '/favicon.png';
 
 const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
     const { logout } = useAuth();
+    const { alertasExcesoRuta, limiteMinutosEnRuta } = useOperativeAlerts();
+    const [notifOpen, setNotifOpen] = useState(false);
+    const notifWrapRef = useRef(null);
+
+    useEffect(() => {
+        if (!notifOpen) return;
+        const close = (e) => {
+            if (notifWrapRef.current && !notifWrapRef.current.contains(e.target)) {
+                setNotifOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', close);
+        return () => document.removeEventListener('mousedown', close);
+    }, [notifOpen]);
+
+    const nAlertas = alertasExcesoRuta.length;
+
     return (
         <div className="flex min-h-screen">
             {/* Sidebar Flotante */}
@@ -50,11 +70,68 @@ const Layout = ({ children }) => {
                             )}
                         </button>
 
-                        <button className="relative p-2 text-[var(--apple-text-main)] hover:text-[var(--istpet-gold)] hover:scale-120 transition-all duration-500 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:rotate-12">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
-                            </svg>
-                        </button>
+                        <div className="relative" ref={notifWrapRef}>
+                            <button
+                                type="button"
+                                onClick={() => setNotifOpen((o) => !o)}
+                                className="relative p-2 text-[var(--apple-text-main)] hover:text-[var(--istpet-gold)] hover:scale-120 transition-all duration-500 group"
+                                title="Alertas de rutas prolongadas"
+                                aria-expanded={notifOpen}
+                                aria-haspopup="true"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 lg:w-6 lg:h-6 transition-transform group-hover:rotate-12">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                                </svg>
+                                {nAlertas > 0 ? (
+                                    <span className="absolute top-1 right-0.5 min-w-[1.1rem] h-[1.1rem] px-0.5 flex items-center justify-center rounded-full bg-amber-500 text-[9px] font-black text-white leading-none shadow-sm">
+                                        {nAlertas > 9 ? '9+' : nAlertas}
+                                    </span>
+                                ) : null}
+                            </button>
+                            {notifOpen ? (
+                                <div
+                                    className="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,24rem)] overflow-y-auto rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] shadow-2xl backdrop-blur-xl z-[120] py-2 px-1 animate-apple-in"
+                                    role="menu"
+                                >
+                                    <p className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] border-b border-[var(--apple-border)]/50">
+                                        Más de {limiteMinutosEnRuta / 60} h en ruta
+                                    </p>
+                                    {nAlertas === 0 ? (
+                                        <p className="px-3 py-6 text-center text-xs font-semibold text-[var(--apple-text-sub)]">
+                                            No hay vehículos con ruta prolongada.
+                                        </p>
+                                    ) : (
+                                        <ul className="py-1">
+                                            {alertasExcesoRuta.map((c) => {
+                                                const placaTxt = (c.placa || '').trim();
+                                                const vehTxt =
+                                                    c.numeroVehiculo != null
+                                                        ? `#${c.numeroVehiculo}${placaTxt ? ` · ${placaTxt}` : ''}`
+                                                        : placaTxt || '—';
+                                                const enRuta = fmtTiempoEnRuta(c.salida);
+                                                return (
+                                                    <li
+                                                        key={c.idPractica}
+                                                        className="px-3 py-2.5 rounded-xl hover:bg-[var(--apple-primary)]/5 border-b border-[var(--apple-border)]/30 last:border-0"
+                                                    >
+                                                        <p className="text-xs font-black text-[var(--apple-text-main)] uppercase truncate">
+                                                            {c.estudiante || '—'}
+                                                        </p>
+                                                        <p className="text-[10px] font-bold text-[var(--apple-text-sub)] mt-0.5">
+                                                            {vehTxt}
+                                                            <span className="ml-2 text-amber-600 font-black">{enRuta}</span>
+                                                        </p>
+                                                        <p className="text-[9px] text-[var(--apple-text-sub)] mt-1">
+                                                            Salida {fmtTimeSpan(c.salida)} · {c.instructor || '—'}
+                                                        </p>
+                                                    </li>
+                                                );
+                                            })}
+                                        </ul>
+                                    )}
+                                </div>
+                            ) : null}
+                        </div>
 
                         {/* Logout Button */}
                         <button
