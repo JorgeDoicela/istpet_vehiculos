@@ -264,37 +264,115 @@ namespace backend.Services.Implementations
         {
             try
             {
-                const string sql = @"
+                // Preferimos una cita agendada para HOY que no haya terminado
+                const string sqlAgenda = @"
                     SELECT
-                        p.idPractica,
-                        p.idalumno,
-                        p.idvehiculo,
+                        COALESCE(p.idPractica, 0) AS idPractica,
+                        av.idAlumno AS idalumno,
+                        av.idVehiculo AS idvehiculo,
                         CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
-                        p.idProfesor,
-                        p.idPeriodo AS idPeriodo,
-                        p.fecha,
-                        p.hora_salida,
+                        av.idProfesor AS idProfesor,
+                        av.idPeriodo AS idPeriodo,
+                        fh.fecha AS fecha,
+                        p.hora_salida AS hora_salida,
                         CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
                         CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
                         CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
                         CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
-                        p.hora_llegada AS SigafiHoraLlegada
-                    FROM cond_alumnos_practicas p
-                    JOIN alumnos a ON a.idAlumno = p.idalumno
-                    JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
-                    JOIN profesores pr ON pr.idProfesor = p.idProfesor
-                    WHERE p.idalumno = @p0
-                    AND p.fecha >= CURDATE()
-                    ORDER BY p.fecha ASC, p.hora_salida ASC
+                        p.hora_llegada AS SigafiHoraLlegada,
+                        h.idAsignacionHorario AS idAsignacionHorario,
+                        hc.hora_inicio AS HoraPlanificadaInicio,
+                        hc.hora_fin AS HoraPlanificadaFin,
+                        1 AS EsPlanificado
+                    FROM cond_alumnos_horarios h
+                    JOIN cond_alumnos_vehiculos av ON av.idAsignacion = h.idAsignacion
+                    JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                    JOIN horas_clases hc ON hc.idhora = h.idHora
+                    LEFT JOIN cond_practicas_horarios_alumnos pha ON pha.idAsignacionHorario = h.idAsignacionHorario
+                    LEFT JOIN cond_alumnos_practicas p ON p.idPractica = pha.idPractica
+                    JOIN alumnos a ON a.idAlumno = av.idAlumno
+                    JOIN vehiculos v ON v.idVehiculo = av.idVehiculo
+                    JOIN profesores pr ON pr.idProfesor = av.idProfesor
+                    WHERE TRIM(av.idAlumno) = TRIM(@p0) 
+                    AND fh.fecha = CURDATE() 
+                    AND COALESCE(h.activo, 1) = 1 
+                    AND (p.idPractica IS NULL OR p.hora_llegada IS NULL)
+                    ORDER BY hc.hora_inicio ASC
                     LIMIT 1";
-                return await QuerySingleAsync(sql, idAlumno, MapScheduledPractice);
+
+                var dto = await QuerySingleAsync(sqlAgenda, idAlumno, MapScheduledPractice);
+                
+                if (dto == null)
+                {
+                    // Si no hay agenda hoy, buscamos cualquier práctica abierta
+                    const string sqlOpen = @"
+                        SELECT
+                            p.idPractica,
+                            p.idalumno,
+                            p.idvehiculo,
+                            CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
+                            p.idProfesor,
+                            p.idPeriodo AS idPeriodo,
+                            p.fecha,
+                            p.hora_salida,
+                            CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
+                            CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                            CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                            CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                            p.hora_llegada AS SigafiHoraLlegada,
+                            NULL AS idAsignacionHorario,
+                            NULL AS HoraPlanificadaInicio,
+                            NULL AS HoraPlanificadaFin,
+                            0 AS EsPlanificado
+                        FROM cond_alumnos_practicas p
+                        JOIN alumnos a ON a.idAlumno = p.idalumno
+                        JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+                        JOIN profesores pr ON pr.idProfesor = p.idProfesor
+                        WHERE TRIM(p.idalumno) = TRIM(@p0)
+                        AND p.hora_llegada IS NULL
+                        AND p.fecha >= CURDATE() - INTERVAL 1 DAY
+                        ORDER BY p.fecha DESC, p.hora_salida DESC
+                        LIMIT 1";
+                    dto = await QuerySingleAsync(sqlOpen, idAlumno, MapScheduledPractice);
+                }
+
+                if (dto != null && dto.idAsignacionHorario.HasValue)
+                {
+                    // Encontramos una cita, buscamos todos los bloques vinculados para cerrar en bloque
+                    const string sqlList = @"
+                        SELECT h.idAsignacionHorario
+                        FROM cond_alumnos_horarios h
+                        JOIN cond_alumnos_vehiculos av ON av.idAsignacion = h.idAsignacion
+                        JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                        WHERE TRIM(av.idAlumno) = TRIM(@p0)
+                        AND fh.fecha = CURDATE()
+                        AND av.idVehiculo = @p1
+                        AND COALESCE(h.activo, 1) = 1";
+
+                    using var conn = new MySqlConnection(_connectionString);
+                    await conn.OpenAsync();
+                    using var cmd = new MySqlCommand(sqlList, conn);
+                    cmd.Parameters.AddWithValue("@p0", idAlumno);
+                    cmd.Parameters.AddWithValue("@p1", dto.idvehiculo);
+                    
+                    var ids = new List<int>();
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        ids.Add(reader.GetInt32(0));
+                    }
+                    dto.idsAsignacionHorario = ids.Count > 0 ? ids : new List<int> { dto.idAsignacionHorario.Value };
+                }
+
+                return dto;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error consultando práctica SIGAFI de alumno {idAlumno}", idAlumno);
+                _logger.LogError(ex, "Error consultando práctica agendada SIGAFI para {idAlumno}", idAlumno);
                 return null;
             }
         }
+
 
         public async Task<IEnumerable<ScheduledPracticeDto>> GetRecentSchedulesAsync(int limit = 100)
         {
@@ -496,7 +574,8 @@ namespace backend.Services.Implementations
         {
             try
             {
-                const string sql = @"
+                // Buscamos el horario más próximo
+                const string sqlMain = @"
                     SELECT 
                         h.idAsignacionHorario, 
                         h.idAsignacion, 
@@ -519,20 +598,50 @@ namespace backend.Services.Implementations
                     LEFT JOIN profesores pr ON pr.idProfesor = a.idProfesor
                     WHERE TRIM(a.idAlumno) = TRIM(@p0) 
                     AND COALESCE(h.activo, 1) = 1
-
+                    AND fh.fecha >= CURDATE()
                     ORDER BY 
                         (CASE 
                             WHEN fh.fecha = CURDATE() THEN 0 
-                            WHEN fh.fecha > CURDATE() THEN 1 
-                            ELSE 2 
+                            ELSE 1 
                         END) ASC,
-                        ABS(DATEDIFF(fh.fecha, CURDATE())) ASC,
+                        fh.fecha ASC,
                         hc.hora_inicio ASC
                     LIMIT 1";
 
+                var main = await QuerySingleAsync(sqlMain, idAlumno, MapCentralHorario);
+                if (main == null) return null;
 
+                // 🚀 REFINAMIENTO: Si el horario es hoy, buscamos otros slots para el mismo vínculo (idAsignacion)
+                // que estén agendados para este mismo alumno hoy, para cerrarlos todos en bloque.
+                if (main.FechaReal?.Date == DateTime.Today)
+                {
+                    const string sqlList = @"
+                        SELECT h.idAsignacionHorario
+                        FROM cond_alumnos_horarios h
+                        JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
+                        WHERE h.idAsignacion = @p0
+                        AND fh.fecha = CURDATE()
+                        AND COALESCE(h.activo, 1) = 1";
 
-                return await QuerySingleAsync(sql, idAlumno, MapCentralHorario);
+                    using var conn = new MySqlConnection(_connectionString);
+                    await conn.OpenAsync();
+                    using var cmd = new MySqlCommand(sqlList, conn);
+                    cmd.Parameters.AddWithValue("@p0", main.idAsignacion);
+                    
+                    var ids = new List<int>();
+                    using var reader = await cmd.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        ids.Add(reader.GetInt32(0));
+                    }
+                    main.idsAsignacionHorario = ids.Count > 0 ? ids : new List<int> { main.idAsignacionHorario };
+                }
+                else
+                {
+                    main.idsAsignacionHorario = new List<int> { main.idAsignacionHorario };
+                }
+
+                return main;
             }
             catch (Exception ex)
             {
@@ -540,6 +649,7 @@ namespace backend.Services.Implementations
                 return null;
             }
         }
+
 
         private const string SqlVehiculosSelect = @"
                 SELECT idVehiculo, idSubcategoria, numero_vehiculo, placa, marca, anio, idCategoria,

@@ -112,6 +112,7 @@ namespace backend.Services.Interfaces
 
         // Campos de Planificación Extendida (Agenda Perfecta)
         public int? idAsignacionHorario { get; set; }
+        public List<int>? idsAsignacionHorario { get; set; }
         public string? HoraPlanificadaInicio { get; set; }
         public string? HoraPlanificadaFin { get; set; }
         public bool EsPlanificado { get; set; }
@@ -142,6 +143,7 @@ namespace backend.Services.Interfaces
         public int? FinSemana { get; set; }
         public string? VehiculoPlanificado { get; set; }
         public string? InstructorPlanificado { get; set; }
+        public List<int>? idsAsignacionHorario { get; set; }
     }
 
 

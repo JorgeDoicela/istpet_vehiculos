@@ -381,7 +381,7 @@ const ControlOperativo = () => {
                 idMatricula: estudianteData.idMatricula,
                 idVehiculo: vehiculoSeleccionado.idVehiculo,
                 idInstructor: instructorSeleccionado.idInstructor,
-                idAsignacionHorario: estudianteData.idAsignacionHorario, // 🚀 Vínculo con agenda
+                idsAsignacionHorario: estudianteData.idsAsignacionHorario, // 🚀 Vínculo masivo con agenda
                 observaciones: "Salida Regular Control Parity"
             });
             showNotification('¡Vehículo en pista registrado!');

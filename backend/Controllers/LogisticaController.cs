@@ -420,9 +420,9 @@ namespace backend.Controllers
             {
                 // Inyectamos los datos de la agenda en la respuesta para el frontend
                 student.horarioProximo = scheduled.EsPlanificado ? $"{scheduled.HoraPlanificadaInicio} - {scheduled.HoraPlanificadaFin}" : null;
-                student.idsAsignacionHorario = scheduled.idAsignacionHorario.HasValue 
+                student.idsAsignacionHorario = scheduled.idsAsignacionHorario ?? (scheduled.idAsignacionHorario.HasValue 
                     ? new List<int> { scheduled.idAsignacionHorario.Value } 
-                    : new List<int>();
+                    : new List<int>());
                 student.horarioFecha = scheduled.fecha.ToString("ddd, dd MMM").ToUpper();
                 student.vehiculoPlanificado = scheduled.VehiculoDetalle;
                 student.instructorPlanificado = scheduled.ProfesorNombre;
