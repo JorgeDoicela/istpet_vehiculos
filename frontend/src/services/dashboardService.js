@@ -37,6 +37,22 @@ const dashboardService = {
     const response = await api.post('/Sync/students');
     const body = response?.data;
     return body?.data ?? body?.Data ?? null;
+  },
+
+  getHistorialHoy: async (limit = 10) => {
+    const response = await api.get(`/Dashboard/agenda-historial?limit=${encodeURIComponent(limit)}`);
+    const body = response?.data;
+    const ok = body?.success ?? body?.Success;
+    if (ok === false) {
+      throw new Error(body?.message ?? body?.Message ?? 'Historial no disponible');
+    }
+    const data = body?.data ?? body?.Data;
+    const practicas = data?.practicas ?? data?.Practicas;
+    return {
+      practicas: Array.isArray(practicas) ? practicas.map(normalizeAgendaPractica) : [],
+      fuenteDatos: data?.fuenteDatos ?? data?.FuenteDatos ?? 'sigafi',
+      obtenidoEn: data?.obtenidoEn ?? data?.ObtenidoEn ?? null
+    };
   }
 };
 

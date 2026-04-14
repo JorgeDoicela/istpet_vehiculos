@@ -36,6 +36,7 @@ const Home = () => {
     const { success: toastSuccess, error: toastError } = useToast();
     const [activeClasses, setActiveClasses] = useState([]);
     const [agendaPack, setAgendaPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
+    const [completedPack, setCompletedPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
     const [syncing, setSyncing] = useState(false);
 
@@ -53,7 +54,13 @@ const Home = () => {
                 setAgendaPack(aPack);
             } catch (agErr) {
                 console.warn('[AGENDA]', agErr?.message || agErr);
-                setAgendaPack({ practicas: [], fuenteDatos: '', obtenidoEn: null });
+            }
+
+            try {
+                const cPack = await dashboardService.getHistorialHoy(10);
+                setCompletedPack(cPack);
+            } catch (hErr) {
+                console.warn('[HISTORIAL]', hErr?.message || hErr);
             }
         } catch (err) {
             console.error('[DASHBOARD ERROR]', err.message);
@@ -142,7 +149,7 @@ const Home = () => {
                         <div className="apple-card p-6 lg:p-8 bg-[var(--apple-card)] border border-[var(--apple-border)] animate-apple-in">
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
                                 <div>
-                                    <h2 className="text-lg font-black uppercase tracking-tight text-[var(--apple-text-main)]">Agenda reciente</h2>
+                                    <h2 className="text-lg font-black uppercase tracking-tight text-[var(--apple-text-main)]">Agenda de hoy (Pendientes)</h2>
                                     <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-1">
                                         {agendaPack.fuenteDatos === 'local' ? 'Espejo local' : 'SIGAFI'}
                                         {agendaPack.obtenidoEn ? ` · ${fmtUltimaCargaAgenda(agendaPack.obtenidoEn)}` : ''}
@@ -160,7 +167,7 @@ const Home = () => {
                                     const chip = estadoAgendaChip(ag.estadoOperativo);
                                     return (
                                         <li
-                                            key={ag.idPractica}
+                                            key={ag.idPractica || ag.idAsignacionHorario}
                                             className="flex flex-wrap items-center gap-3 justify-between rounded-2xl border border-[var(--apple-border)]/60 bg-[var(--apple-bg)]/50 px-4 py-3"
                                         >
                                             <div className="min-w-0 flex-1">
@@ -173,6 +180,38 @@ const Home = () => {
                                         </li>
                                     );
                                 })}
+                            </ul>
+                        </div>
+                    )}
+
+                    {!loading && completedPack.practicas.length > 0 && (
+                        <div className="apple-card p-6 lg:p-8 bg-[var(--apple-card)] border border-[var(--apple-border)] animate-apple-in">
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-5">
+                                <div>
+                                    <h2 className="text-lg font-black uppercase tracking-tight text-[var(--apple-text-main)]">Retornos Recientes</h2>
+                                    <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-wider mt-1">
+                                        Estudiantes que ya completaron sus prácticas hoy
+                                    </p>
+                                </div>
+                            </div>
+                            <ul className="space-y-3 font-semibold">
+                                {completedPack.practicas.map((ag) => (
+                                    <li
+                                        key={ag.idPractica}
+                                        className="flex items-center gap-3 justify-between rounded-2xl border border-emerald-500/20 bg-emerald-50/5 px-4 py-3"
+                                    >
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-black text-[var(--apple-text-main)] uppercase truncate">{ag.AlumnoNombre}</p>
+                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] mt-1">
+                                                {ag.VehiculoDetalle} · {ag.ProfesorNombre}
+                                            </p>
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-[10px] font-black text-emerald-500 uppercase">Completado</p>
+                                            <p className="text-[9px] font-bold text-[var(--apple-text-sub)] mt-0.5">{fmtTimeSpan(ag.SigafiHoraLlegada)}</p>
+                                        </div>
+                                    </li>
+                                ))}
                             </ul>
                         </div>
                     )}

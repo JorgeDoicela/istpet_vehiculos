@@ -371,6 +371,9 @@ namespace backend.Services.Interfaces
 
         Task<bool> PingSigafiAsync();
 
+        /// <summary>Historial de retornos de hoy (completados).</summary>
+        Task<IEnumerable<ScheduledPracticeDto>> GetTodayCompletedPracticesAsync(int limit = 50);
+
         /// <summary>
         /// Invalida todas las entradas de caché de catálogos SIGAFI.
         /// Llamar antes de un MasterSync para garantizar datos frescos.

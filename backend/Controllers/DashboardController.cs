@@ -109,5 +109,20 @@ namespace backend.Controllers
                 return StatusCode(500, ApiResponse<AgendaLogisticaResponseDto>.Fail($"Agenda: {ex.Message}"));
             }
         }
+
+        [HttpGet("agenda-historial")]
+        public async Task<ActionResult<ApiResponse<AgendaLogisticaResponseDto>>> GetAgendaHistorial([FromQuery] int limit = 50)
+        {
+            try
+            {
+                var take = Math.Clamp(limit, 1, 100);
+                var payload = await _agendaPanel.GetTodayHistoryAsync(take);
+                return Ok(ApiResponse<AgendaLogisticaResponseDto>.Ok(payload));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<AgendaLogisticaResponseDto>.Fail($"Historial: {ex.Message}"));
+            }
+        }
     }
 }

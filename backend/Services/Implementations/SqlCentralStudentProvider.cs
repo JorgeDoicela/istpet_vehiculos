@@ -413,6 +413,8 @@ namespace backend.Services.Implementations
                     AND COALESCE(h.activo, 1) = 1 
                     AND COALESCE(h.asiste, 0) = 0
                     AND COALESCE(av.activa, 1) = 1
+                    -- [FILTRO PENDIENTES] Excluir si ya tiene práctica iniciada o finalizada
+                    AND (p.idPractica IS NULL OR (p.ensalida = 0 AND p.hora_llegada IS NULL))
 
                     UNION
 
@@ -448,17 +450,62 @@ namespace backend.Services.Implementations
                       AND NOT EXISTS (
                           SELECT 1 
                           FROM cond_practicas_horarios_alumnos pha 
-                          JOIN cond_alumnos_horarios h ON h.idAsignacionHorario = pha.idAsignacionHorario
-                          JOIN fechas_horarios fh ON fh.idFecha = h.idFecha
-                          WHERE pha.idPractica = p.idPractica AND fh.fecha = CURDATE()
+                          WHERE pha.idPractica = p.idPractica
                       )
+                      -- [FILTRO PENDIENTES] Para no planificados, solo si no han salido ni regresado
+                      AND p.ensalida = 0 AND p.hora_llegada IS NULL
                     ORDER BY fecha DESC, COALESCE(HoraPlanificadaInicio, '23:59:00') ASC, hora_salida DESC
                     LIMIT {take}";
                 return await QueryListAsync(sql, MapScheduledPractice);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error consultando prácticas recientes SIGAFI.");
+                _logger.LogError(ex, "Error consultando agenda SIGAFI.");
+                return new List<ScheduledPracticeDto>();
+            }
+        }
+
+        /// <summary>
+        /// Obtiene el historial de prácticas COMPLETADAS (con retorno) del día actual.
+        /// </summary>
+        public async Task<IEnumerable<ScheduledPracticeDto>> GetTodayCompletedPracticesAsync(int limit = 50)
+        {
+            try
+            {
+                var take = Math.Clamp(limit, 1, 100);
+                var sql = $@"
+                    SELECT
+                        p.idPractica,
+                        p.idalumno,
+                        p.idvehiculo,
+                        CONCAT_WS(' ', a.apellidoPaterno, a.apellidoMaterno, a.primerNombre, a.segundoNombre) AS AlumnoNombre,
+                        p.idProfesor,
+                        p.idPeriodo AS idPeriodo,
+                        p.fecha,
+                        p.hora_salida,
+                        CONCAT('#', v.numero_vehiculo, ' (', v.placa, ')') AS VehiculoDetalle,
+                        CONCAT_WS(' ', pr.apellidos, pr.nombres) AS ProfesorNombre,
+                        CAST(COALESCE(p.cancelado, 0) AS SIGNED) AS SigafiCancelado,
+                        CAST(COALESCE(p.ensalida, 0) AS SIGNED) AS SigafiEnsalida,
+                        p.hora_llegada AS SigafiHoraLlegada,
+                        NULL AS idAsignacionHorario,
+                        NULL AS HoraPlanificadaInicio,
+                        NULL AS HoraPlanificadaFin,
+                        0 AS EsPlanificado
+                    FROM cond_alumnos_practicas p
+                    JOIN alumnos a ON a.idAlumno = p.idalumno
+                    JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+                    JOIN profesores pr ON pr.idProfesor = p.idProfesor
+                    WHERE p.fecha = CURDATE()
+                      AND p.hora_llegada IS NOT NULL
+                    ORDER BY p.hora_llegada DESC
+                    LIMIT {take}";
+
+                return await QueryListAsync(sql, MapScheduledPractice);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error consultando historial de retornos SIGAFI.");
                 return new List<ScheduledPracticeDto>();
             }
         }

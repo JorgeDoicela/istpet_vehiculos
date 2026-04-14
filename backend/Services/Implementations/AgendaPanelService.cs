@@ -132,5 +132,16 @@ namespace backend.Services.Implementations
             }).ToList();
         }
 */
+        public async Task<AgendaLogisticaResponseDto> GetTodayHistoryAsync(int limit = 50)
+        {
+            var list = (await _central.GetTodayCompletedPracticesAsync(limit)).ToList();
+
+            return new AgendaLogisticaResponseDto
+            {
+                Practicas = list,
+                FuenteDatos = "sigafi",
+                ObtenidoEn = DateTime.UtcNow
+            };
+        }
     }
 }
