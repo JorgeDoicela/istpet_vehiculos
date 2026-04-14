@@ -6,6 +6,11 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './Reports.css';
 
+const inputCls =
+    'w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-2.5 text-sm font-bold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/45 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none';
+
+const labelCls = 'text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60 block mb-1.5';
+
 /**
  * Reports: Absolute SIGAFI Parity Edition 2026.
  * All property naming aligned with SIGAFI / Backend Refactor (idAlumno, idProfesor, numeroVehiculo).
@@ -98,122 +103,96 @@ const Reports = () => {
 
     return (
         <Layout>
-            <div className="reports-container animate-apple-in w-full max-w-full min-w-0">
-                <div className="reports-header mb-6 sm:mb-8">
-                    <div className="flex flex-col gap-4 sm:gap-6 lg:flex-row lg:items-center lg:justify-between">
-                        <div className="min-w-0">
-                            <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-0">
-                                Administración
-                            </p>
-                            <h1 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
-                                Reporte de Prácticas
-                            </h1>
-                        </div>
-
-                        <div className="flex w-full sm:w-auto shrink-0">
-                            <button
-                                onClick={exportToExcel}
-                                disabled={data.length === 0}
-                                className="w-full sm:w-auto justify-center px-6 py-3 bg-[var(--istpet-gold)] text-white rounded-full text-xs font-black uppercase tracking-widest shadow-xl shadow-amber-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center gap-2 disabled:opacity-30"
-                            >
-                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                Descargar Excel
-                            </button>
-                        </div>
+            <div className="reports-page space-y-5 animate-apple-in w-full max-w-full min-w-0">
+                {/* Cabecera — misma jerarquía que /historial */}
+                <div className="px-1 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+                    <div>
+                        <p className="text-[10px] lg:text-xs font-black text-[var(--istpet-gold)] uppercase tracking-[0.2em] mb-0">
+                            Administración
+                        </p>
+                        <h1 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tighter uppercase leading-tight">
+                            Reporte de prácticas
+                        </h1>
                     </div>
+                    <button
+                        type="button"
+                        onClick={exportToExcel}
+                        disabled={data.length === 0}
+                        className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all self-start sm:self-auto disabled:opacity-35 disabled:pointer-events-none"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Descargar Excel
+                    </button>
                 </div>
 
-                {error && (
-                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-4 text-sm font-bold text-rose-500 mb-4 sm:mb-6">
-                        {error}
-                    </div>
-                )}
-
-                <div className="apple-glass-card p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 rounded-[1.5rem] sm:rounded-[2.5rem]">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 items-end">
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Desde</label>
-                            <input
-                                type="date"
-                                name="fechaInicio"
-                                value={filtros.fechaInicio}
-                                onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
-                            />
+                <div className="space-y-4">
+                    {/* Filtros — mismo bloque que HistorialPanel */}
+                    <div className="apple-card p-4 bg-[var(--apple-card)] border border-[var(--apple-border)] space-y-3">
+                        <div className="grid grid-cols-2 gap-3">
+                            <div>
+                                <label className={labelCls}>Desde</label>
+                                <input type="date" name="fechaInicio" value={filtros.fechaInicio} onChange={handleFiltroChange} className={inputCls} />
+                            </div>
+                            <div>
+                                <label className={labelCls}>Hasta</label>
+                                <input type="date" name="fechaFin" value={filtros.fechaFin} onChange={handleFiltroChange} className={inputCls} />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Hasta</label>
-                            <input
-                                type="date"
-                                name="fechaFin"
-                                value={filtros.fechaFin}
-                                onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
-                            />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Filtro Instructor</label>
-                            <select
-                                name="instructorId"
-                                value={filtros.instructorId}
-                                onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner appearance-none"
-                            >
-                                <option value="">TODOS LOS DOCENTES</option>
+                        <div>
+                            <label className={labelCls}>Instructor</label>
+                            <select name="instructorId" value={filtros.instructorId} onChange={handleFiltroChange} className={`${inputCls} appearance-none`}>
+                                <option value="">Todos</option>
                                 {instructores.map(i => (
                                     <option key={i.idInstructor} value={i.idInstructor}>{i.fullName}</option>
                                 ))}
                             </select>
                         </div>
-                        <button
-                            type="button"
-                            onClick={ejecutarReporte}
-                            disabled={loading}
-                            className="btn-apple-primary h-12 sm:col-span-2 xl:col-span-1 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
-                        >
-                            {loading ? (
-                                <>
-                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                    </svg>
-                                    Buscando…
-                                </>
-                            ) : 'Buscar'}
-                        </button>
+                        <div className="flex flex-col sm:flex-row gap-2 pt-1">
+                            <button
+                                type="button"
+                                onClick={ejecutarReporte}
+                                disabled={loading}
+                                className="btn-apple-primary w-full sm:flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest disabled:opacity-50 disabled:pointer-events-none"
+                            >
+                                {loading ? 'Buscando…' : 'Buscar'}
+                            </button>
+                        </div>
                     </div>
-                </div>
 
-                <div className="apple-glass-card overflow-hidden rounded-[1.5rem] sm:rounded-[2.5rem]">
-                    <div className="md:hidden p-4 space-y-3">
-                        {loading && data.length === 0 && (
-                            <div className="flex justify-center py-16">
-                                <svg className="animate-spin h-8 w-8 text-[var(--istpet-gold)]" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                                </svg>
-                            </div>
-                        )}
-                        {!loading && !cargado && (
-                            <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 py-12 px-4">
-                                Ajusta el rango y el instructor, luego pulsa <span className="text-[var(--istpet-gold)]">Buscar</span> para generar el reporte.
-                            </p>
-                        )}
-                        {!loading && cargado && data.length === 0 && (
-                            <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40 py-12">
-                                No hay registros para los filtros seleccionados
-                            </p>
-                        )}
-                        {cargado && data.length > 500 && (
-                            <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
-                                <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
-                                    Limitado a los últimos 500 de {data.length} registros. Use Excel para el total.
-                                </p>
-                            </div>
-                        )}
-                        {cargado && !loading && data.length > 0 && data.slice(0, 500).map((item) => (
+                    {error && (
+                        <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-4 text-sm font-bold text-rose-500">
+                            {error}
+                        </div>
+                    )}
+
+                    {!error && (
+                        <>
+                            <div className="md:hidden space-y-2.5">
+                                {loading && data.length === 0 && (
+                                    <div className="flex justify-center py-12">
+                                        <div className="w-8 h-8 rounded-full border-2 border-t-[var(--apple-primary)] border-transparent animate-spin" />
+                                    </div>
+                                )}
+                                {!loading && !cargado && (
+                                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 py-12 px-4">
+                                        Ajusta los filtros y pulsa <span className="text-[var(--apple-primary)]">Buscar</span> para cargar el reporte.
+                                    </p>
+                                )}
+                                {!loading && cargado && data.length === 0 && (
+                                    <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40 py-12">
+                                        Sin registros para los filtros seleccionados
+                                    </p>
+                                )}
+                                {cargado && data.length > 500 && (
+                                    <div className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] px-4 py-3">
+                                        <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase tracking-widest leading-relaxed">
+                                            Limitado a los últimos 500 de {data.length} registros. Use Excel para el total.
+                                        </p>
+                                    </div>
+                                )}
+                                {cargado && !loading && data.length > 0 && data.slice(0, 500).map((item) => (
                             <article
                                 key={item.idPractica}
                                 className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3"
@@ -223,7 +202,7 @@ const Reports = () => {
                                         <p className="text-[10px] font-black uppercase tracking-wider text-[var(--apple-text-sub)]">Profesor</p>
                                         <p className="text-sm font-black text-[var(--apple-text-main)] uppercase truncate">{item.profesor}</p>
                                     </div>
-                                    <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-[var(--apple-bg)] border border-[var(--apple-border)] text-[var(--istpet-gold)] shrink-0">
+                                    <span className="text-[9px] font-black px-2 py-1 rounded-lg bg-[var(--apple-bg)] border border-[var(--apple-border)] text-[var(--apple-primary)] shrink-0">
                                         {item.categoria}
                                     </span>
                                 </div>
@@ -269,21 +248,21 @@ const Reports = () => {
                                     )}
                                 </div>
                             </article>
-                        ))}
-                    </div>
+                                ))}
+                            </div>
 
-                    {cargado && data.length > 500 && (
-                        <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
-                            <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
-                                Mostrando 500 de {data.length} registros para optimizar carga. Use "Descargar Excel" para el reporte completo.
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="hidden md:block reports-table-wrap overflow-x-auto custom-scrollbar">
+                            <div className="hidden md:block rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] overflow-hidden">
+                                {cargado && data.length > 500 && (
+                                    <div className="px-6 py-3 border-b border-[var(--apple-border)] bg-[var(--apple-bg)]/20">
+                                        <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase tracking-widest leading-relaxed">
+                                            Mostrando 500 de {data.length} registros para optimizar carga. Use «Descargar Excel» para el reporte completo.
+                                        </p>
+                                    </div>
+                                )}
+                                <div className="reports-table-wrap overflow-x-auto custom-scrollbar">
                         <table className="reports-data-table w-full min-w-[920px] text-left border-collapse">
                             <thead>
-                                <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg)]/20">
+                                <tr className="border-b border-[var(--apple-border)] bg-[var(--apple-bg)]/30">
                                     <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">idprofesor</th>
                                     <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">profesor</th>
                                     <th className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">categoria</th>
@@ -303,9 +282,9 @@ const Reports = () => {
                                     <tr>
                                         <td colSpan="12" className="py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full border-2 border-t-[var(--istpet-gold)] border-transparent animate-spin" />
-                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--apple-text-sub)] opacity-40">
-                                                    Procesando reporte…
+                                                <div className="w-12 h-12 rounded-full border-2 border-t-[var(--apple-primary)] border-transparent animate-spin" />
+                                                <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40">
+                                                    Cargando reporte…
                                                 </p>
                                             </div>
                                         </td>
@@ -315,7 +294,7 @@ const Reports = () => {
                                     <tr>
                                         <td colSpan="12" className="py-20 text-center px-6">
                                             <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 max-w-lg mx-auto leading-relaxed">
-                                                Ajusta el rango y el instructor, luego pulsa <span className="text-[var(--istpet-gold)]">Buscar</span> para generar el reporte.
+                                                Ajusta los filtros y pulsa <span className="text-[var(--apple-primary)]">Buscar</span> para cargar el reporte.
                                             </p>
                                         </td>
                                     </tr>
@@ -323,8 +302,8 @@ const Reports = () => {
                                 {!loading && cargado && data.length === 0 && (
                                     <tr>
                                         <td colSpan="12" className="py-20 text-center">
-                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--apple-text-sub)] opacity-40">
-                                                No hay registros para los filtros seleccionados
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40">
+                                                Sin registros para los filtros seleccionados
                                             </p>
                                         </td>
                                     </tr>
@@ -334,7 +313,7 @@ const Reports = () => {
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idProfesor}</td>
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.profesor}</td>
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black">
-                                            <span className="bg-[var(--apple-bg)] px-2 py-1 rounded border border-[var(--apple-border)] text-[var(--istpet-gold)]">
+                                            <span className="bg-[var(--apple-bg)] px-2 py-1 rounded border border-[var(--apple-border)] text-[var(--apple-primary)]">
                                                 {item.categoria}
                                             </span>
                                         </td>
@@ -361,7 +340,10 @@ const Reports = () => {
                                 ))}
                             </tbody>
                         </table>
-                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
         </Layout>
