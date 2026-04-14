@@ -117,6 +117,19 @@ const ControlOperativo = () => {
         }
     }, [vehiculoSeleccionado, activeTab]);
 
+    // Auto-scroll a la ficha cuando se carga un estudiante (solo si no es visible)
+    useEffect(() => {
+        if (estudianteData && activeTab === 'salida') {
+            const timer = setTimeout(() => {
+                const el = document.getElementById('ficha-salida');
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+            }, 600); 
+            return () => clearTimeout(timer);
+        }
+    }, [estudianteData, activeTab]);
+
     const clasesActivasParaLlegada = useMemo(() => {
         const q = filtroLlegada.trim().toLowerCase().replace(/\s+/g, ' ');
         let list = Array.isArray(clasesActivas) ? [...clasesActivas] : [];
@@ -554,7 +567,7 @@ const ControlOperativo = () => {
                         </div>
 
                         {activeTab === 'salida' ? (
-                            <div className="apple-card !pt-9 lg:!pt-12">
+                            <div id="ficha-salida" className="apple-card !pt-9 lg:!pt-12 pb-32 scroll-mt-20">
                                 <div className="mb-6 px-2 flex items-start justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
@@ -844,7 +857,7 @@ const ControlOperativo = () => {
                                         </div>
                                     </div>
 
-                                    <div className="pt-6 px-1 relative">
+                                    <div id="seccion-instructor" className="pt-6 px-1 relative">
                                         <div className="mb-2 transition-all">
                                             <p className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 transition-colors duration-300 ${showInstructorMenu ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>Instructor</p>
                                         </div>
@@ -938,6 +951,7 @@ const ControlOperativo = () => {
 
                                     <div className="pt-6 border-t border-[var(--apple-border)] mt-4">
                                         <button
+                                            id="btn-registrar-salida"
                                             onClick={handleProcesarSalida}
                                             disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
                                             className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01]'}`}
