@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import Layout from '../components/layout/Layout';
 import reportService from '../services/reportService';
 import { logisticaService } from '../services/logisticaService';
-import { useTheme } from '../components/common/ThemeContext';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import './Reports.css';
@@ -12,9 +11,10 @@ import './Reports.css';
  * All property naming aligned with SIGAFI / Backend Refactor (idAlumno, idProfesor, numeroVehiculo).
  */
 const Reports = () => {
-    const { theme } = useTheme();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([]);
+    const [cargado, setCargado] = useState(false);
+    const [error, setError] = useState('');
     const [instructores, setInstructores] = useState([]);
     const [filtros, setFiltros] = useState({
         fechaInicio: new Date().toISOString().split('T')[0],
@@ -23,7 +23,6 @@ const Reports = () => {
     });
     useEffect(() => {
         cargarInstructores();
-        ejecutarReporte();
     }, []);
 
     const cargarInstructores = async () => {
@@ -37,6 +36,7 @@ const Reports = () => {
 
     const ejecutarReporte = async () => {
         setLoading(true);
+        setError('');
         try {
             const res = await reportService.getReportePracticas(filtros);
             const rawData = res?.Data || res?.data || (Array.isArray(res) ? res : []);
@@ -57,8 +57,13 @@ const Reports = () => {
                 cancelado: item.cancelado || item.Cancelado || 0
             }));
             setData(listaNormalizada);
-        } catch (error) {
-            console.error('Error al generar reporte:', error);
+            setCargado(true);
+        } catch (err) {
+            console.error('Error al generar reporte:', err);
+            const msg = err?.message ?? err?.Message ?? err?.title ?? 'Error al generar el reporte';
+            setError(typeof msg === 'string' ? msg : 'Error al generar el reporte');
+            setData([]);
+            setCargado(true);
         } finally {
             setLoading(false);
         }
@@ -120,6 +125,12 @@ const Reports = () => {
                     </div>
                 </div>
 
+                {error && (
+                    <div className="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-4 text-sm font-bold text-rose-500 mb-4 sm:mb-6">
+                        {error}
+                    </div>
+                )}
+
                 <div className="apple-glass-card p-4 sm:p-6 lg:p-8 mb-6 sm:mb-8 rounded-[1.5rem] sm:rounded-[2.5rem]">
                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 items-end">
                         <div className="space-y-2">
@@ -129,7 +140,7 @@ const Reports = () => {
                                 name="fechaInicio"
                                 value={filtros.fechaInicio}
                                 onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)]/50 border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
+                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
                             />
                         </div>
                         <div className="space-y-2">
@@ -139,7 +150,7 @@ const Reports = () => {
                                 name="fechaFin"
                                 value={filtros.fechaFin}
                                 onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)]/50 border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
+                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner"
                             />
                         </div>
                         <div className="space-y-2">
@@ -148,7 +159,7 @@ const Reports = () => {
                                 name="instructorId"
                                 value={filtros.instructorId}
                                 onChange={handleFiltroChange}
-                                className="w-full bg-[var(--apple-bg)]/50 border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner appearance-none"
+                                className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-3 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] transition-all outline-none shadow-inner appearance-none"
                             >
                                 <option value="">TODOS LOS DOCENTES</option>
                                 {instructores.map(i => (
@@ -157,22 +168,27 @@ const Reports = () => {
                             </select>
                         </div>
                         <button
+                            type="button"
                             onClick={ejecutarReporte}
-                            className="bg-[var(--apple-text-main)] text-[var(--apple-bg)] h-12 sm:col-span-2 xl:col-span-1 rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-all flex items-center justify-center gap-2"
+                            disabled={loading}
+                            className="btn-apple-primary h-12 sm:col-span-2 xl:col-span-1 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 disabled:opacity-50 disabled:pointer-events-none"
                         >
                             {loading ? (
-                                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                            ) : "Actualizar"}
+                                <>
+                                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Buscando…
+                                </>
+                            ) : 'Buscar'}
                         </button>
                     </div>
                 </div>
 
                 <div className="apple-glass-card overflow-hidden rounded-[1.5rem] sm:rounded-[2.5rem]">
                     <div className="md:hidden p-4 space-y-3">
-                        {loading && (
+                        {loading && data.length === 0 && (
                             <div className="flex justify-center py-16">
                                 <svg className="animate-spin h-8 w-8 text-[var(--istpet-gold)]" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -180,14 +196,24 @@ const Reports = () => {
                                 </svg>
                             </div>
                         )}
-                        {data.length > 500 && (
+                        {!loading && !cargado && (
+                            <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 py-12 px-4">
+                                Ajusta el rango y el instructor, luego pulsa <span className="text-[var(--istpet-gold)]">Buscar</span> para generar el reporte.
+                            </p>
+                        )}
+                        {!loading && cargado && data.length === 0 && (
+                            <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40 py-12">
+                                No hay registros para los filtros seleccionados
+                            </p>
+                        )}
+                        {cargado && data.length > 500 && (
                             <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
                                 <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
                                     Limitado a los últimos 500 de {data.length} registros. Use Excel para el total.
                                 </p>
                             </div>
                         )}
-                        {!loading && data.length > 0 && data.slice(0, 500).map((item) => (
+                        {cargado && !loading && data.length > 0 && data.slice(0, 500).map((item) => (
                             <article
                                 key={item.idPractica}
                                 className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3"
@@ -246,7 +272,7 @@ const Reports = () => {
                         ))}
                     </div>
 
-                    {data.length > 500 && (
+                    {cargado && data.length > 500 && (
                         <div className="px-6 py-3 bg-[var(--istpet-gold)]/10 border-b border-[var(--istpet-gold)]/10">
                             <p className="text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest leading-relaxed">
                                 Mostrando 500 de {data.length} registros para optimizar carga. Use "Descargar Excel" para el reporte completo.
@@ -273,49 +299,66 @@ const Reports = () => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[var(--apple-border)]">
-                                {data.length === 0 ? (
+                                {loading && data.length === 0 && (
                                     <tr>
-                                        <td colSpan="12" className="py-20 text-center animate-pulse">
+                                        <td colSpan="12" className="py-20 text-center">
                                             <div className="flex flex-col items-center gap-3">
-                                                <div className="w-12 h-12 rounded-full border-2 border-t-[var(--istpet-gold)] border-transparent animate-spin"></div>
+                                                <div className="w-12 h-12 rounded-full border-2 border-t-[var(--istpet-gold)] border-transparent animate-spin" />
                                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--apple-text-sub)] opacity-40">
-                                                    {loading ? "PROCESANDO REPORTES MASIVOS..." : "NO HAY REGISTROS"}
+                                                    Procesando reporte…
                                                 </p>
                                             </div>
                                         </td>
                                     </tr>
-                                ) : (
-                                    data.slice(0, 500).map((item) => (
-                                        <tr key={item.idPractica} className="hover:bg-[var(--apple-bg)]/60 transition-colors group">
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idProfesor}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.profesor}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black">
-                                                <span className="bg-[var(--apple-bg)] px-2 py-1 rounded border border-[var(--apple-border)] text-[var(--istpet-gold)]">
-                                                    {item.categoria}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
-                                                <span className="inline-flex w-7 h-7 rounded bg-[var(--apple-text-main)] text-[var(--apple-bg)] items-center justify-center font-black text-[10px]">
-                                                    {item.numeroVehiculo}
-                                                </span>
-                                            </td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idAlumno}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase truncate max-w-[150px]">{item.nomina}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-sub)] uppercase italic">{item.dia}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.fecha}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-emerald-600 tabular-nums">{item.horaSalida}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-rose-500 tabular-nums">{item.horaLlegada || "--:--:--"}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.tiempo}</td>
-                                            <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
-                                                {item.cancelado ? (
-                                                    <span className="text-[10px] font-black text-rose-500">SÍ</span>
-                                                ) : (
-                                                    <span className="text-[10px] font-black text-[var(--apple-text-sub)] opacity-20">NO</span>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
                                 )}
+                                {!loading && !cargado && (
+                                    <tr>
+                                        <td colSpan="12" className="py-20 text-center px-6">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-50 max-w-lg mx-auto leading-relaxed">
+                                                Ajusta el rango y el instructor, luego pulsa <span className="text-[var(--istpet-gold)]">Buscar</span> para generar el reporte.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                )}
+                                {!loading && cargado && data.length === 0 && (
+                                    <tr>
+                                        <td colSpan="12" className="py-20 text-center">
+                                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-[var(--apple-text-sub)] opacity-40">
+                                                No hay registros para los filtros seleccionados
+                                            </p>
+                                        </td>
+                                    </tr>
+                                )}
+                                {cargado && data.slice(0, 500).map((item) => (
+                                    <tr key={item.idPractica} className="hover:bg-[var(--apple-bg)]/60 transition-colors group">
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idProfesor}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.profesor}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black">
+                                            <span className="bg-[var(--apple-bg)] px-2 py-1 rounded border border-[var(--apple-border)] text-[var(--istpet-gold)]">
+                                                {item.categoria}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
+                                            <span className="inline-flex w-7 h-7 rounded bg-[var(--apple-text-main)] text-[var(--apple-bg)] items-center justify-center font-black text-[10px]">
+                                                {item.numeroVehiculo}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idAlumno}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase truncate max-w-[150px]">{item.nomina}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[10px] font-bold text-[var(--apple-text-sub)] uppercase italic">{item.dia}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.fecha}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-emerald-600 tabular-nums">{item.horaSalida}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-rose-500 tabular-nums">{item.horaLlegada || "--:--:--"}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold tabular-nums">{item.tiempo}</td>
+                                        <td className="px-3 lg:px-5 py-3 lg:py-4 text-center">
+                                            {item.cancelado ? (
+                                                <span className="text-[10px] font-black text-rose-500">SÍ</span>
+                                            ) : (
+                                                <span className="text-[10px] font-black text-[var(--apple-text-sub)] opacity-20">NO</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>

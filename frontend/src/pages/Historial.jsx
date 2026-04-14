@@ -6,7 +6,7 @@ import LogsPanel from '../components/features/LogsPanel';
 const TABS = [
   {
     id: 'historial',
-    label: 'Historial',
+    label: 'Registros',
     icon: (
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2M12 2a10 10 0 1 1 0 20A10 10 0 0 1 12 2Z" />
