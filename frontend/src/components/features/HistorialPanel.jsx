@@ -28,7 +28,7 @@ function SpinnerIcon() {
 }
 
 const inputCls =
-  'w-full bg-[var(--apple-bg)]/50 border-2 border-[var(--apple-border)] rounded-2xl px-4 py-2.5 text-sm font-bold text-[var(--apple-text-main)] focus:border-[var(--apple-primary)] transition-all outline-none';
+  'w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-2xl px-4 py-2.5 text-sm font-bold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/45 focus:border-[var(--apple-primary)] shadow-inner transition-all outline-none';
 
 const labelCls = 'text-[9px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60 block mb-1.5';
 
@@ -91,8 +91,6 @@ export default function HistorialPanel() {
     ejecutar(next);
   };
 
-  const total = data.length;
-
   const hayFiltrosActivos = filtros.busqueda || filtros.instructorId || filtros.estado ||
     filtros.fechaInicio !== hoy() || filtros.fechaFin !== hoy();
 
@@ -132,7 +130,7 @@ export default function HistorialPanel() {
           </div>
         </div>
 
-        {/* Fila 3: búsqueda + badge + limpiar */}
+        {/* Fila 3: búsqueda + limpiar */}
         <div className="flex items-end gap-2">
           <div className="flex-1 min-w-0">
             <label className={labelCls}>Buscar alumno / instructor</label>
@@ -157,11 +155,6 @@ export default function HistorialPanel() {
               )}
             </div>
           </div>
-          {cargado && (
-            <span className="shrink-0 text-[10px] font-black text-[var(--apple-text-sub)] bg-[var(--apple-bg)] border border-[var(--apple-border)] px-3 py-2.5 rounded-2xl whitespace-nowrap">
-              {total} reg.
-            </span>
-          )}
           {hayFiltrosActivos && (
             <button
               onClick={limpiar}

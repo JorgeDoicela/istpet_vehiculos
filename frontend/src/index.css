@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    color-scheme: light;
     /* Paleta Corporativa ISTPET 2026 Core */
     --istpet-navy: #1a2544;
     --istpet-gold: #b5944a;
@@ -21,6 +22,7 @@
   }
 
   .dark {
+    color-scheme: dark;
     /* Configuración Modo Oscuro */
     --apple-bg: #0f172a;
     --apple-card: rgba(30, 41, 59, 0.4);
