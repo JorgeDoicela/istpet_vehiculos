@@ -29,6 +29,7 @@ const ControlOperativo = () => {
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
     const instructorInputRef = useRef(null);
+    const agendaSheetTouchStartY = useRef(0);
 
     // Sync activeTab con URL params
     useEffect(() => {
@@ -1266,8 +1267,22 @@ const ControlOperativo = () => {
                 <div className="lg:hidden fixed inset-0 z-[200] flex flex-col justify-end animate-apple-in">
                     <div className="absolute inset-0 bg-black/30 backdrop-blur-md" onClick={() => setShowAgendaDrawer(false)} />
                     <div className="relative bg-[var(--apple-bg)] rounded-t-[2.5rem] max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
-                        <div className="flex justify-center pt-2 pb-0.5"><div className="w-10 h-1 rounded-full bg-[var(--apple-border)]" /></div>
-                        <div className="flex items-center justify-between px-5 pt-1 pb-1 gap-3">
+                        <button
+                            type="button"
+                            className="flex w-full items-center justify-center py-3 touch-manipulation shrink-0 cursor-pointer active:opacity-70"
+                            aria-label="Cerrar agenda"
+                            onClick={() => setShowAgendaDrawer(false)}
+                            onTouchStart={(e) => {
+                                agendaSheetTouchStartY.current = e.touches[0].clientY;
+                            }}
+                            onTouchEnd={(e) => {
+                                const dy = e.changedTouches[0].clientY - agendaSheetTouchStartY.current;
+                                if (dy > 48) setShowAgendaDrawer(false);
+                            }}
+                        >
+                            <span className="w-10 h-1 rounded-full bg-[var(--apple-border)]" />
+                        </button>
+                        <div className="flex items-center justify-between px-5 pt-0 pb-1 gap-3">
                             <div className="min-w-0 flex-1">
                                 <h3 className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-[0.15em]">Agenda</h3>
                             </div>
@@ -1282,7 +1297,6 @@ const ControlOperativo = () => {
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                 </svg>
                             </button>
-                            <button type="button" onClick={() => setShowAgendaDrawer(false)} className="h-8 w-8 shrink-0 flex items-center justify-center rounded-full bg-[var(--apple-border)]/40 text-[var(--apple-text-sub)]"><svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
                         </div>
                         <div className="px-5 pt-0 pb-3 shrink-0">
                             <div className="relative">
