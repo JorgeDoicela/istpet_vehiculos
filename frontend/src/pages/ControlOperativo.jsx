@@ -112,7 +112,7 @@ const ControlOperativo = () => {
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'start' });
                 }
-            }, 350); 
+            }, 350);
             return () => clearTimeout(timer);
         }
     }, [vehiculoSeleccionado, activeTab]);
@@ -125,7 +125,7 @@ const ControlOperativo = () => {
                 if (el) {
                     el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
-            }, 600); 
+            }, 600);
             return () => clearTimeout(timer);
         }
     }, [estudianteData, activeTab]);
@@ -708,41 +708,36 @@ const ControlOperativo = () => {
                                                             </p>
                                                         )}
 
-                                                        {/* Nivel + Paralelo como chips */}
+                                                        {/* Nivel + Paralelo como chips — alineados al borde izquierdo */}
                                                         <div className="flex items-center gap-2">
                                                             <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
-                                                                Nivel {estudianteData.nivel ?? ''}
+                                                                Nivel: {estudianteData.nivel ?? ''}
                                                             </span>
                                                             <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
-                                                                Paralelo {estudianteData.paralelo ?? ''}
+                                                                Paralelo: {estudianteData.paralelo ?? ''}
                                                             </span>
                                                         </div>
 
                                                         {/* Planificación */}
                                                         {(estudianteData.horarioProximo || estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
-                                                            <div className="flex items-start gap-2.5 px-3 py-2.5 bg-[var(--apple-primary)]/10 rounded-2xl animate-apple-in">
-                                                                <svg className="h-3.5 w-3.5 text-[var(--apple-primary)] mt-0.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                                                </svg>
-                                                                <div className="space-y-0.5">
-                                                                    <p className="text-[8px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em] leading-none">Planificación</p>
-                                                                    {estudianteData.horarioProximo && (
-                                                                        <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase leading-snug">
-                                                                            {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}{estudianteData.horarioProximo}
-                                                                        </p>
-                                                                    )}
-                                                                    {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
-                                                                        <p className="text-[10px] font-bold text-[var(--apple-primary)]/65 uppercase leading-snug">
-                                                                            {estudianteData.vehiculoPlanificado}{estudianteData.instructorPlanificado && ` · ${estudianteData.instructorPlanificado}`}
-                                                                        </p>
-                                                                    )}
-                                                                </div>
+                                                            <div className="flex flex-col gap-0.5 animate-apple-in">
+                                                                <p className="text-[8px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em] leading-none">Planificación</p>
+                                                                {estudianteData.horarioProximo && (
+                                                                    <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase leading-snug">
+                                                                        {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}{estudianteData.horarioProximo}
+                                                                    </p>
+                                                                )}
+                                                                {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
+                                                                    <p className="text-[10px] font-bold text-[var(--apple-primary)]/65 uppercase leading-snug">
+                                                                        {estudianteData.vehiculoPlanificado}{estudianteData.instructorPlanificado && ` · ${estudianteData.instructorPlanificado}`}
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
 
                                                     {/* Jornada */}
-                                                    <div className="shrink-0 text-right">
+                                                    <div className="shrink-0 text-right pt-0.5">
                                                         <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50 mb-1">Jornada</span>
                                                         <span className="block text-[10px] font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
                                                     </div>
@@ -999,55 +994,55 @@ const ControlOperativo = () => {
                                                     const enRuta = fmtTiempoEnRuta(c.salida);
                                                     const placaTxt = (c.placa || '').trim();
                                                     return (
-                                                    <div
-                                                        key={c.idPractica}
-                                                        onClick={() => {
-                                                            if (llegadaSubmitting) return;
-                                                            setClaseSeleccionada(prev =>
-                                                                prev?.idPractica === c.idPractica ? null : c
-                                                            );
-                                                        }}
-                                                        className={`group relative rounded-[1.65rem] border px-5 py-4 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
-                                                    >
-                                                        {/* Fila 1: Estudiante + Hora */}
-                                                        <div className="flex items-start justify-between gap-4 mb-3">
-                                                            <div className="min-w-0 flex-1">
-                                                                <p className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-snug line-clamp-1">{c.estudiante}</p>
-                                                                <p className="text-[10px] font-bold text-[var(--apple-text-sub)] tracking-[0.08em] mt-1">
-                                                                    {c.idAlumno}
-                                                                    {enRuta ? <span className="ml-2 text-emerald-600 font-black">{enRuta}</span> : null}
-                                                                </p>
-                                                            </div>
-                                                            <div className="text-right shrink-0 flex flex-col items-end gap-0.5">
-                                                                <p className="text-lg font-black text-[var(--istpet-gold)] tabular-nums leading-none">{fmtTimeSpan(c.salida)}</p>
-                                                                <p className="text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.15em]">Salida</p>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Divisor */}
-                                                        <div className="h-px bg-[var(--apple-border)]/40 mb-3"></div>
-
-                                                        {/* Fila 2: Vehículo */}
-                                                        <div className="flex items-center justify-between gap-3 mb-2">
-                                                            <div className="flex items-center gap-2 min-w-0">
-                                                                <svg className="h-4 w-4 text-[var(--istpet-gold)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
-                                                                <span className="text-xs font-black text-[var(--apple-text-main)] uppercase tracking-tight">
-                                                                    #{c.numeroVehiculo}{placaTxt ? ` · ${placaTxt}` : ''}
-                                                                </span>
-                                                            </div>
-                                                            {sel ? (
-                                                                <div className="h-6 w-6 rounded-full bg-[var(--istpet-gold)] text-white flex items-center justify-center shadow-sm shrink-0" aria-hidden>
-                                                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                        <div
+                                                            key={c.idPractica}
+                                                            onClick={() => {
+                                                                if (llegadaSubmitting) return;
+                                                                setClaseSeleccionada(prev =>
+                                                                    prev?.idPractica === c.idPractica ? null : c
+                                                                );
+                                                            }}
+                                                            className={`group relative rounded-[1.65rem] border px-5 py-4 transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.5)] ${llegadaSubmitting ? 'opacity-60 pointer-events-none' : 'cursor-pointer active:scale-[0.99]'} ${sel ? 'bg-[var(--istpet-gold)]/[0.04] border-[var(--istpet-gold)] shadow-sm' : 'bg-[var(--apple-card)] border-[var(--apple-border)] hover:border-[var(--apple-text-sub)]/50'}`}
+                                                        >
+                                                            {/* Fila 1: Estudiante + Hora */}
+                                                            <div className="flex items-start justify-between gap-4 mb-3">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <p className="text-sm font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-snug line-clamp-1">{c.estudiante}</p>
+                                                                    <p className="text-[10px] font-bold text-[var(--apple-text-sub)] tracking-[0.08em] mt-1">
+                                                                        {c.idAlumno}
+                                                                        {enRuta ? <span className="ml-2 text-emerald-600 font-black">{enRuta}</span> : null}
+                                                                    </p>
                                                                 </div>
-                                                            ) : null}
-                                                        </div>
+                                                                <div className="text-right shrink-0 flex flex-col items-end gap-0.5">
+                                                                    <p className="text-lg font-black text-[var(--istpet-gold)] tabular-nums leading-none">{fmtTimeSpan(c.salida)}</p>
+                                                                    <p className="text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.15em]">Salida</p>
+                                                                </div>
+                                                            </div>
 
-                                                        {/* Fila 3: Instructor */}
-                                                        <div className="flex items-center gap-1.5">
-                                                            <span className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.12em] opacity-50 shrink-0">Instructor</span>
-                                                            <span className="text-[10px] font-black text-[var(--apple-text-main)] uppercase tracking-tight truncate">{c.instructor}</span>
+                                                            {/* Divisor */}
+                                                            <div className="h-px bg-[var(--apple-border)]/40 mb-3"></div>
+
+                                                            {/* Fila 2: Vehículo */}
+                                                            <div className="flex items-center justify-between gap-3 mb-2">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <svg className="h-4 w-4 text-[var(--istpet-gold)] shrink-0" viewBox="0 0 24 24" fill="currentColor"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" /></svg>
+                                                                    <span className="text-xs font-black text-[var(--apple-text-main)] uppercase tracking-tight">
+                                                                        #{c.numeroVehiculo}{placaTxt ? ` · ${placaTxt}` : ''}
+                                                                    </span>
+                                                                </div>
+                                                                {sel ? (
+                                                                    <div className="h-6 w-6 rounded-full bg-[var(--istpet-gold)] text-white flex items-center justify-center shadow-sm shrink-0" aria-hidden>
+                                                                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                                    </div>
+                                                                ) : null}
+                                                            </div>
+
+                                                            {/* Fila 3: Instructor */}
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className="text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.12em] opacity-50 shrink-0">Instructor</span>
+                                                                <span className="text-[10px] font-black text-[var(--apple-text-main)] uppercase tracking-tight truncate">{c.instructor}</span>
+                                                            </div>
                                                         </div>
-                                                    </div>
                                                     );
                                                 })
                                             ) : clasesActivas.length === 0 ? (
@@ -1081,7 +1076,7 @@ const ControlOperativo = () => {
                                                             <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                         </svg>
                                                     </button>
-                                                    
+
                                                     <button
                                                         type="button"
                                                         onClick={handleProcesarLlegada}
