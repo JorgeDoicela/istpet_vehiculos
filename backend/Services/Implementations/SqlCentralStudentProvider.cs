@@ -963,6 +963,9 @@ WHERE COALESCE(activo, 1) = 0";
         public Task<IEnumerable<CentralFechaHorarioDto>> GetAllFechasHorariosFromCentralAsync()
             => QueryListAsync("SELECT * FROM fechas_horarios", MapCentralFechaHorario);
 
+        public Task<IEnumerable<CentralHoraClaseDto>> GetAllHorasClasesFromCentralAsync()
+            => QueryListAsync("SELECT * FROM horas_clases", MapCentralHoraClase);
+
         public Task<IEnumerable<CentralHorarioProfesorDto>> GetAllHorariosProfesoresFromCentralAsync()
             => QueryListAsync("SELECT * FROM horario_profesores", MapCentralHorarioProfesor);
 
@@ -1222,6 +1225,19 @@ WHERE COALESCE(activo, 1) = 0";
             idHora = ReadInt(reader, "idHora"),
             idFecha = ReadInt(reader, "idFecha"),
             asiste = ReadInt(reader, "asiste"),
+            activo = ReadInt(reader, "activo")
+        };
+
+        private static CentralHoraClaseDto MapCentralHoraClase(MySqlDataReader reader) => new()
+        {
+            idhora = ReadInt(reader, "idhora"),
+            idSeccion = ReadInt(reader, "idSeccion"),
+            idCarrera = ReadInt(reader, "idCarrera"),
+            hora_inicio = ReadNullableTime(reader, "hora_inicio"),
+            hora_fin = ReadNullableTime(reader, "hora_fin"),
+            minutos = ReadInt(reader, "minutos"),
+            numero_hora = ReadInt(reader, "numero_hora"),
+            tipo = ReadNullableString(reader, "tipo"),
             activo = ReadInt(reader, "activo")
         };
 

@@ -63,7 +63,7 @@ namespace backend.Controllers
             [FromQuery] int? idVehiculoAgenda = null,
             [FromQuery] string? idProfesorAgenda = null,
             [FromQuery] int? idPracticaAgenda = null,
-            [FromQuery] int? idAsignacionHorario = null)
+            [FromQuery] List<int>? idsAsignacionHorario = null)
         {
             idAlumno = idAlumno.Trim();
 
@@ -94,7 +94,7 @@ namespace backend.Controllers
             {
                 var fromCentral = await BuildLogisticaFromSigafiAndPersistAsync(centralData);
                 await EnrichEstudianteLogisticaDesdeSigafiAsync(fromCentral);
-                await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda, idAsignacionHorario);
+                await AplicarContextoFilaAgendaAsync(fromCentral, idVehiculoAgenda, idProfesorAgenda, idPracticaAgenda, idsAsignacionHorario);
                 fromCentral.isBusy = await _context.Practicas
                     .AnyAsync(p => p.idalumno == fromCentral.idAlumno && p.ensalida == 1 && p.cancelado == 0);
                 return Ok(ApiResponse<EstudianteLogisticaResponse>.Ok(fromCentral, "Datos vigentes desde SIGAFI."));
@@ -112,7 +112,7 @@ namespace backend.Controllers
             int? idVehiculoAgenda,
             string? idProfesorAgenda,
             int? idPracticaAgenda,
-            int? idAsignacionHorario)
+            List<int>? idsAsignacionHorario)
         {
             if (idVehiculoAgenda is > 0)
             {
@@ -133,18 +133,18 @@ namespace backend.Controllers
                     student.practicaInstructor = $"{ins.apellidos} {ins.nombres}".Trim();
             }
 
-            if (idAsignacionHorario is > 0)
+            if (idsAsignacionHorario != null && idsAsignacionHorario.Any())
             {
-                student.idAsignacionHorario = idAsignacionHorario;
+                student.idsAsignacionHorario = idsAsignacionHorario;
             }
             else if (idPracticaAgenda is > 0)
             {
-                var link = await _context.PracticasHorarios.AsNoTracking()
+                var links = await _context.PracticasHorarios.AsNoTracking()
                     .Where(x => x.idPractica == idPracticaAgenda.Value)
-                    .Select(x => (int?)x.idAsignacionHorario)
-                    .FirstOrDefaultAsync();
-                if (link.HasValue)
-                    student.idAsignacionHorario = link;
+                    .Select(x => x.idAsignacionHorario)
+                    .ToListAsync();
+                if (links.Any())
+                    student.idsAsignacionHorario = links;
             }
         }
 
@@ -420,7 +420,9 @@ namespace backend.Controllers
             {
                 // Inyectamos los datos de la agenda en la respuesta para el frontend
                 student.horarioProximo = scheduled.EsPlanificado ? $"{scheduled.HoraPlanificadaInicio} - {scheduled.HoraPlanificadaFin}" : null;
-                student.idAsignacionHorario = scheduled.idAsignacionHorario;
+                student.idsAsignacionHorario = scheduled.idAsignacionHorario.HasValue 
+                    ? new List<int> { scheduled.idAsignacionHorario.Value } 
+                    : new List<int>();
                 student.horarioFecha = scheduled.fecha.ToString("ddd, dd MMM").ToUpper();
                 student.vehiculoPlanificado = scheduled.VehiculoDetalle;
                 student.instructorPlanificado = scheduled.ProfesorNombre;
@@ -656,7 +658,7 @@ namespace backend.Controllers
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
             var result = await _logisticaService.RegistrarSalidaAsync(
                 req.idMatricula, req.idVehiculo, req.idInstructor,
-                req.registradoPor, req.idAsignacionHorario);
+                req.registradoPor, req.idsAsignacionHorario);
 
             if (result == "EXITO")
             {

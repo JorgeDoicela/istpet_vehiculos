@@ -26,7 +26,7 @@ namespace backend.DTOs
         public string? practicaInstructor { get; set; }
         public string? practicaHora { get; set; }
         public string? horarioProximo { get; set; } // Ej: "14:00 - 15:00"
-        public int? idAsignacionHorario { get; set; }
+        public List<int>? idsAsignacionHorario { get; set; }
         public bool asistenciaHoy { get; set; }
         public string? horarioFecha { get; set; }
         public string? vehiculoPlanificado { get; set; }
@@ -74,7 +74,7 @@ namespace backend.DTOs
         public string idInstructor { get; set; } = string.Empty;
         public string? observaciones { get; set; }
         public int registradoPor { get; set; } = 1;
-        public int? idAsignacionHorario { get; set; } // Opcional: Para vincular con agenda SIGAFI
+        public List<int>? idsAsignacionHorario { get; set; } // Para vincular con agenda SIGAFI (puede ser uno o varios)
     }
 
     public class LlegadaRequest
@@ -179,6 +179,19 @@ namespace backend.DTOs
         public DateTime fecha { get; set; }
         public int finsemana { get; set; }
         public string? dia { get; set; }
+    }
+
+    public class CentralHoraClaseDto
+    {
+        public int idhora { get; set; }
+        public int idSeccion { get; set; }
+        public int idCarrera { get; set; }
+        public TimeSpan? hora_inicio { get; set; }
+        public TimeSpan? hora_fin { get; set; }
+        public int minutos { get; set; }
+        public int numero_hora { get; set; }
+        public string? tipo { get; set; }
+        public int activo { get; set; }
     }
 
     public class CentralHorarioProfesorDto

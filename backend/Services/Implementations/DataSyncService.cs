@@ -212,6 +212,7 @@ namespace backend.Services.Implementations
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_alumnos_horarios", SyncSchedulesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("cond_practicas_horarios_alumnos", SyncPracticeScheduleLinksAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("fechas_horarios", SyncFechasHorariosAsync, warnings, log);
+            log.RegistrosProcesados += await ExecuteSyncStepAsync("horas_clases", SyncHorasClasesAsync, warnings, log);
             log.RegistrosProcesados += await ExecuteSyncStepAsync("horario_profesores", SyncHorariosProfesoresAsync, warnings, log);
 
             if (warnings.Count == 0)
@@ -1396,6 +1397,45 @@ namespace backend.Services.Implementations
                     existing.fecha = item.fecha;
                     existing.finsemana = (byte)item.finsemana;
                     existing.dia = item.dia;
+                }
+                processed++;
+            }
+            await _context.SaveChangesAsync();
+            return processed;
+        }
+
+        private async Task<int> SyncHorasClasesAsync()
+        {
+            var rows = await _centralProvider.GetAllHorasClasesFromCentralAsync();
+            var processed = 0;
+            foreach (var item in rows)
+            {
+                var existing = await _context.HorasClases.FirstOrDefaultAsync(x => x.idhora == item.idhora);
+                if (existing == null)
+                {
+                    _context.HorasClases.Add(new HoraClase
+                    {
+                        idhora = item.idhora,
+                        idSeccion = item.idSeccion,
+                        idCarrera = item.idCarrera,
+                        hora_inicio = item.hora_inicio,
+                        hora_fin = item.hora_fin,
+                        minutos = item.minutos,
+                        numero_hora = item.numero_hora,
+                        tipo = item.tipo,
+                        activo = (byte)item.activo
+                    });
+                }
+                else
+                {
+                    existing.idSeccion = item.idSeccion;
+                    existing.idCarrera = item.idCarrera;
+                    existing.hora_inicio = item.hora_inicio;
+                    existing.hora_fin = item.hora_fin;
+                    existing.minutos = item.minutos;
+                    existing.numero_hora = item.numero_hora;
+                    existing.tipo = item.tipo;
+                    existing.activo = (byte)item.activo;
                 }
                 processed++;
             }

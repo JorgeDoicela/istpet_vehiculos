@@ -33,6 +33,7 @@ namespace backend.Models
         [MaxLength(60)]
         public string? segundoNombre { get; set; }
 
+        public int estadoCivil { get; set; } = 1;
 
         [MaxLength(100)]
         public string? direccion { get; set; }
@@ -68,6 +69,9 @@ namespace backend.Models
         [MaxLength(1)]
         public string? tipo { get; set; } = "P";
 
+        [MaxLength(40)]
+        public string? nacionalidad { get; set; }
+
         [MaxLength(200)]
         public string? titulo { get; set; }
 
@@ -79,6 +83,12 @@ namespace backend.Models
 
         public int activo { get; set; } = 1;
 
+        public int idEtnia { get; set; } = 1;
+
+        public int idNacionalidad { get; set; } = 1;
+
+        public int idParroquiaNacimiento { get; set; } = 1;
+
         [MaxLength(255)]
         public string? emailInstitucional { get; set; }
 
@@ -88,9 +98,20 @@ namespace backend.Models
 
         public DateTime? fecha_retiro { get; set; }
 
+        public int idParroquiaResidencia { get; set; } = 1;
+
+        public int idDiscapacidad { get; set; } = 1;
 
         [MaxLength(5)]
         public string tipoSangre { get; set; } = "S/N";
+
+        [MaxLength(20)]
+        public string? codigoPostal { get; set; }
+
+        public int? porcentajeDiscapacidad { get; set; }
+
+        [MaxLength(45)]
+        public string? numeroConadis { get; set; }
 
         [MaxLength(255)]
         public string? foto { get; set; }

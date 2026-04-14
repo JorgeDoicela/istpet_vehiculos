@@ -26,6 +26,7 @@ namespace backend.Data
         public DbSet<MatriculaExamenConduccion> MatriculasExamenesConduccion { get; set; }
         public DbSet<PracticaHorarioAlumno> PracticasHorarios { get; set; }
         public DbSet<FechaHorario> FechasHorarios { get; set; }
+        public DbSet<HoraClase> HorasClases { get; set; }
         public DbSet<HorarioProfesor> HorariosProfesores { get; set; }
 
         public DbSet<ClaseActiva> ClasesActivas { get; set; }
@@ -229,6 +230,11 @@ namespace backend.Data
             modelBuilder.Entity<FechaHorario>(entity => {
                 entity.ToTable("fechas_horarios");
                 entity.HasKey(e => e.idFecha);
+            });
+
+            modelBuilder.Entity<HoraClase>(entity => {
+                entity.ToTable("horas_clases");
+                entity.HasKey(e => e.idhora);
             });
 
             modelBuilder.Entity<HorarioProfesor>(entity => {

@@ -23,7 +23,7 @@ namespace backend.Services.Implementations
         }
 
 
-        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, int? idAsignacionHorario = null)
+        public async Task<string> RegistrarSalidaAsync(int idMatricula, int idVehiculo, string idInstructor, int registradoPor, IEnumerable<int>? idsAsignacionHorario = null)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -115,7 +115,7 @@ namespace backend.Services.Implementations
                     idProfesor = idInstructor,
                     idPeriodo = matricula.idPeriodo ?? "S/P",
                     fecha = DateTime.Today,
-                    dia = DateTime.Today.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToUpper(),
+                    dia = DateTime.Today.ToString("dddd", new System.Globalization.CultureInfo("es-ES")).ToLower(),
                     hora_salida = DateTime.Now.TimeOfDay,
                     ensalida = 1,
                     user_asigna = registradoPor.ToString(),
@@ -125,15 +125,18 @@ namespace backend.Services.Implementations
                 _context.Practicas.Add(practica);
                 await _context.SaveChangesAsync();
 
-                // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo)
-                if (idAsignacionHorario.HasValue && idAsignacionHorario.Value > 0)
+                // 🚀 Vínculo con Agenda SIGAFI (Cierre de Ciclo) - Soporte para múltiples horas
+                if (idsAsignacionHorario != null && idsAsignacionHorario.Any())
                 {
-                    var vinculacion = new PracticaHorarioAlumno
+                    foreach (var idH in idsAsignacionHorario)
                     {
-                        idPractica = practica.idPractica,
-                        idAsignacionHorario = idAsignacionHorario.Value
-                    };
-                    _context.PracticasHorarios.Add(vinculacion);
+                        var vinculacion = new PracticaHorarioAlumno
+                        {
+                            idPractica = practica.idPractica,
+                            idAsignacionHorario = idH
+                        };
+                        _context.PracticasHorarios.Add(vinculacion);
+                    }
                     await _context.SaveChangesAsync();
                 }
 
