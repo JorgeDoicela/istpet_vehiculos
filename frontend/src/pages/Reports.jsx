@@ -118,7 +118,12 @@ const Reports = () => {
                         type="button"
                         onClick={exportToExcel}
                         disabled={data.length === 0}
-                        className="w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all self-start sm:self-auto disabled:opacity-35 disabled:pointer-events-none"
+                        className={`w-full sm:w-auto shrink-0 flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-black uppercase tracking-widest transition-all self-start sm:self-auto disabled:opacity-35 disabled:pointer-events-none
+                            ${data.length > 0 
+                                ? 'bg-emerald-600 text-white border border-emerald-600 shadow-lg shadow-emerald-600/20 hover:scale-[1.02] active:scale-95' 
+                                : 'border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)]'
+                            }
+                        `}
                     >
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
