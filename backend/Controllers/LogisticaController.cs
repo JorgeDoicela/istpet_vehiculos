@@ -60,6 +60,38 @@ namespace backend.Controllers
             _config = config;
         }
 
+        private static string FriendlySalidaError(string? raw)
+        {
+            var msg = (raw ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(msg))
+                return "No se pudo registrar la salida. Intente nuevamente.";
+
+            if (msg.Equals("VEHICULO_EN_USO", StringComparison.OrdinalIgnoreCase))
+                return "El vehículo seleccionado ya se encuentra en práctica.";
+
+            if (msg.Equals("ESTUDIANTE_EN_PISTA", StringComparison.OrdinalIgnoreCase))
+                return "El estudiante ya tiene una práctica activa en este momento.";
+
+            if (msg.Contains("Matrícula", StringComparison.OrdinalIgnoreCase) &&
+                msg.Contains("no encontrada", StringComparison.OrdinalIgnoreCase))
+            {
+                return "No se encontró una matrícula activa para este estudiante. "
+                    + "Suele pasar con registros antiguos o periodos cerrados; verifique la matrícula vigente en SIGAFI.";
+            }
+
+            if (msg.Contains("Instructor", StringComparison.OrdinalIgnoreCase) &&
+                msg.Contains("no encontrado", StringComparison.OrdinalIgnoreCase))
+                return "El instructor seleccionado no está disponible en SIGAFI. Actualice la lista e intente nuevamente.";
+
+            if (msg.Contains("no operativo", StringComparison.OrdinalIgnoreCase))
+                return "El vehículo no está operativo para salida en este momento.";
+
+            if (msg.StartsWith("ERROR:", StringComparison.OrdinalIgnoreCase))
+                return msg.Substring("ERROR:".Length).Trim();
+
+            return msg;
+        }
+
         [HttpGet("estudiante/{idAlumno}")]
         public async Task<ActionResult<ApiResponse<EstudianteLogisticaResponse>>> BuscarEstudiante(
             string idAlumno,
@@ -698,7 +730,7 @@ namespace backend.Controllers
                 return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
             }
 
-            return BadRequest(ApiResponse<string>.Fail($"Error: {result}"));
+            return BadRequest(ApiResponse<string>.Fail(FriendlySalidaError(result)));
         }
 
         [HttpPost("llegada")]
