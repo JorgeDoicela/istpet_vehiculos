@@ -1,6 +1,14 @@
 $ErrorActionPreference = "Stop"
 
-Write-Host "==> Cargando imagenes Docker..."
+Write-Host "==> Deteniendo versiones anteriores (si existen)..." -ForegroundColor Yellow
+# 1. Intentamos bajar por compose (limpio)
+docker compose -f .\docker-compose.server.yml down --remove-orphans 2>$null
+
+# 2. Por si acaso fueron creados con otro nombre de proyecto, forzamos por nombre de contenedor
+Write-Host "==> Limpieza de seguridad por nombre de contenedor..." -ForegroundColor Gray
+docker rm -f istpet_backend istpet_frontend 2>$null
+
+Write-Host "==> Cargando imagenes Docker..." -ForegroundColor Cyan
 docker load -i .\istpet-images.tar
 
 # El paquete ya incluye .env listo para editar/usar.
