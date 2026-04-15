@@ -132,9 +132,8 @@ const Layout = ({ children }) => {
                                 <div
                                     className={`fixed inset-x-4 top-16 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 
                                                w-auto md:w-[22rem] max-h-[70vh] md:max-h-[28rem] 
-                                               overflow-y-auto rounded-[2rem] border border-[var(--apple-border)] 
-                                               shadow-2xl z-[120] py-2 px-1 animate-apple-in
-                                               bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl`}
+                                               overflow-y-auto rounded-[2rem] z-[120] py-2 px-1 animate-apple-in
+                                               apple-glass`}
                                     role="menu"
                                 >
                                     <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--apple-border)]/50 mb-1">

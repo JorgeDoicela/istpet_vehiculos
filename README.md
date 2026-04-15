@@ -91,4 +91,18 @@ npm run dev
 
 ---
 
+## 🚀 Despliegue Industrial
+
+### Generación de Paquetes (Bundle)
+Para generar un paquete de despliegue portable para servidores que solo tienen Docker instalado, ejecute el script de automatización:
+
+```powershell
+# Desde la raíz del proyecto
+.\create-release-bundle.ps1
+```
+
+Este script compila el código, construye las imágenes Docker, las exporta a un archivo `.tar` y genera un `.zip` listo para ser enviado al servidor de producción. Consulte **[docs/PRODUCCION.md](docs/PRODUCCION.md)** para más detalles sobre el despliegue directo.
+
+---
+
 *Proyecto desarrollado para la Escuela de Conducción del ISTPET. Sistema de logística de prácticas de manejo.*

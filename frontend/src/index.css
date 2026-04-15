@@ -11,7 +11,7 @@
     
     /* Configuración por defecto (Modo Claro) */
     --apple-bg: #f8f9fb;
-    --apple-card: rgba(255, 255, 255, 0.8);
+    --apple-card: rgba(255, 255, 255, 0.95);
     --apple-border: rgba(26, 37, 68, 0.08);
     --apple-text-main: #1a2544;
     --apple-text-sub: #64748b;
@@ -21,16 +21,16 @@
                         radial-gradient(at 100% 100%, hsla(43, 40%, 96%, 1) 0, transparent 50%);
   }
 
-  .dark {
+  .dark, [data-theme='dark'] {
     color-scheme: dark;
     /* Configuración Modo Oscuro */
     --apple-bg: #0f172a;
-    --apple-card: rgba(30, 41, 59, 0.4);
-    --apple-border: rgba(255, 255, 255, 0.05);
+    --apple-card: rgba(30, 41, 59, 0.7);
+    --apple-border: rgba(255, 255, 255, 0.1);
     --apple-text-main: #f8fafc;
     --apple-text-sub: #94a3b8;
-    --apple-primary: #b5944a; /* Golden as primary in dark mode for pop */
-    --apple-glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+    --apple-primary: #b5944a;
+    --apple-glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
     --apple-gradient-bg: radial-gradient(at 0% 0%, hsla(222, 47%, 11%, 1) 0, transparent 50%), 
                         radial-gradient(at 100% 100%, hsla(222, 47%, 15%, 1) 0, transparent 50%);
   }

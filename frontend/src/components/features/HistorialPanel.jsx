@@ -92,7 +92,7 @@ export default function HistorialPanel() {
     filtros.fechaInicio !== hoy() || filtros.fechaFin !== hoy();
 
   return (
-    <div className="space-y-4 animate-apple-in">
+    <div className="space-y-4 animate-apple-in max-w-full overflow-hidden">
       {/* Barra de filtros */}
       <div className="apple-card p-4 bg-[var(--apple-card)] border border-[var(--apple-border)] space-y-3">
 
@@ -307,20 +307,20 @@ export default function HistorialPanel() {
                   </span>
                 </div>
                 {/* Fila 2: veh, fecha, día */}
-                <div className="grid grid-cols-3 gap-2 text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-y-3 gap-x-2 text-xs">
                   <div>
-                    <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">Vehículo</p>
+                    <p className={labelCls}>Vehículo</p>
                     <span className="inline-flex w-7 h-7 rounded-lg bg-[var(--apple-text-main)] text-[var(--apple-bg)] items-center justify-center font-black text-[10px] mt-0.5">
                       {item.numeroVehiculo}
                     </span>
                   </div>
                   <div>
-                    <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">Fecha</p>
-                    <p className="font-bold tabular-nums mt-0.5">{item.fecha}</p>
+                    <p className={labelCls}>Fecha</p>
+                    <p className="font-bold tabular-nums mt-0.5 whitespace-nowrap">{item.fecha}</p>
                   </div>
-                  <div>
-                    <p className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">Día</p>
-                    <p className="font-bold uppercase italic mt-0.5">{item.dia}</p>
+                  <div className="col-span-2 sm:col-span-1">
+                    <p className={labelCls}>Día</p>
+                    <p className="font-bold uppercase italic mt-0.5 truncate">{item.dia}</p>
                   </div>
                 </div>
                 {/* Fila 3: horas + tiempo */}
@@ -345,14 +345,14 @@ export default function HistorialPanel() {
                   <div className="grid grid-cols-1 gap-2 text-xs border-t border-[var(--apple-border)] pt-3">
                     {item.userSalida && (
                       <div className="min-w-0">
-                        <span className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">User salida </span>
-                        <span className="font-bold text-[var(--apple-text-sub)] break-all">{item.userSalida}</span>
+                        <span className={labelCls}>User salida </span>
+                        <p className="font-bold text-[var(--apple-text-sub)] break-words leading-tight">{item.userSalida}</p>
                       </div>
                     )}
                     {item.userLlegada && (
                       <div className="min-w-0">
-                        <span className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">User llegada </span>
-                        <span className="font-bold text-[var(--apple-text-sub)] break-all">{item.userLlegada}</span>
+                        <span className={labelCls}>User llegada </span>
+                        <p className="font-bold text-[var(--apple-text-sub)] break-words leading-tight">{item.userLlegada}</p>
                       </div>
                     )}
                   </div>
