@@ -130,12 +130,8 @@ namespace backend.Controllers
                 var placa = v?.placa ?? "";
                 var numeroVehiculo = v?.numero_vehiculo ?? "0";
 
-                var categoriaDetalle = string.Join(" ", new[] { marca, modelo }.Where(s => !string.IsNullOrWhiteSpace(s)));
-                var categoria = !string.IsNullOrWhiteSpace(categoriaDetalle)
-                    ? culture.TextInfo.ToUpper(categoriaDetalle)
-                    : (!string.IsNullOrWhiteSpace(placa)
-                        ? culture.TextInfo.ToUpper($"Placa {placa.Trim()}")
-                        : culture.TextInfo.ToUpper("Práctica local"));
+                // Para reportes locales, usamos como predeterminado 'LICENCIA TIPO C' (alineado con la solicitud del usuario)
+                var categoria = culture.TextInfo.ToUpper("LICENCIA TIPO C");
 
                 var tsSalida = p.hora_salida;
                 var tsLlegada = p.hora_llegada;

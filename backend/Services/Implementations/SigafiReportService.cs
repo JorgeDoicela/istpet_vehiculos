@@ -65,6 +65,12 @@ SELECT
     v.placa AS placa,
     v.Marca AS marca,
     v.Modelo AS modelo,
+    (SELECT car.Carrera 
+     FROM matriculas m 
+     INNER JOIN cursos c ON c.idNivel = m.idNivel 
+     INNER JOIN carreras car ON car.idCarrera = c.idCarrera 
+     WHERE m.idAlumno = p.idalumno 
+     ORDER BY m.idMatricula DESC LIMIT 1) AS tipo_licencia,
     p.idalumno AS id_alumno,
     TRIM(CONCAT(
         COALESCE(a.apellidoPaterno, ''), ' ',
@@ -160,12 +166,10 @@ WHERE 1=1";
                 if (duracion < TimeSpan.Zero)
                     duracion = TimeSpan.Zero;
 
-                var categoriaDetalle = string.Join(" ", new[] { marca, modelo }.Where(s => !string.IsNullOrWhiteSpace(s)));
-                var categoria = !string.IsNullOrWhiteSpace(categoriaDetalle)
-                    ? culture.TextInfo.ToUpper(categoriaDetalle)
-                    : (!string.IsNullOrWhiteSpace(placa)
-                        ? culture.TextInfo.ToUpper($"Placa {placa.Trim()}")
-                        : culture.TextInfo.ToUpper("Práctica SIGAFI"));
+                var tipoLicencia = reader.IsDBNull(reader.GetOrdinal("tipo_licencia")) ? "" : reader.GetString(reader.GetOrdinal("tipo_licencia")).Trim();
+                var categoria = !string.IsNullOrWhiteSpace(tipoLicencia)
+                    ? culture.TextInfo.ToUpper(tipoLicencia)
+                    : culture.TextInfo.ToUpper("LICENCIA TIPO C");
 
                 list.Add(new ReportePracticasDTO
                 {

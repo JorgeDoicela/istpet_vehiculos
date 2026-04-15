@@ -81,18 +81,18 @@ const Reports = () => {
 
     const exportToExcel = () => {
         const worksheet = XLSX.utils.json_to_sheet(data.map(item => ({
-            'ID Profesor': item.idProfesor,
-            'Profesor': item.profesor,
-            'Categoria': item.categoria,
-            'Vehículo': item.numeroVehiculo,
-            'ID Alumno': item.idAlumno,
-            'Nómina': item.nomina,
-            'Día': item.dia,
-            'Fecha': item.fecha,
-            'Hora Salida': item.horaSalida,
-            'Hora Llegada': item.horaLlegada || '--:--:--',
-            'Tiempo': item.tiempo,
-            'Observaciones': item.observaciones
+            'idprofesor': item.idProfesor,
+            'profesor': item.profesor,
+            'categoria': item.categoria,
+            'numero_vehiculo': item.numeroVehiculo,
+            'idalumno': item.idAlumno,
+            'nomina': item.nomina,
+            'dia': item.dia,
+            'fecha': item.fecha,
+            'hora_salida': item.horaSalida,
+            'hora_llegada': item.horaLlegada || '',
+            'tiempo': item.tiempo,
+            'cancelado': item.cancelado
         })));
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte_Practicas");
