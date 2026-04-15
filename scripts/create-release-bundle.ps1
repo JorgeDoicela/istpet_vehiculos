@@ -21,9 +21,9 @@ Write-Host "==> Exportando imágenes a un archivo .tar (esto puede tardar)..." -
 docker save -o "$RELEASE_DIR/$IMAGES_FILE" istpet/backend:release istpet/frontend:release
 
 Write-Host "==> Copiando archivos de orquestación y despliegue..." -ForegroundColor Cyan
-Copy-Item "docker-compose.server.yml" -Destination "$RELEASE_DIR/"
-Copy-Item "deploy-direct-server.ps1" -Destination "$RELEASE_DIR/"
-Copy-Item ".env.server.example" -Destination "$RELEASE_DIR/.env" # Se renombra a .env para el bundle listo para usar
+Copy-Item "infrastructure/docker-compose.server.yml" -Destination "$RELEASE_DIR/"
+Copy-Item "infrastructure/deploy-direct-server.ps1" -Destination "$RELEASE_DIR/"
+Copy-Item ".env" -Destination "$RELEASE_DIR/.env" # Usa el .env principal con las variables por defecto del usuario
 
 Write-Host "==> Creando paquete comprimido (.zip)..." -ForegroundColor Green
 if (Test-Path $BUNDLE_NAME) { Remove-Item $BUNDLE_NAME }
