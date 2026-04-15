@@ -219,8 +219,12 @@ export default function LogsPanel() {
                   </td>
                 </tr>
               )}
-              {data.map(item => (
-                <tr key={item.id} className="hover:bg-[var(--apple-bg)]/40 transition-colors">
+              {data.map((item, index) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-[var(--apple-bg)]/40 transition-colors animate-apple-in"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+                >
                   <td className="px-4 py-3 text-[10px] font-bold tabular-nums text-[var(--apple-text-sub)] whitespace-nowrap">{fmtFechaHora(item.fecha_hora)}</td>
                   <td className="px-4 py-3 text-[11px] font-black text-[var(--apple-text-main)] whitespace-nowrap">{item.usuario}</td>
                   <td className="px-4 py-3">
@@ -256,8 +260,12 @@ export default function LogsPanel() {
           {!loading && data.length === 0 && cargado && (
             <p className="text-center text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] opacity-40 py-12">Sin registros</p>
           )}
-          {data.map(item => (
-            <article key={item.id} className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] p-4 space-y-3">
+          {data.map((item, index) => (
+            <article
+              key={item.id}
+              className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-card)] p-4 space-y-3 animate-apple-in"
+              style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+            >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-black text-[var(--apple-text-main)] truncate">{item.usuario}</p>

@@ -220,8 +220,12 @@ export default function HistorialPanel() {
                   </td>
                 </tr>
               )}
-              {data.map(item => (
-                <tr key={item.idPractica} className="hover:bg-[var(--apple-bg)]/40 transition-colors group">
+              {data.map((item, index) => (
+                <tr
+                  key={item.idPractica}
+                  className="hover:bg-[var(--apple-bg)]/40 transition-colors group animate-apple-in"
+                  style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+                >
                   {/* # Veh */}
                   <td className="px-4 py-3 text-center">
                     <span className="inline-flex w-8 h-8 rounded-lg bg-[var(--apple-text-main)] text-[var(--apple-bg)] items-center justify-center font-black text-[11px]">
@@ -284,10 +288,14 @@ export default function HistorialPanel() {
               Sin registros para los filtros seleccionados
             </p>
           )}
-          {data.map(item => {
+          {data.map((item, index) => {
             const chip = estadoChip(item);
             return (
-              <article key={item.idPractica} className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3">
+              <article
+                key={item.idPractica}
+                className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3 animate-apple-in"
+                style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+              >
                 {/* Fila 1: alumno + estado */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
