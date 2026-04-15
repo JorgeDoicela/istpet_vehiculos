@@ -130,14 +130,21 @@ const Layout = ({ children }) => {
                             </button>
                             {notifOpen ? (
                                 <div
-                                    className={`absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] max-h-[min(70vh,24rem)] overflow-y-auto rounded-2xl border border-[var(--apple-border)] shadow-2xl z-[120] py-2 px-1 animate-apple-in ${
-                                        theme === 'dark' ? 'bg-slate-900' : 'bg-white'
-                                    }`}
+                                    className={`fixed inset-x-4 top-16 md:absolute md:inset-auto md:right-0 md:top-full md:mt-2 
+                                               w-auto md:w-[22rem] max-h-[70vh] md:max-h-[28rem] 
+                                               overflow-y-auto rounded-[2rem] border border-[var(--apple-border)] 
+                                               shadow-2xl z-[120] py-2 px-1 animate-apple-in
+                                               bg-white/90 dark:bg-slate-900/90 backdrop-blur-2xl`}
                                     role="menu"
                                 >
-                                    <p className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-[var(--apple-text-sub)] border-b border-[var(--apple-border)]/50">
-                                        Más de {limiteMinutosEnRuta / 60} h en ruta
-                                    </p>
+                                    <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--apple-border)]/50 mb-1">
+                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">
+                                            Rutas Prolongadas ({limiteMinutosEnRuta / 60}h+)
+                                        </p>
+                                        <button onClick={() => setNotifOpen(false)} className="md:hidden p-1 text-[var(--apple-text-sub)]">
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                        </button>
+                                    </div>
                                     {systemNotificationsSupported ? (
                                         systemNotifPermission === 'default' ? (
                                             <div className="px-3 py-2.5 border-b border-[var(--apple-border)]/50 space-y-2">
@@ -174,16 +181,20 @@ const Layout = ({ children }) => {
                                                 return (
                                                     <li
                                                         key={c.idPractica}
-                                                        className="px-3 py-2.5 rounded-xl hover:bg-[var(--apple-primary)]/5 border-b border-[var(--apple-border)]/30 last:border-0"
+                                                        className="px-4 py-3.5 rounded-2xl hover:bg-[var(--apple-primary)]/5 border-b border-[var(--apple-border)]/30 last:border-0 transition-colors"
                                                     >
-                                                        <p className="text-xs font-black text-[var(--apple-text-main)] uppercase truncate">
+                                                        <p className="text-[13px] font-black text-[var(--apple-text-main)] uppercase truncate tracking-tight">
                                                             {c.estudiante || '—'}
                                                         </p>
-                                                        <p className="text-[10px] font-bold text-[var(--apple-text-sub)] mt-0.5">
-                                                            {vehTxt}
-                                                            <span className="ml-2 text-amber-600 font-black">{enRuta}</span>
-                                                        </p>
-                                                        <p className="text-[9px] text-[var(--apple-text-sub)] mt-1">
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase">
+                                                                {vehTxt}
+                                                            </span>
+                                                            <span className="text-[10px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-lg">
+                                                                {enRuta}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-[10px] font-semibold text-[var(--apple-text-sub)] mt-2 opacity-60">
                                                             Salida {fmtTimeSpan(c.salida)} · {c.instructor || '—'}
                                                         </p>
                                                     </li>

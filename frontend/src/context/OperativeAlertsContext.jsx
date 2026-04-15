@@ -90,7 +90,10 @@ export function OperativeAlertsProvider({ children }) {
             const sufijo = placa ? ` (${placa})` : '';
             const alumno = (a.estudiante || '').trim();
             const msg = `${veh}${sufijo}: lleva más de 2 h en ruta${alumno ? ` — ${alumno}` : ''}.`;
-            warning(msg, 9000);
+            warning({
+                title: `${veh}${sufijo}`,
+                description: `Lleva más de 2 h en ruta${alumno ? ` — ${alumno}` : ''}.`
+            }, 9000);
             showSystemNotification({
                 title: 'ISTPET — Ruta prolongada',
                 body: msg,
