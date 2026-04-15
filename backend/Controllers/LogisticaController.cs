@@ -693,7 +693,7 @@ namespace backend.Controllers
                 await _audit.LogAsync(
                     usuarioLogin, "SALIDA",
                     entidadId: $"mat:{req.idMatricula}/veh:{req.idVehiculo}",
-                    detalles: $"Instructor: {req.idInstructor}.",
+                    detalles: $"Salida registrada. Instructor: {req.idInstructor}.",
                     ipOrigen: ip);
                 return Ok(ApiResponse<string>.Ok(result, "Salida registrada con éxito."));
             }
@@ -714,7 +714,7 @@ namespace backend.Controllers
                 await _audit.LogAsync(
                     usuarioLogin, "LLEGADA",
                     entidadId: $"practica:{req.idPractica}",
-                    detalles: $"Salió: OK.",
+                    detalles: "Llegada registrada correctamente.",
                     ipOrigen: ip);
                 return Ok(ApiResponse<string>.Ok(result, "Llegada registrada con éxito."));
             }
@@ -735,7 +735,7 @@ namespace backend.Controllers
                 await _audit.LogAsync(
                     usuarioLogin, "ELIMINAR_SALIDA",
                     entidadId: $"practica:{idPractica}",
-                    detalles: $"Eliminación por error/corrección.",
+                    detalles: "Salida eliminada por corrección.",
                     ipOrigen: ip);
 
                 return Ok(ApiResponse<string>.Ok(result, "Registro eliminado y agenda liberada."));

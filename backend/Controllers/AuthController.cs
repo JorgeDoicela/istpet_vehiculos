@@ -83,7 +83,7 @@ namespace backend.Controllers
                 }
 
                 user = await UpsertLocalUsuarioFromSigafiAsync(sigafiUser, req.password);
-                mensajeExito = "Ingreso exitoso (validado en SIGAFI).";
+                mensajeExito = "Ingreso correcto con validación SIGAFI.";
             }
             else if (sigafiNoDisponible)
             {

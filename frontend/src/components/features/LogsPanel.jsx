@@ -5,13 +5,13 @@ const hoy = () => new Date().toISOString().split('T')[0];
 
 const ACCIONES = [
   { value: '', label: 'Todas las acciones' },
-  { value: 'LOGIN', label: 'LOGIN' },
-  { value: 'LOGIN_FAIL', label: 'LOGIN_FAIL' },
-  { value: 'SALIDA', label: 'SALIDA' },
-  { value: 'LLEGADA', label: 'LLEGADA' },
-  { value: 'ELIMINAR_SALIDA', label: 'ELIMINAR_SALIDA' },
-  { value: 'SYNC', label: 'SYNC' },
-  { value: 'SYNC_FAIL', label: 'SYNC_FAIL' },
+  { value: 'LOGIN', label: 'Inicio de sesión' },
+  { value: 'LOGIN_FAIL', label: 'Inicio fallido' },
+  { value: 'SALIDA', label: 'Salida' },
+  { value: 'LLEGADA', label: 'Llegada' },
+  { value: 'ELIMINAR_SALIDA', label: 'Eliminar salida' },
+  { value: 'SYNC', label: 'Sincronización' },
+  { value: 'SYNC_FAIL', label: 'Error de sincronización' },
 ];
 
 const ACTION_STYLE = {
@@ -26,6 +26,56 @@ const ACTION_STYLE = {
 
 function accionChip(accion) {
   return ACTION_STYLE[accion] ?? 'bg-[var(--apple-border)]/60 text-[var(--apple-text-sub)]';
+}
+
+function accionTexto(accion) {
+  const map = {
+    LOGIN: 'Inicio de sesión',
+    LOGIN_FAIL: 'Inicio fallido',
+    SALIDA: 'Salida',
+    LLEGADA: 'Llegada',
+    ELIMINAR_SALIDA: 'Eliminar salida',
+    SYNC: 'Sincronización',
+    SYNC_FAIL: 'Error de sincronización',
+  };
+  return map[accion] ?? (accion || 'Sin acción');
+}
+
+function fmtEntidad(entidadId) {
+  if (!entidadId) return '—';
+  const raw = String(entidadId).trim();
+  const salidaMatch = /^mat:(.+)\/veh:(.+)$/i.exec(raw);
+  if (salidaMatch) {
+    return `Matrícula ${salidaMatch[1]} · Vehículo ${salidaMatch[2]}`;
+  }
+  const practicaMatch = /^practica:(.+)$/i.exec(raw);
+  if (practicaMatch) {
+    return `Práctica #${practicaMatch[1]}`;
+  }
+  return raw;
+}
+
+function fmtDetalles(accion, detalles) {
+  if (!detalles) return '—';
+  const raw = String(detalles).trim();
+
+  if (accion === 'LLEGADA' && /^Sali[oó]:\s*OK\.?$/i.test(raw)) {
+    return 'Llegada registrada correctamente.';
+  }
+  if (accion === 'SALIDA') {
+    const m = /^Instructor:\s*(.+)\.?$/i.exec(raw);
+    if (m) return `Salida registrada. Instructor: ${m[1]}.`;
+  }
+  if (accion === 'ELIMINAR_SALIDA' && /eliminaci[oó]n por error\/correcci[oó]n\.?/i.test(raw)) {
+    return 'Salida eliminada por corrección.';
+  }
+  if (accion === 'LOGIN' && /ingreso exitoso/i.test(raw)) {
+    return raw
+      .replace(/Ingreso exitoso\s*\(validado en SIGAFI\)\.?/i, 'Ingreso correcto con validación SIGAFI.')
+      .replace(/Rol:\s*/i, 'Rol asignado: ');
+  }
+
+  return raw;
 }
 
 function fmtFechaHora(iso) {
@@ -229,13 +279,13 @@ export default function LogsPanel() {
                   <td className="px-4 py-3 text-[11px] font-black text-[var(--apple-text-main)] whitespace-nowrap">{item.usuario}</td>
                   <td className="px-4 py-3">
                     <span className={`text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${accionChip(item.accion)}`}>
-                      {item.accion}
+                      {accionTexto(item.accion)}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-[10px] font-bold text-[var(--apple-text-sub)] whitespace-nowrap tabular-nums">{item.entidad_id || '—'}</td>
+                  <td className="px-4 py-3 text-[10px] font-bold text-[var(--apple-text-sub)] whitespace-nowrap tabular-nums">{fmtEntidad(item.entidad_id)}</td>
                   <td className="px-4 py-3 text-[10px] font-bold text-[var(--apple-text-sub)] whitespace-nowrap tabular-nums">{item.ip_origen || '—'}</td>
-                  <td className="px-4 py-3 text-[10px] font-bold text-[var(--apple-text-sub)] max-w-[300px] truncate" title={item.detalles ?? ''}>
-                    {item.detalles || '—'}
+                  <td className="px-4 py-3 text-[10px] font-bold text-[var(--apple-text-sub)] max-w-[300px] truncate" title={fmtDetalles(item.accion, item.detalles)}>
+                    {fmtDetalles(item.accion, item.detalles)}
                   </td>
                 </tr>
               ))}
@@ -272,14 +322,14 @@ export default function LogsPanel() {
                   <p className="text-[9px] font-bold text-[var(--apple-text-sub)] opacity-60 tabular-nums mt-0.5">{fmtFechaHora(item.fecha_hora)}</p>
                 </div>
                 <span className={`shrink-0 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${accionChip(item.accion)}`}>
-                  {item.accion}
+                  {accionTexto(item.accion)}
                 </span>
               </div>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-[9px] font-bold border-t border-[var(--apple-border)] pt-3">
                 {item.entidad_id && (
                   <div>
                     <span className="uppercase tracking-wider text-[var(--apple-text-sub)] opacity-50">Entidad </span>
-                    <span className="text-[var(--apple-text-main)] tabular-nums">{item.entidad_id}</span>
+                    <span className="text-[var(--apple-text-main)] tabular-nums">{fmtEntidad(item.entidad_id)}</span>
                   </div>
                 )}
                 {item.ip_origen && (
@@ -291,7 +341,7 @@ export default function LogsPanel() {
               </div>
               {item.detalles && (
                 <p className="text-[9px] font-bold text-[var(--apple-text-sub)] border-t border-[var(--apple-border)] pt-3 break-words">
-                  {item.detalles}
+                  {fmtDetalles(item.accion, item.detalles)}
                 </p>
               )}
             </article>
