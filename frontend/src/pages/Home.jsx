@@ -13,6 +13,7 @@ const Home = () => {
     const [activeClasses, setActiveClasses] = useState([]);
     const [completedPack, setCompletedPack] = useState({ practicas: [], fuenteDatos: '', obtenidoEn: null });
     const [loading, setLoading] = useState(true);
+    const [clockSkew, setClockSkew] = useState(0); 
     const [retornosListMaxPx, setRetornosListMaxPx] = useState(null);
     const retornosListRef = useRef(null);
 
@@ -67,8 +68,14 @@ const Home = () => {
     const fetchInitialData = async () => {
         setLoading(true);
         try {
-            const cData = await dashboardService.getClasesActivas();
-            setActiveClasses(cData);
+            const { clases, serverTime } = await dashboardService.getClasesActivas();
+            setActiveClasses(clases || []);
+            
+            if (serverTime) {
+                const sTime = new Date(serverTime).getTime();
+                const cTime = new Date().getTime();
+                setClockSkew(sTime - cTime);
+            }
 
             try {
                 const cPack = await dashboardService.getHistorialHoy(10);
@@ -108,7 +115,7 @@ const Home = () => {
                                 <SkeletonLoader type="card" />
                             </div>
                         ) : (
-                            <ActiveClasses classes={activeClasses} />
+                             <ActiveClasses classes={activeClasses} clockSkew={clockSkew} />
                         )}
                     </div>
 

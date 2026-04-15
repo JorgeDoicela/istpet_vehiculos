@@ -7,7 +7,7 @@ const MAX_VISIBLE_CARDS = 3;
  * Active Classes Component: Absolute SIGAFI Parity 2026.
  * All property naming aligned with ClaseActiva model (idRegistro, idAlumno, numeroVehiculo).
  */
-const ActiveClasses = ({ classes }) => {
+const ActiveClasses = ({ classes, clockSkew = 0 }) => {
     const safeClasses = Array.isArray(classes) ? classes : [];
 
     const [horaActual, setHoraActual] = useState('');
@@ -15,11 +15,14 @@ const ActiveClasses = ({ classes }) => {
     const gridRef = useRef(null);
 
     useEffect(() => {
-        const tick = () => setHoraActual(new Date().toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+        const tick = () => {
+            const syncedNow = new Date(new Date().getTime() + clockSkew);
+            setHoraActual(syncedNow.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }));
+        };
         tick();
         const id = setInterval(tick, 1000);
         return () => clearInterval(id);
-    }, []);
+    }, [clockSkew]);
 
     const classCount = Array.isArray(classes) ? classes.length : 0;
 
@@ -88,7 +91,8 @@ const ActiveClasses = ({ classes }) => {
                 ) : (
                     <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2 gap-4">
                         {safeClasses.map((c, idx) => {
-                            const tiempoEnRuta = fmtTiempoEnRuta(c.salida);
+                            const syncedNow = new Date(new Date().getTime() + clockSkew);
+                            const tiempoEnRuta = fmtTiempoEnRuta(c.salida, syncedNow);
                             return (
                             <div
                                 key={c.idRegistro || c.idPractica || idx}

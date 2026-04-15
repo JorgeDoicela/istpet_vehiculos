@@ -97,7 +97,7 @@ export default function HistorialPanel() {
       <div className="apple-card p-4 bg-[var(--apple-card)] border border-[var(--apple-border)] space-y-3">
 
         {/* Fila 1: fechas */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
           <div>
             <label className={labelCls}>Desde</label>
             <input type="date" name="fechaInicio" value={filtros.fechaInicio} onChange={handleChange} className={inputCls} />
@@ -109,7 +109,7 @@ export default function HistorialPanel() {
         </div>
 
         {/* Fila 2: selects */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
           <div>
             <label className={labelCls}>Instructor</label>
             <select name="instructorId" value={filtros.instructorId} onChange={handleChange} className={`${inputCls} appearance-none`}>
@@ -297,12 +297,12 @@ export default function HistorialPanel() {
                 style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
               >
                 {/* Fila 1: alumno + estado */}
-                <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start justify-between gap-2 overflow-hidden">
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm font-black text-[var(--apple-text-main)] uppercase truncate">{item.nomina}</p>
+                    <p className="text-sm font-black text-[var(--apple-text-main)] uppercase truncate break-words">{item.nomina}</p>
                     <p className="text-[10px] font-bold text-[var(--apple-text-sub)] opacity-60 truncate mt-0.5">{item.profesor}</p>
                   </div>
-                  <span className={`shrink-0 text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-wider ${chip.cls}`}>
+                  <span className={`shrink-0 text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${chip.cls}`}>
                     {chip.label}
                   </span>
                 </div>
