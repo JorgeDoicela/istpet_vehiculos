@@ -34,8 +34,18 @@ api.interceptors.response.use(
                 window.location.href = '/login?expired=true';
             }
         }
-        
-        const errorMsg = error.response?.data?.message || error.message || 'Error de conexión';
+
+        const payload = error.response?.data;
+        const errorMsg =
+            payload?.message ||
+            payload?.Message ||
+            payload?.detail ||
+            payload?.Detail ||
+            error.message ||
+            'Error de conexión';
+
+        // Unifica el mensaje para todos los catch del frontend.
+        error.message = errorMsg;
         console.error(`[API ERROR] ${errorMsg}`);
         return Promise.reject(error);
     }

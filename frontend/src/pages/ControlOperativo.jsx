@@ -92,6 +92,14 @@ const ControlOperativo = () => {
         setTimeout(() => setNotification(null), 4000);
     };
 
+    const getApiErrorMessage = (err, fallback = 'No se pudo completar la operación.') =>
+        err?.response?.data?.message
+        || err?.response?.data?.Message
+        || err?.response?.data?.detail
+        || err?.response?.data?.Detail
+        || err?.message
+        || fallback;
+
     const agendaFiltrada = useMemo(() => {
         const q = filtroAgenda.trim().toLowerCase().replace(/\s+/g, ' ');
         if (!q) return agendadosHoy;
@@ -483,7 +491,7 @@ const ControlOperativo = () => {
             }, LLEGADA_EXIT_MS);
 
         } catch (err) {
-            const apiMsg = err.response?.data?.message || err.message;
+            const apiMsg = getApiErrorMessage(err, 'No se pudo registrar la salida.');
             showNotification(apiMsg, 'error');
         }
     };
@@ -520,7 +528,7 @@ const ControlOperativo = () => {
                 setLlegadaSubmitting(false);
             }, LLEGADA_EXIT_MS);
         } catch (err) {
-            const apiMsg = err.response?.data?.message || err.message;
+            const apiMsg = getApiErrorMessage(err, 'No se pudo registrar la llegada.');
             showNotification(apiMsg, 'error');
             setLlegadaSubmitting(false);
         }
@@ -556,7 +564,7 @@ const ControlOperativo = () => {
                 setLlegadaSubmitting(false);
             }, LLEGADA_EXIT_MS);
         } catch (err) {
-            const apiMsg = err.response?.data?.message || err.message;
+            const apiMsg = getApiErrorMessage(err, 'No se pudo eliminar el registro.');
             showNotification(apiMsg, 'error');
             setLlegadaSubmitting(false);
         }

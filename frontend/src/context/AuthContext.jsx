@@ -43,7 +43,13 @@ export const AuthProvider = ({ children }) => {
         } catch (error) {
             return { 
                 success: false, 
-                message: error.response?.data?.message || 'Error de conexión con el servidor de seguridad.'
+                message:
+                    error?.response?.data?.message
+                    || error?.response?.data?.Message
+                    || error?.response?.data?.detail
+                    || error?.response?.data?.Detail
+                    || error?.message
+                    || 'Error de conexión con el servidor de seguridad.'
             };
         }
     };
