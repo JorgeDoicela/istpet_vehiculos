@@ -13,7 +13,7 @@ namespace backend.DTOs
         /// <summary>Solo en desarrollo: detalle técnico del fallo (p. ej. excepción).</summary>
         public string? Detail { get; set; }
 
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+        public DateTime Timestamp { get; set; } = DateTime.Now;
 
         public static ApiResponse<T> Ok(T data, string message = "Operación exitosa")
             => new ApiResponse<T> { Success = true, Data = data, Message = message };
