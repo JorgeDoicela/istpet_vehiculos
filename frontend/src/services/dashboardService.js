@@ -8,7 +8,10 @@ const dashboardService = {
   getClasesActivas: async () => {
     const response = await api.get('/Dashboard/clases-activas');
     const body = response?.data;
-    return body?.data ?? body?.Data ?? [];
+    return {
+      clases: body?.data ?? body?.Data ?? [],
+      serverTime: body?.timestamp ?? body?.Timestamp ?? null
+    };
   },
   
   getAlertasMantenimiento: async () => {

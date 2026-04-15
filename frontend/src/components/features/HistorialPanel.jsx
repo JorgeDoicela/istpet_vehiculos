@@ -128,7 +128,7 @@ export default function HistorialPanel() {
         </div>
 
         {/* Fila 3: búsqueda + limpiar */}
-        <div className="flex items-end gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-2">
           <div className="flex-1 min-w-0">
             <label className={labelCls}>Buscar alumno / instructor</label>
             <div className="relative">
@@ -156,7 +156,7 @@ export default function HistorialPanel() {
             <button
               type="button"
               onClick={limpiar}
-              className="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded-2xl border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all"
+              className="w-full sm:w-auto shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-2.5 rounded-2xl border border-[var(--apple-border)] text-[var(--apple-text-sub)] hover:border-[var(--apple-primary)] hover:text-[var(--apple-primary)] transition-all"
             >
               Limpiar
             </button>
@@ -342,17 +342,17 @@ export default function HistorialPanel() {
                 </div>
                 {/* Fila 4: usuarios */}
                 {(item.userSalida || item.userLlegada) && (
-                  <div className="flex gap-4 text-xs border-t border-[var(--apple-border)] pt-3">
+                  <div className="grid grid-cols-1 gap-2 text-xs border-t border-[var(--apple-border)] pt-3">
                     {item.userSalida && (
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">User salida </span>
-                        <span className="font-bold text-[var(--apple-text-sub)]">{item.userSalida}</span>
+                        <span className="font-bold text-[var(--apple-text-sub)] break-all">{item.userSalida}</span>
                       </div>
                     )}
                     {item.userLlegada && (
-                      <div>
+                      <div className="min-w-0">
                         <span className="text-[9px] font-black uppercase text-[var(--apple-text-sub)] opacity-50">User llegada </span>
-                        <span className="font-bold text-[var(--apple-text-sub)]">{item.userLlegada}</span>
+                        <span className="font-bold text-[var(--apple-text-sub)] break-all">{item.userLlegada}</span>
                       </div>
                     )}
                   </div>

@@ -86,6 +86,7 @@ const ControlOperativo = () => {
         onConfirm: () => { },
         type: 'info'
     });
+    const [clockSkew, setClockSkew] = useState(0); // Desfase en ms (ServerTime - ClientTime)
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -180,14 +181,15 @@ const ControlOperativo = () => {
     // Reloj para Hora Retorno (Llegada)
     useEffect(() => {
         const clockInt = setInterval(() => {
-            const now = new Date();
-            const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-            const dateStr = now.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
+            const localNow = new Date();
+            const syncedNow = new Date(localNow.getTime() + clockSkew);
+            const timeStr = syncedNow.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = syncedNow.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' }).toUpperCase();
             setHoraRetorno(timeStr);
             setFechaHoy(dateStr);
         }, 1000);
         return () => clearInterval(clockInt);
-    }, []);
+    }, [clockSkew]);
 
     // Carga de datos base
     useEffect(() => {
@@ -356,8 +358,13 @@ const ControlOperativo = () => {
 
     const cargarClasesActivas = async () => {
         try {
-            const data = await dashboardService.getClasesActivas();
-            setClasesActivas(data);
+            const { clases, serverTime } = await dashboardService.getClasesActivas();
+            setClasesActivas(clases);
+            if (serverTime) {
+                const sTime = new Date(serverTime).getTime();
+                const cTime = new Date().getTime();
+                setClockSkew(sTime - cTime);
+            }
         } catch (e) {
             showNotification('Error cargando vehículos en pista', 'error');
         }
@@ -1070,8 +1077,9 @@ const ControlOperativo = () => {
                                             ) : null}
                                             {clasesActivasParaLlegada.length > 0 ? (
                                                 clasesActivasParaLlegada.map(c => {
+                                                    const syncedNow = new Date(new Date().getTime() + clockSkew);
                                                     const sel = claseSeleccionada?.idPractica === c.idPractica;
-                                                    const enRuta = fmtTiempoEnRuta(c.salida);
+                                                    const enRuta = fmtTiempoEnRuta(c.salida, syncedNow);
                                                     const placaTxt = (c.placa || '').trim();
                                                     const exitAnim =
                                                         llegadaExit && idPracticaKey(llegadaExit.idPractica) === idPracticaKey(c.idPractica)

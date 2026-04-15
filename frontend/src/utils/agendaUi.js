@@ -135,20 +135,21 @@ export function fmtDuracionSalidaLlegada(salida, llegada) {
 }
 
 /** Minutos desde la hora de salida hasta ahora (mismo criterio que `fmtTiempoEnRuta`, mismo día); null si no aplica. */
-export function minutosEnRuta(val) {
+export function minutosEnRuta(val, nowOverride = null) {
   if (val == null) return null;
-  const now = new Date();
+  const now = nowOverride instanceof Date ? nowOverride : new Date();
   const ahoraMinutos = now.getHours() * 60 + now.getMinutes();
   const salidaMinutos = salidaToMinutes(val);
   if (Number.isNaN(salidaMinutos)) return null;
   const diferencia = ahoraMinutos - salidaMinutos;
-  if (diferencia < 0) return null;
-  return diferencia;
+  // Permitimos diferencias negativas pequeñas (p. ej. clock skew de 2 min) tratándolas como 0
+  if (diferencia < -2) return null; 
+  return Math.max(0, diferencia);
 }
 
 /** Etiqueta “X min / h en ruta” respecto a la hora local actual; null si no aplica. */
-export function fmtTiempoEnRuta(val) {
-  const diferencia = minutosEnRuta(val);
+export function fmtTiempoEnRuta(val, nowOverride = null) {
+  const diferencia = minutosEnRuta(val, nowOverride);
   if (diferencia == null) return null;
   if (diferencia < 60) return `${diferencia} min en ruta`;
   const horas = Math.floor(diferencia / 60);
