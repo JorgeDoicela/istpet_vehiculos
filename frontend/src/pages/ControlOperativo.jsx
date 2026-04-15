@@ -76,6 +76,8 @@ const ControlOperativo = () => {
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
     /** Salida animada tras confirmar llegada o eliminar salida: { idPractica, mode } */
     const [llegadaExit, setLlegadaExit] = useState(null);
+    /** Control de salida animada (sent/success) */
+    const [salidaExit, setSalidaExit] = useState(null);
     const [confirmState, setConfirmState] = useState({
         isOpen: false,
         title: '',
@@ -465,15 +467,20 @@ const ControlOperativo = () => {
                 idsAsignacionHorario: estudianteData.idsAsignacionHorario, // 🚀 Vínculo masivo con agenda
                 observaciones: "Salida Regular Control Parity"
             });
+            setSalidaExit({ mode: 'success' });
             showNotification('¡Vehículo en pista registrado!');
-            setEstudianteData(null);
-            setSalidaIdAlumno('');
-            setVehiculoSeleccionado(null);
-            setInstructorSeleccionado(null);
-            setFiltroLicencia(null);
-            cargarVehiculosDisponibles();
-            cargarClasesActivas(); // Refrescar pestaña Llegada inmediatamente
-            cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
+
+            window.setTimeout(() => {
+                setSalidaExit(null);
+                setEstudianteData(null);
+                setSalidaIdAlumno('');
+                setVehiculoSeleccionado(null);
+                setInstructorSeleccionado(null);
+                setFiltroLicencia(null);
+                cargarVehiculosDisponibles();
+                cargarClasesActivas(); // Refrescar pestaña Llegada inmediatamente
+                cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
+            }, LLEGADA_EXIT_MS);
 
         } catch (err) {
             const apiMsg = err.response?.data?.message || err.message;
@@ -591,7 +598,10 @@ const ControlOperativo = () => {
                         </div>
 
                         {activeTab === 'salida' ? (
-                            <div id="ficha-salida" className="apple-card !pt-9 lg:!pt-12 pb-20 lg:pb-10 scroll-mt-20">
+                            <div
+                                id="ficha-salida"
+                                className={`apple-card !pt-9 lg:!pt-12 pb-20 lg:pb-10 scroll-mt-20 ${salidaExit ? 'animate-llegada-exit-success pointer-events-none' : ''}`}
+                            >
                                 <div className="mb-6 px-2 flex items-start justify-between">
                                     <h3 className="text-lg lg:text-2xl font-black text-[var(--apple-text-main)] tracking-tight">Registro de Salida</h3>
                                     <div className="flex flex-col items-end leading-tight">
