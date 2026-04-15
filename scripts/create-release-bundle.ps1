@@ -11,11 +11,14 @@ if (Test-Path $RELEASE_DIR) {
 }
 New-Item -ItemType Directory -Path $RELEASE_DIR
 
+Write-Host "==> Leyendo configuración del API desde .env..." -ForegroundColor Gray
+$VITE_API_URL = (Get-Content .env | Select-String "VITE_API_URL=").ToString().Split("=")[1].Trim()
+
 Write-Host "==> Construyendo imagen del Backend..." -ForegroundColor Yellow
 docker build -t istpet/backend:release ./backend
 
-Write-Host "==> Construyendo imagen del Frontend..." -ForegroundColor Yellow
-docker build -t istpet/frontend:release ./frontend
+Write-Host "==> Construyendo imagen del Frontend (API: $VITE_API_URL)..." -ForegroundColor Yellow
+docker build --build-arg VITE_API_URL=$VITE_API_URL -t istpet/frontend:release ./frontend
 
 Write-Host "==> Exportando imágenes a un archivo .tar (esto puede tardar)..." -ForegroundColor Yellow
 docker save -o "$RELEASE_DIR/$IMAGES_FILE" istpet/backend:release istpet/frontend:release
