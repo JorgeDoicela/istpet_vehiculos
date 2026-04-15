@@ -192,11 +192,12 @@ const Reports = () => {
                                         </p>
                                     </div>
                                 )}
-                                {cargado && !loading && data.length > 0 && data.slice(0, 500).map((item) => (
-                            <article
-                                key={item.idPractica}
-                                className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3"
-                            >
+                                {cargado && !loading && data.length > 0 && data.slice(0, 500).map((item, index) => (
+                                    <article
+                                        key={item.idPractica}
+                                        className="rounded-2xl border border-[var(--apple-border)] bg-[var(--apple-bg)]/30 p-4 space-y-3 animate-apple-in"
+                                        style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+                                    >
                                 <div className="flex flex-wrap items-start justify-between gap-2">
                                     <div className="min-w-0 flex-1">
                                         <p className="text-[10px] font-black uppercase tracking-wider text-[var(--apple-text-sub)]">Profesor</p>
@@ -308,8 +309,12 @@ const Reports = () => {
                                         </td>
                                     </tr>
                                 )}
-                                {cargado && data.slice(0, 500).map((item) => (
-                                    <tr key={item.idPractica} className="hover:bg-[var(--apple-bg)]/60 transition-colors group">
+                                {cargado && data.slice(0, 500).map((item, index) => (
+                                    <tr
+                                        key={item.idPractica}
+                                        className="hover:bg-[var(--apple-bg)]/60 transition-colors group animate-apple-in"
+                                        style={{ animationDelay: `${Math.min(index * 0.03, 0.6)}s`, animationFillMode: 'both' }}
+                                    >
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-bold text-[var(--apple-text-sub)] tabular-nums">{item.idProfesor}</td>
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[11px] font-black text-[var(--apple-text-main)] uppercase">{item.profesor}</td>
                                         <td className="px-3 lg:px-5 py-3 lg:py-4 text-[9px] font-black">
