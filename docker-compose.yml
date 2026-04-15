@@ -2,6 +2,7 @@ services:
   db:
     image: mariadb:10.11
     container_name: istpet_db
+    profiles: ["mirror"]
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${LOCAL_DB_PASS}
@@ -23,13 +24,11 @@ services:
       dockerfile: Dockerfile
     container_name: istpet_backend
     restart: always
-    depends_on:
-      db:
-        condition: service_healthy
     environment:
       - ASPNETCORE_ENVIRONMENT=${ASPNETCORE_ENVIRONMENT:-Production}
       - ASPNETCORE_HTTP_PORTS=8080
-      - "ConnectionStrings__DefaultConnection=Server=${LOCAL_DB_HOST:-db};Port=3306;Database=${LOCAL_DB_NAME:-istpet_vehiculos};Uid=${LOCAL_DB_USER:-root};Pwd=${LOCAL_DB_PASS};"
+      - DATABASE_MODE=${DATABASE_MODE:-Direct}
+      - "ConnectionStrings__DefaultConnection=Server=${LOCAL_DB_HOST:-db};Port=${LOCAL_DB_PORT:-3306};Database=${LOCAL_DB_NAME:-istpet_vehiculos};Uid=${LOCAL_DB_USER:-root};Pwd=${LOCAL_DB_PASS};"
       - "ConnectionStrings__SigafiConnection=Server=${REMOTE_SIGAFI_SERVER};Port=${REMOTE_SIGAFI_PORT:-3306};Database=${REMOTE_SIGAFI_DB:-sigafi_es};Uid=${REMOTE_SIGAFI_USER};Pwd=${REMOTE_SIGAFI_PASS};"
       - JWT_KEY=${JWT_KEY}
       - "CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}"

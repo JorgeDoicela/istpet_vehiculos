@@ -20,8 +20,11 @@ cd /opt/istpet_logistica
 # Genere una llave JWT de 32+ caracteres
 openssl rand -base64 48 > .env_jwt_key
 
-# Despliegue Atómico
+# Despliegue Modo Directo (BDs existentes en servidor)
 docker compose up -d --build
+
+# Despliegue Modo Espejo (levanta MariaDB local del compose)
+docker compose --profile mirror up -d --build
 ```
 
 ### 1.2. El Protocolo de Auto-Reparación
