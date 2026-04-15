@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b3a70" />
+      <stop offset="100%" stop-color="#1454a1" />
+    </linearGradient>
+  </defs>
+  <rect x="24" y="24" width="464" height="464" rx="96" fill="url(#bg)" />
+  <path
+    d="M126 314c39-84 102-126 190-126 31 0 57 5 79 14-34 39-74 58-120 58-24 0-45-5-65-14-22 20-41 44-57 74-13 25-25 49-34 72H64c17-27 38-56 62-78z"
+    fill="#ffffff"
+    opacity="0.95"
+  />
+  <circle cx="345" cy="350" r="55" fill="#ffffff" />
+  <circle cx="345" cy="350" r="25" fill="#0b3a70" />
+  <text
+    x="256"
+    y="120"
+    text-anchor="middle"
+    font-size="54"
+    font-family="Arial, sans-serif"
+    font-weight="700"
+    fill="#ffffff"
+  >
+    ISTPET
+  </text>
+</svg>

@@ -1,0 +1,19 @@
+{
+  "name": "ISTPET Vehiculos",
+  "short_name": "ISTPET",
+  "description": "Sistema de gestion de conduccion ISTPET",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0b3a70",
+  "icons": [
+    {
+      "src": "/pwa-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
