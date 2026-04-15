@@ -65,12 +65,7 @@ SELECT
     v.placa AS placa,
     v.Marca AS marca,
     v.Modelo AS modelo,
-    (SELECT car.Carrera 
-     FROM matriculas m 
-     INNER JOIN cursos c ON c.idNivel = m.idNivel 
-     INNER JOIN carreras car ON car.idCarrera = c.idCarrera 
-     WHERE m.idAlumno = p.idalumno 
-     ORDER BY m.idMatricula DESC LIMIT 1) AS tipo_licencia,
+    cv.categoria AS tipo_licencia,
     p.idalumno AS id_alumno,
     TRIM(CONCAT(
         COALESCE(a.apellidoPaterno, ''), ' ',
@@ -87,6 +82,7 @@ FROM cond_alumnos_practicas p
 LEFT JOIN alumnos a ON a.idAlumno = p.idalumno
 LEFT JOIN profesores pr ON pr.idProfesor = p.idProfesor
 LEFT JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+LEFT JOIN categoria_vehiculos cv ON cv.idCategoria = v.idCategoria
 WHERE 1=1";
 
             var args = new List<MySqlParameter>();

@@ -112,9 +112,11 @@ namespace backend.Controllers
                 from a in alumnosJoin.DefaultIfEmpty()
                 join v in _context.Vehiculos.AsNoTracking() on p.idvehiculo equals v.idVehiculo into vehiculosJoin
                 from v in vehiculosJoin.DefaultIfEmpty()
+                join cv in _context.CategoriasVehiculos.AsNoTracking() on v.idCategoria equals cv.idCategoria into catsJoin
+                from cv in catsJoin.DefaultIfEmpty()
                 join pr in _context.Instructores.AsNoTracking() on p.idProfesor equals pr.idProfesor into profesJoin
                 from pr in profesJoin.DefaultIfEmpty()
-                select new { p, a, v, pr }).ToListAsync();
+                select new { p, a, v, pr, cv }).ToListAsync();
 
             var list = new List<ReportePracticasDTO>(rows.Count);
             foreach (var x in rows)
@@ -123,6 +125,7 @@ namespace backend.Controllers
                 var a = x.a;
                 var v = x.v;
                 var pr = x.pr;
+                var cv = x.cv;
 
                 var fecha = p.fecha.Date;
                 var marca = (v?.marca ?? "").Trim();
@@ -130,8 +133,10 @@ namespace backend.Controllers
                 var placa = v?.placa ?? "";
                 var numeroVehiculo = v?.numero_vehiculo ?? "0";
 
-                // Para reportes locales, usamos como predeterminado 'LICENCIA TIPO C' (alineado con la solicitud del usuario)
-                var categoria = culture.TextInfo.ToUpper("LICENCIA TIPO C");
+                // Obtenemos el nombre de la licencia desde la categoría del vehículo
+                var categoria = !string.IsNullOrWhiteSpace(cv?.categoria)
+                    ? culture.TextInfo.ToUpper(cv.categoria)
+                    : culture.TextInfo.ToUpper("LICENCIA TIPO C");
 
                 var tsSalida = p.hora_salida;
                 var tsLlegada = p.hora_llegada;
