@@ -380,6 +380,9 @@ namespace backend.Services.Interfaces
         /// </summary>
         void InvalidateSigafiCatalogCache();
         Task<IDictionary<string, CentralHorarioDto>> GetNextSchedulesForAlumnosAsync(IEnumerable<string> ids);
+
+        /// <summary>Libera un registro en la base central (cancelado=1, ensalida=0).</summary>
+        Task<bool> CancelPracticeInCentralAsync(int idPractica);
     }
 }
 

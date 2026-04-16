@@ -1169,6 +1169,71 @@ WHERE COALESCE(activo, 1) = 0";
             }
         }
 
+        public async Task<bool> CancelPracticeInCentralAsync(int idPractica)
+        {
+            if (idPractica <= 0) return false;
+            try
+            {
+                return await _pipeline.ExecuteAsync(async () =>
+                {
+                    await using var conn = new MySqlConnection(_connectionString);
+                    await conn.OpenAsync();
+
+                    // 1. Liberar los slots de agenda vinculados (asiste=0)
+                    // Buscamos los IDs de asignación horario vinculados a esta práctica
+                    var sqlLinks = "SELECT idAsignacionHorario FROM cond_practicas_horarios_alumnos WHERE idPractica = @p0";
+                    var links = new List<int>();
+                    await using (var cmdLinks = new MySqlCommand(sqlLinks, conn))
+                    {
+                        cmdLinks.Parameters.AddWithValue("@p0", idPractica);
+                        await using (var reader = await cmdLinks.ExecuteReaderAsync())
+                        {
+                            while (await reader.ReadAsync()) links.Add(reader.GetInt32(0));
+                        }
+                    }
+
+                    await using var trans = await conn.BeginTransactionAsync();
+                    try
+                    {
+                        if (links.Count > 0)
+                        {
+                            // Marcar como 'no asistió' para que vuelvan a estar disponibles
+                            var sqlUpdateAgenda = $"UPDATE cond_alumnos_horarios SET asiste = 0 WHERE idAsignacionHorario IN ({string.Join(",", links)})";
+                            await using var cmdUpd = new MySqlCommand(sqlUpdateAgenda, conn, trans);
+                            await cmdUpd.ExecuteNonQueryAsync();
+
+                            // Borrar los vínculos de la tabla puente
+                            var sqlDelLinks = "DELETE FROM cond_practicas_horarios_alumnos WHERE idPractica = @p0";
+                            await using var cmdDel = new MySqlCommand(sqlDelLinks, conn, trans);
+                            cmdDel.Parameters.AddWithValue("@p0", idPractica);
+                            await cmdDel.ExecuteNonQueryAsync();
+                        }
+
+                        // 2. Marcar la práctica como cancelada y no en salida
+                        var sqlCancel = "UPDATE cond_alumnos_practicas SET cancelado = 1, ensalida = 0 WHERE idPractica = @p0";
+                        await using var cmdCancel = new MySqlCommand(sqlCancel, conn, trans);
+                        cmdCancel.Parameters.AddWithValue("@p0", idPractica);
+                        var affected = await cmdCancel.ExecuteNonQueryAsync();
+
+                        await trans.CommitAsync();
+                        _logger.LogInformation("Práctica {idPractica} cancelada exitosamente en SIGAFI Central.", idPractica);
+                        return affected > 0;
+                    }
+                    catch (Exception ex)
+                    {
+                        await trans.RollbackAsync();
+                        _logger.LogError(ex, "Error en transacción de cancelación central para práctica {idPractica}", idPractica);
+                        return false;
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Fallo crítico al intentar cancelar práctica {idPractica} en SIGAFI.", idPractica);
+                return false;
+            }
+        }
+
         public void InvalidateSigafiCatalogCache()
         {
             _cache.Remove("sigafi:instructores");

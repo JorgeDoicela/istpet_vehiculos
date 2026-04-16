@@ -201,46 +201,72 @@ namespace backend.Services.Implementations
     
         public async Task<string> EliminarSalidaAsync(int idPractica, string usuarioLogin)
         {
+            bool eliminadoLocal = false;
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                // 1. Obtener registro de la práctica
+                // 1. Obtener registro de la práctica localmente
                 var practica = await _context.Practicas.FindAsync(idPractica);
-                if (practica == null)
-                    return "ERROR: Registro de práctica no encontrado.";
-
-                // 2. Liberar agenda (si estaba vinculada)
-                var vinculos = await _context.PracticasHorarios
-                    .Where(vh => vh.idPractica == idPractica)
-                    .ToListAsync();
-
-                foreach (var v in vinculos)
+                if (practica != null)
                 {
-                    var horario = await _context.HorariosAlumnos.FindAsync(v.idAsignacionHorario);
-                    if (horario != null)
+                    // 2. Liberar agenda local (si estaba vinculada)
+                    var vinculos = await _context.PracticasHorarios
+                        .Where(vh => vh.idPractica == idPractica)
+                        .ToListAsync();
+
+                    foreach (var v in vinculos)
                     {
-                        horario.asiste = 0; // Restaurar a pendiente
+                        var horario = await _context.HorariosAlumnos.FindAsync(v.idAsignacionHorario);
+                        if (horario != null)
+                        {
+                            horario.asiste = 0; // Restaurar a pendiente
+                        }
                     }
-                }
 
-                // 3. Eliminar vínculos y la práctica (Cascada manual por precaución)
-                if (vinculos.Any())
+                    // 3. Eliminar vínculos y la práctica
+                    if (vinculos.Any())
+                    {
+                        _context.PracticasHorarios.RemoveRange(vinculos);
+                    }
+
+                    _context.Practicas.Remove(practica);
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    eliminadoLocal = true;
+                }
+                else
                 {
-                    _context.PracticasHorarios.RemoveRange(vinculos);
+                    await transaction.RollbackAsync();
                 }
-
-                _context.Practicas.Remove(practica);
-                
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return "EXITO";
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                return $"ERROR: {ex.Message}";
+                // No retornamos aquí, intentamos la limpieza en Central
+                Console.WriteLine($"[Service] Error en borrado local: {ex.Message}");
             }
+
+            // 4. RESILIENCIA: Intentar cancelar en SIGAFI Central directamente (fuente de verdad)
+            // Esto resuelve el caso de registros 'fantasma' que existen en Central pero no localmente.
+            bool canceladoCentral = false;
+            try
+            {
+                canceladoCentral = await _central.CancelPracticeInCentralAsync(idPractica);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[Service] Error en cancelación central: {ex.Message}");
+            }
+
+            // Si se eliminó de algún lado, lo consideramos éxito operativo
+            if (eliminadoLocal || canceladoCentral)
+            {
+                return "EXITO";
+            }
+
+            // Si llegamos aquí y no estaba localmente, pero tampoco pudimos confirmar Central, 
+            // devolvemos un error específico pero permitimos que el front decida si ocultar.
+            return "ERROR: Registro no localizado en base local ni central.";
         }
     }
 }

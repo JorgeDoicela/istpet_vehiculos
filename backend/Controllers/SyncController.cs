@@ -15,16 +15,29 @@ namespace backend.Controllers
     {
         private readonly IDataSyncService _syncService;
         private readonly SigafiExtractionProbe _sigafiProbe;
+        private readonly bool _isDirectMode;
 
-        public SyncController(IDataSyncService syncService, SigafiExtractionProbe sigafiProbe)
+        public SyncController(IDataSyncService syncService, SigafiExtractionProbe sigafiProbe, IConfiguration config)
         {
             _syncService = syncService;
             _sigafiProbe = sigafiProbe;
+            var mode = config["DatabaseSettings:Database_Mode"] ?? "Mirror";
+            _isDirectMode = mode.Equals("Direct", System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        private ActionResult? CheckDirectMode()
+        {
+            if (_isDirectMode)
+                return BadRequest(ApiResponse<SyncLog>.Fail("Modo Directo Activo: La sincronización manual no es necesaria ya que el sistema lee directamente de SIGAFI."));
+            return null;
         }
 
         [HttpPost("students")]
         public async Task<ActionResult<ApiResponse<SyncLog>>> SyncStudents([FromBody] List<JsonElement> externalData)
         {
+            var directCheck = CheckDirectMode();
+            if (directCheck != null) return directCheck;
+
             try
             {
                 // Si no mandan datos, simulamos una ingesta externa con errores para probar el Escudo
@@ -53,6 +66,9 @@ namespace backend.Controllers
         [HttpPost("instructors")]
         public async Task<ActionResult<ApiResponse<SyncLog>>> SyncInstructors()
         {
+            var directCheck = CheckDirectMode();
+            if (directCheck != null) return directCheck;
+
             try
             {
                 var syncLog = await _syncService.SyncInstructorsAsync();
@@ -67,6 +83,9 @@ namespace backend.Controllers
         [HttpPost("master")]
         public async Task<ActionResult<ApiResponse<SyncLog>>> MasterSync()
         {
+            var directCheck = CheckDirectMode();
+            if (directCheck != null) return directCheck;
+
             try
             {
                 var syncLog = await _syncService.MasterSyncAsync();

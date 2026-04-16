@@ -94,7 +94,8 @@ if (!string.IsNullOrEmpty(envDbMode))
 // REFINAMIENTO "CERO TOQUE" PARA MODO DIRECTO
 // Si el modo es Directo, forzamos que la conexión principal sea la de SIGAFI
 // ─────────────────────────────────────────────────────────────────────────────
-var finalDbMode = builder.Configuration["DatabaseSettings:Database_Mode"] ?? "Mirror";
+// [PARA USUARIO] Forzado Manual a Directo (comenta si quieres volver a Mirror)
+var finalDbMode = "Direct"; // builder.Configuration["DatabaseSettings:Database_Mode"] ?? "Mirror";
 if (finalDbMode.Equals("Direct", StringComparison.OrdinalIgnoreCase))
 {
     connectionString = sigafiConnectionString;
@@ -542,7 +543,10 @@ await using (var scope = app.Services.CreateAsyncScope())
 
         // Ejecutar comandos
         var finalCommands = new List<string>();
+        /* 
+        [PARA USUARIO] Comentado para Modo Directo: evita crear tablas de catálogo locales si la BD es SIGAFI
         if (!isDirectMode) finalCommands.AddRange(mirrorCommands);
+        */
         finalCommands.AddRange(operationalCommands);
 
         foreach (var cmd in finalCommands)

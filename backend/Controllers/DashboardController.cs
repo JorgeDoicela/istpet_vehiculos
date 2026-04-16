@@ -48,7 +48,6 @@ namespace backend.Controllers
         {
             try
             {
-                var desdeSigafi = await _central.GetClasesActivasEnRutaFromCentralAsync();
                 List<ClaseActiva> desdeLocal = new();
                 try
                 {
@@ -59,9 +58,15 @@ namespace backend.Controllers
                     _logger.LogWarning(ex, "Vista local v_clases_activas no disponible; se usa solo SIGAFI.");
                 }
 
-                var merged = SigafiLocalReadMerge.MergeClasesActivas(desdeSigafi, desdeLocal);
+                // [OPTIMIZACIÓN DIRECTA] Si estamos en modo directo, la vista local apunta a SIGAFI
+                // por lo que no hace falta preguntar a _central y luego mezclar.
+                var merged = desdeLocal; 
+                if (!desdeLocal.Any()) {
+                    merged = (await _central.GetClasesActivasEnRutaFromCentralAsync()).ToList();
+                }
+
                 return Ok(ApiResponse<IEnumerable<ClaseActiva>>.Ok(merged,
-                    "SIGAFI + espejo local (sin duplicar por idPractica)."));
+                    "Datos directos de SIGAFI (vía vista v_clases_activas)."));
             }
             catch (Exception ex)
             {
@@ -74,7 +79,6 @@ namespace backend.Controllers
         {
             try
             {
-                var desdeSigafi = await _central.GetAlertasVehiculoDesdeCentralAsync();
                 List<AlertaMantenimiento> desdeLocal = new();
                 try
                 {
@@ -85,9 +89,14 @@ namespace backend.Controllers
                     _logger.LogWarning(ex, "Vista local v_alerta_mantenimiento no disponible; se usa solo SIGAFI.");
                 }
 
-                var merged = SigafiLocalReadMerge.MergeAlertasVehiculo(desdeSigafi, desdeLocal);
+                // [OPTIMIZACIÓN DIRECTA] 
+                var merged = desdeLocal;
+                if (!desdeLocal.Any()) {
+                    merged = (await _central.GetAlertasVehiculoDesdeCentralAsync()).ToList();
+                }
+
                 return Ok(ApiResponse<IEnumerable<AlertaMantenimiento>>.Ok(merged,
-                    "SIGAFI (vehículos inactivos) + alertas locales (sin duplicar por id_vehiculo)."));
+                    "Vehículos inactivos desde SIGAFI."));
             }
             catch (Exception ex)
             {

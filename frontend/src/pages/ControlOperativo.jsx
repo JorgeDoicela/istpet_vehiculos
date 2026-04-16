@@ -572,8 +572,26 @@ const ControlOperativo = () => {
             }, LLEGADA_EXIT_MS);
         } catch (err) {
             const apiMsg = getApiErrorMessage(err, 'No se pudo eliminar el registro.');
-            showNotification(apiMsg, 'error');
-            setLlegadaSubmitting(false);
+            
+            // Si el error indica que ya no existe, tratamos como éxito operativo
+            const isNotFound = apiMsg.toLowerCase().includes('no encontrado') || 
+                               apiMsg.toLowerCase().includes('no localizado') ||
+                               err?.response?.status === 404;
+
+            if (isNotFound) {
+                showNotification('El registro ya no existe en el sistema. Actualizando...');
+                setLlegadaExit({ idPractica, mode: 'remove' });
+                window.setTimeout(() => {
+                    setLlegadaExit(null);
+                    setClaseSeleccionada(null);
+                    cargarClasesActivas();
+                    cargarAgendadosHoy();
+                    setLlegadaSubmitting(false);
+                }, LLEGADA_EXIT_MS);
+            } else {
+                showNotification(apiMsg, 'error');
+                setLlegadaSubmitting(false);
+            }
         }
     };
 
