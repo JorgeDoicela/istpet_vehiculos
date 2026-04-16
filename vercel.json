@@ -1,0 +1,17 @@
+{
+  "rewrites": [
+    { "source": "/logistica/(.*)", "destination": "/$1" },
+    { "source": "/logistica", "destination": "/" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
+      ]
+    }
+  ]
+}
