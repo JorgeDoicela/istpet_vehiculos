@@ -789,15 +789,15 @@ const ControlOperativo = () => {
                                                     <div className="flex-1 min-w-0 space-y-2.5">
 
                                                         {/* Nombre + badges */}
-                                                        <div className="flex flex-wrap items-center gap-2">
-                                                            <h4 className="text-base lg:text-lg font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-none">
+                                                        <div className="flex flex-wrap items-center gap-3">
+                                                            <h4 className="text-lg lg:text-xl xl:text-2xl font-black text-[var(--apple-text-main)] uppercase tracking-tight leading-tight">
                                                                 {estudianteData.nombreCompleto}
                                                             </h4>
-                                                            <span className="px-2 py-0.5 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-md text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
+                                                            <span className="px-3 py-1 bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-lg text-[10px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">
                                                                 {estudianteData.idPeriodo}
                                                             </span>
                                                             {estudianteData.isBusy && (
-                                                                <span className="px-2 py-0.5 bg-rose-500 text-white rounded-md text-[8px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
+                                                                <span className="px-3 py-1 bg-rose-500 text-white rounded-lg text-[10px] font-black uppercase tracking-widest animate-pulse shadow-sm shadow-rose-500/20">
                                                                     YA EN PISTA
                                                                 </span>
                                                             )}
@@ -805,28 +805,28 @@ const ControlOperativo = () => {
 
                                                         {/* Carrera */}
                                                         {estudianteData.carrera?.trim() && (
-                                                            <p className="text-[11px] font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-70 leading-none">
+                                                            <p className="text-sm lg:text-base font-black text-[var(--apple-text-main)] uppercase tracking-wide opacity-80 leading-snug">
                                                                 {estudianteData.carrera}
                                                             </p>
                                                         )}
 
                                                         {/* Nivel + Paralelo como chips — alineados al borde izquierdo */}
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="px-3 py-1 bg-[var(--apple-border)]/20 rounded-lg text-[11px] lg:text-xs font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
                                                                 Nivel: {estudianteData.nivel ?? ''}
                                                             </span>
-                                                            <span className="px-2 py-0.5 bg-[var(--apple-border)]/20 rounded-md text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
+                                                            <span className="px-3 py-1 bg-[var(--apple-border)]/20 rounded-lg text-[11px] lg:text-xs font-black text-[var(--apple-text-sub)] uppercase tracking-wider">
                                                                 Paralelo: {estudianteData.paralelo ?? ''}
                                                             </span>
                                                         </div>
 
                                                         {/* Planificación */}
                                                         {(estudianteData.horarioProximo || estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
-                                                            <div className="flex flex-col gap-0.5 animate-apple-in">
-                                                                <p className="text-[8px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em] leading-none">Planificación</p>
+                                                            <div className="flex flex-col gap-1 mt-1 animate-apple-in">
+                                                                <p className="text-[10px] lg:text-[11px] font-black text-[var(--apple-primary)] uppercase tracking-[0.2em] leading-none opacity-60">Planificación Práctica</p>
                                                                 {estudianteData.horarioProximo && (
-                                                                    <p className="text-[10px] font-black text-[var(--apple-primary)] uppercase leading-snug">
-                                                                        {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}{estudianteData.horarioProximo}
+                                                                    <p className="text-xs lg:text-sm font-black text-[var(--apple-primary)] uppercase leading-snug">
+                                                                        {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}<span className="text-[var(--apple-text-main)]">{estudianteData.horarioProximo}</span>
                                                                     </p>
                                                                 )}
                                                             </div>
@@ -835,58 +835,58 @@ const ControlOperativo = () => {
 
                                                     {/* Jornada */}
                                                     <div className="shrink-0 text-right pt-0.5 relative z-10 flex flex-col items-end">
-                                                        <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50 mb-1">Jornada</span>
-                                                        <span className="block text-[10px] font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
+                                                        <span className="block text-[8px] lg:text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50 mb-1">Jornada</span>
+                                                        <span className="block text-xs lg:text-sm font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
                                                     </div>
                                                 </div>
 
                                                 {/* TICKET DE VERIFICACION UNIFICADO */}
-                                                <div className="relative z-10 mt-6 pt-5 border-t-2 border-dashed border-[var(--apple-border)]">
+                                                <div className="relative z-10 mt-8 pt-6 border-t-2 border-dashed border-[var(--apple-border)]">
                                                     {/* Badge de Listo */}
                                                     {vehiculoSeleccionado && instructorSeleccionado && !estudianteData.isBusy && (
-                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow-sm flex items-center gap-1.5 animate-bounce-slow">
-                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-5 py-1.5 rounded-full text-[11px] lg:text-xs font-black tracking-widest uppercase shadow-md flex items-center gap-2 animate-bounce-slow">
+                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                                                             LISTO PARA SALIDA
                                                         </div>
                                                     )}
 
-                                                    <div className="flex flex-col gap-1">
+                                                    <div className="flex flex-col gap-2">
                                                         {/* Fila Vehículo */}
                                                         <button 
                                                             onClick={() => setShowVehiculoModal(true)}
-                                                            className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group ${!vehiculoSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
+                                                            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${!vehiculoSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
                                                         >
-                                                            <div className="flex items-center gap-3.5">
-                                                                <div className={`p-2 rounded-xl ${!vehiculoSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
-                                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h8M8 11h8M5 15h14M4 19h16l-1.5-6h-13L4 19zm0 0v-2" /></svg>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`p-2.5 rounded-xl ${!vehiculoSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
+                                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h8M8 11h8M5 15h14M4 19h16l-1.5-6h-13L4 19zm0 0v-2" /></svg>
                                                                 </div>
                                                                 <div className="text-left">
-                                                                    <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-0.5">Vehículo Asignado</span>
-                                                                    <p className={`text-sm font-black uppercase leading-none ${!vehiculoSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
+                                                                    <span className="block text-[10px] lg:text-[11px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-1">Vehículo Asignado</span>
+                                                                    <p className={`text-base lg:text-lg font-black uppercase leading-none ${!vehiculoSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
                                                                         {vehiculoSeleccionado ? `#${vehiculoSeleccionado.numeroVehiculo}` : 'Tocar para seleccionar vehículo'}
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <svg className="w-4 h-4 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                                            <svg className="w-5 h-5 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                                                         </button>
 
                                                         {/* Fila Instructor */}
                                                         <button 
                                                             onClick={() => setShowInstructorModal(true)}
-                                                            className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group ${!instructorSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
+                                                            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all group ${!instructorSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
                                                         >
-                                                            <div className="flex items-center gap-3.5">
-                                                                <div className={`p-2 rounded-xl ${!instructorSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
-                                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                            <div className="flex items-center gap-4">
+                                                                <div className={`p-2.5 rounded-xl ${!instructorSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
+                                                                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
                                                                 </div>
                                                                 <div className="text-left">
-                                                                    <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-0.5">Instructor a Cargo</span>
-                                                                    <p className={`text-sm font-black uppercase leading-none truncate max-w-[180px] sm:max-w-xs ${!instructorSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
+                                                                    <span className="block text-[10px] lg:text-[11px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-1">Instructor a Cargo</span>
+                                                                    <p className={`text-base lg:text-lg font-black uppercase leading-none ${!instructorSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
                                                                         {instructorSeleccionado ? instructorSeleccionado.fullName : 'Tocar para seleccionar instructor'}
                                                                     </p>
                                                                 </div>
                                                             </div>
-                                                            <svg className="w-4 h-4 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                                            <svg className="w-5 h-5 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" /></svg>
                                                         </button>
                                                     </div>
                                                 </div>
