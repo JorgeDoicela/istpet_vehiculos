@@ -1,108 +1,71 @@
-# Sistema de Gestión de Flota y Logística de Prácticas - ISTPET
+# ISTPET Logistics: SIGAFI Parity Edition 2026
 
-Sistema web para la gestión operativa de la escuela de conducción del Tecnológico Traversari (ISTPET). Automatiza el control de salida y llegada de vehículos, la sincronización de estudiantes desde el sistema académico central (SIGAFI) y el monitoreo en tiempo real de la flota.
+![ISTPET Zenith Header](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png) <!-- Reemplazar con imagen real si existe -->
 
----
+**ISTPET Logistics** es la plataforma de control operativo de flota y monitoreo académico definitiva del Instituto Superior Tecnológico "Mayor Pedro Traversari" (ISTPET). Diseñada para garantizar una **paridad absoluta** con la base de datos central de SIGAFI, esta edición 2026 introduce una arquitectura híbrida de alta disponibilidad y una experiencia de usuario de grado industrial.
 
-## Ecosistema Tecnológico
-
-| Capa | Tecnología | Versión |
-| :--- | :--- | :--- |
-| **Backend API** | .NET 8 Web API + Entity Framework Core | 8.0 |
-| **ORM / Datos** | Pomelo EF Core for MySQL | 8.0 |
-| **Base de Datos** | MySQL / MariaDB | 11+ |
-| **Frontend** | React + Vite + Tailwind CSS | 19 / 8 / 3.4 |
-| **Comunicación** | Axios (REST JSON) | 1.14 |
-| **Mapeo Automático** | AutoMapper | 12.0 |
-| **Hash de Contraseñas** | BCrypt.Net + SHA-256 | 4.1 |
-| **CI/CD** | GitHub Actions | v4 |
+> [!IMPORTANT]
+> **Estado de Producción:** El sistema opera actualmente en **Modo Directo**, consultando SIGAFI en tiempo real. El **Modo Espejo (Sincronización Masiva)** se mantiene como un respaldo de alta disponibilidad (Standby HA) reactivable por configuración.
 
 ---
 
-## Módulos del Sistema
+## 🚀 Innovaciones Clave (Version Final)
 
-| Módulo | Ruta | Descripción |
-| :--- | :--- | :--- |
-| **Control Operativo** | `/` | Panel principal: registro de salida y llegada de vehículos |
-| **Monitoreo** | `/monitoreo` | Dashboard con clases activas y alertas de mantenimiento |
-| **Estudiantes** | `/estudiantes` | Catálogo y búsqueda de estudiantes |
-| **Vehículos** | `/vehiculos` | Catálogo y estado de la flota |
+- **Hybrid Universal Bridge**: Arquitectura que permite conmutar entre lectura directa de SIGAFI y un espejo local sincronizado cada 15 minutos.
+- **Resiliencia Industrial**: Implementación de *Circuit Breakers* (Polly) para proteger el sistema ante caídas de la base de datos central.
+- **Apple Aesthetic UI**: Interfaz fluida basada en Glassmorphism, diseñada para visión nocturna y fatiga visual reducida en turnos de guardia.
+- **Módulo de Reportes Pro**: Generación de reportes operativos con paridad de campos SIGAFI y exportación nativa a Excel.
+- **PWA Ready**: Capacidad de instalación como aplicación de escritorio o móvil con soporte de Service Workers para resiliencia de red.
 
----
+## 🏗️ Resumen Arquitectónico
 
-## Documentación Técnica
+El sistema utiliza un **Backend .NET 8** con C# que actúa como puente inteligente hacia SIGAFI (MySQL), exponiendo una API REST robusta al **Frontend React 19**.
 
-### Arquitectura e Ingeniería
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** — Capas, patrones de diseño y flujo de datos
-- **[API_SPEC.md](docs/API_SPEC.md)** — Especificación completa de endpoints REST
+- **Direct Path**: Consultas JIT (Just-In-Time) que garantizan que los datos del estudiante siempre estén frescos.
+- **Standby Path**: Motor de sincronización de 23 módulos que mantiene una copia operativa total en la base de datos local `istpet_vehiculos`.
+- **Audit Engine**: Registro transaccional de cada salida y llegada para trazabilidad completa.
 
-### Base de Datos
-- **[DATABASE.md](docs/DATABASE.md)** — Esquema ERD, 11 tablas y vistas SQL
-- **[SQL_SCHEMA.md](docs/SQL_SCHEMA.md)** — Script de creación de base de datos comentado
-- **[Scripts/README.md](docs/Scripts/README.md)** — Qué script usar (`01`, `02`, cloud `99`) y alineación con el API
-- **[CENTRAL_DB.md](docs/CENTRAL_DB.md)** — Integración con la BD Central SIGAFI del ISTPET
+## 📁 Estructura del Proyecto
 
-### Operaciones y Seguridad
-- **[INSTALLATION.md](docs/INSTALLATION.md)** — Guía de configuración y puesta en marcha
-- **[DEPLOYMENT_CLOUD.md](docs/DEPLOYMENT_CLOUD.md)** — Render (API), Vercel (frontend), TiDB Cloud y conexión a SIGAFI
-- **[SYNC_VERIFICATION.md](docs/SYNC_VERIFICATION.md)** — Swagger: ping SIGAFI, probe, Master Sync y comprobación SQL del espejo
-- **[SECURITY_DATA_SHIELD.md](docs/SECURITY_DATA_SHIELD.md)** — Autenticación híbrida y protección de datos
-- **[PIPELINES.md](docs/PIPELINES.md)** — Pipelines de CI/CD con GitHub Actions
-
-### Usuario y Hoja de Ruta
-- **[USER_GUIDE.md](docs/USER_GUIDE.md)** — Manual de operación para el guardia/administrador
-- **[ROADMAP.md](docs/ROADMAP.md)** — Funcionalidades pendientes y mejoras futuras
-
----
-
-## Inicio Rápido
-
-### Requisitos Previos
-- .NET 8 SDK
-- Node.js 20+
-- MySQL 8+ (o MariaDB 11+)
-
-### 1. Base de Datos
-```sql
--- Ejecutar en MySQL:
-SOURCE docs/Scripts/SQL_SCHEMA.sql;
-
--- (Opcional) Para pruebas con SIGAFI simulado:
-SOURCE docs/Scripts/MOCK_SIGAFI_ES.sql;
-```
-
-### 2. Backend
 ```bash
-cd backend
-# Ajustar la cadena de conexión en appsettings.json
-dotnet restore
-dotnet run
-# API disponible en: http://localhost:5000
-# Swagger UI en: http://localhost:5000/swagger
+istpet_vehiculos/
+├── backend/                # API .NET 8 (Paridad SIGAFI)
+│   ├── Controllers/        # Endpoints de Lógica y Sync
+│   ├── Hosting/            # Servicios en Background (Standby Mode)
+│   ├── Models/             # 30+ Entidades de Dominio
+│   ├── Services/           # Puentes, Resiliencia y Auditoría
+│   └── backend.Tests/      # Pruebas Unitarias de Seguridad
+├── frontend/               # SPA React 19 (Apple Aesthetic)
+│   ├── src/
+│   │   ├── components/     # UI Atómica y Funcional
+│   │   ├── context/        # Estado Global (Alertas, Auth)
+│   │   ├── pages/          # Control Operativo, Reportes, Home
+│   │   └── utils/          # Normalización JIT
+│   └── public/             # PWA Manifest & Icons
+├── infrastructure/         # Orquestación Docker & Env
+└── scripts/                # Automatización de Release & Bundle
 ```
 
-### 3. Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-# UI disponible en: http://localhost:5173
-```
+## 🛠️ Despliegue Rápido
+
+### Requisitos
+- .NET 8 SDK & Node.js 20+
+- MySQL Server (Local) & Acceso a SIGAFI Central
+
+### Modo Directo (Recomendado)
+1. Configure su `.env` con `DATABASE_MODE=Direct`.
+2. Ejecute `infrastructure/deploy-direct-server.ps1` desde PowerShell como Administrador.
+3. El sistema se auto-reparará y levantará el esquema necesario.
+
+## 📄 Documentación Técnica Completa
+
+Para profundizar en el funcionamiento interno, consulte los siguientes manuales:
+
+- 📐 [Arquitectura del Sistema](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/ARCHITECTURE.md)
+- 🔌 [Especificación de API](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/API_SPEC.md)
+- 🎨 [Guía de Desarrollo Frontend](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/FRONTEND_GUIDE.md)
+- 📋 [Manual de Operaciones y HA](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/OPERATIONS_MANUAL.md)
 
 ---
+© 2026 ISTPET Zenith - Advanced Engineering Team.
 
-## 🚀 Despliegue Industrial
-
-### Generación de Paquetes (Bundle)
-Para generar un paquete de despliegue portable para servidores que solo tienen Docker instalado, ejecute el script de automatización:
-
-```powershell
-# Desde la raíz del proyecto
-.\scripts\create-release-bundle.ps1
-```
-
-Este script compila el código, construye las imágenes Docker, las exporta a un archivo `.tar` y genera un `.zip` listo para ser enviado al servidor de producción utilizando la configuración base en la carpeta **`infrastructure/`**. Consulte **[docs/PRODUCCION.md](docs/PRODUCCION.md)** para más detalles sobre el despliegue directo.
-
----
-
-*Proyecto desarrollado para la Escuela de Conducción del ISTPET. Sistema de logística de prácticas de manejo.*

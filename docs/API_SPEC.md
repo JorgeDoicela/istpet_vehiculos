@@ -1,82 +1,74 @@
-# Especificación de la API REST (Industrial Edition 2026)
+# Especificación de la API REST — ISTPET Zenith Edición 2026
 
-Este documento define el contrato técnico de la API del Sistema ISTPET Vehículos. Todas las comunicaciones se realizan vía HTTPS/JSON bajo el estándar **Industrial ApiResponse**.
+Este documento define el contrato técnico oficial de la API del Sistema ISTPET Vehículos. Todas las comunicaciones se realizan vía HTTPS/JSON bajo el estándar **Industrial ApiResponse<T>**.
 
 ---
 
-## 1. Núcleo Académico y Puente (Logística Hub)
+## 1. Núcleo Operativo (Logistics Controller)
 
 ### GET `/api/logistica/estudiante/{cedula}`
-**Pilar**: Puente Híbrido Universal.
-Consulta simultánea en el Espejo Local y en la BD Central SIGAFI.
-*   **JIT Enrichment**: Si el alumno no reside localmente, se materializa instantáneamente desde SIGAFI.
-*   **Agenda Mapping**: Cruza automágicamente con la tabla `cond_alumnos_practicas` de SIGAFI para sugerir vehículo e instructor.
+**Pilar**: Bridge JIT (Just-In-Time).
+Consulta simultánea en SIGAFI Central y Espejo Local.
+*   **Enriquecimiento Automático**: Si el alumno tiene una cita agendada hoy en SIGAFI, inyecta automáticamente el vehículo e instructor sugeridos.
 
 ### GET `/api/logistica/vehiculos-disponibles`
-**Pilar**: Flota Inteligente.
-Retorna unidades con estado `OPERATIVO` que no tienen registros de salida pendientes en la vista `v_clases_activas`.
-
----
-
-## 2. Motor de Sincronización e Integridad (Sync Engine)
-
-### GET `/api/sync/ping-sigafi`
-Valida el **Enlace de Paridad**. Retorna latencia y estado del clúster SIGAFI.
-
-### GET `/api/sync/sigafi-probe`
-**Sonda de Extracción**: Ejecuta una simulación de carga masiva para los 13 módulos críticos sin comprometer la base de datos local.
-
-### POST `/api/sync/master`
-**Orquestación de Paridad**: Ejecuta el pipeline de 20 pasos del motor Master Sync. Aplica el **Escudo de Datos (Data Shield)** para sanitización y truncamiento proactivo.
-
----
-
-## 3. Auditoría e Inspección de Paridad
-
-### GET `/api/sync/audit`
-**Auditoría Estadística**: Devuelve una comparativa de conteo de registros entre la fuente de verdad (SIGAFI) y el espejo local para detección de derivas de datos.
-
-### GET `/api/sync/inspect/student/{idAlumno}`
-**Inspección Granular**: Realiza un *Deep Mapping* comparando campo por campo (Nombre, Email, Nivel) entre el registro local y el central.
-
----
-
-## 4. Operaciones de Pista (Control Operativo)
+Muestra unidades activas y operativas que no están actualmente en pista (según la vista `v_clases_activas`).
 
 ### POST `/api/logistica/salida`
-Registra la salida física de una unidad.
-*   **Validaciones**: Triángulo de Disponibilidad (Estudiante, Vehículo, Instructor).
-*   **Audit**: Genera una firma digital de la transacción en `audit_logs`.
+Registra el despacho de una unidad.
+*   **Validación**: Requiere Matrícula, Vehículo e Instructor válidos en SIGAFI.
+*   **Business Rules**: Impide la salida si el vehículo ya está fuera o si el alumno tiene una práctica pendiente.
 
 ### POST `/api/logistica/llegada`
-Cierra el ciclo operativo.
-*   **Cálculo Acumulado**: Calcula el diferencial de tiempo y actualiza las horas de práctica en el expediente local del alumno.
+Registra el retorno y libera la unidad. Calcula automáticamente el tiempo en pista para el historial académico.
 
 ---
 
-## 5. Dashboards y Monitoreo (Mission Control)
+## 2. Motor de Inteligencia y Sync (Sync Engine)
 
-### GET `/api/dashboard/clases-activas`
-Consumo de la vista persistente `v_clases_activas`. Base para el panel de "Garita de Retorno".
+### POST `/api/sync/master`
+Ejecuta la orquestación de **23 módulos de paridad**.
+1.  **Académico**: Carreras, Periodos, Secciones, Modalidades, Cursos.
+2.  **Infraestructura**: Vehículos, Categorías, Licencias, Exam Links.
+3.  **Planificación**: Horarios, Fechas, Calendarios de Profesores.
+4.  **Seguridad**: Sincronización de credenciales `usuarios_web`.
 
-### GET `/api/dashboard/alertas-mantenimiento`
-Consumo de la vista `v_alerta_mantenimiento`. Filtra unidades con desperfectos reportados por el instructor o guardia.
+### GET `/api/sync/audit`
+Devuelve el reporte de deriva de datos (*Data Drift*). Compara conteos remotos vs. locales por tabla.
 
 ---
 
-## 6. Estándares de Respuesta (The Envelope)
+## 3. Reportes Unificados (Reports Controller)
 
-Todas las respuestas cumplen con el esquema `ApiResponse<T>`:
+### GET `/api/reports/practicas`
+**Endpoint Primario de Auditoría**.
+Genera un reporte consolidado entre SIGAFI y el Espejo Local.
+*   **Filtros**: `fechaInicio`, `fechaFin`, `instructorId`.
+*   **Merge Logic**: Si una práctica existe localmente con estados más frescos (ej: hora de llegada cargada en el momento), prioriza el dato local sobre el académico.
+
+---
+
+## 4. Estándares de Respuesta
+
+Estructura global `ApiResponse<T>`:
 ```json
 {
   "success": true,
-  "message": "Operación completada bajo el protocolo Data Shield.",
+  "message": "Operación exitosa",
   "data": { ... },
-  "timestamp": "2026-04-13T03:00:00Z"
+  "timestamp": "2026-04-16T14:40:00Z"
 }
 ```
 
-### Códigos de Negocio Críticos:
-*   `VEHICULO_EN_USO`: La unidad ya ha sido despachada.
-*   `ESTUDIANTE_EN_PISTA`: El alumno tiene una salida pendiente sin retorno.
-*   `OUT_OF_PARITY`: El registro local ha divergido significativamente de la fuente central.
+### Códigos de Lógica Operativa:
+- `VEHICULO_EN_USO`: Bloqueo de concurrencia en pista.
+- `ESTUDIANTE_EN_PISTA`: El alumno debe cerrar su retorno antes de iniciar otra práctica.
+- `INVALID_MATRICULA`: El estudiante no tiene una matrícula válida para el periodo actual en SIGAFI.
+- `CIRCUIT_OPEN`: El enlace con SIGAFI ha sido suspendido temporalmente por resiliencia de red.
+
+---
+
+## 5. Seguridad y Roles
+- **admin**: Acceso total (Reportes, Sync Master).
+- **logistica**: Gestión de flotas e instructores.
+- **guardia**: Registro de Salidas/Llegadas y Pista.

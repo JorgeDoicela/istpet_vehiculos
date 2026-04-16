@@ -1,14 +1,14 @@
-# Arquitectura del Sistema — ISTPET Logística (Industrial Grade)
+# Arquitectura del Sistema — ISTPET Logística (Versión Final 2026)
 
 ## 1. Visión Holística
 
-El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura de Puente Híbrido Universal**. No es solo una aplicación aislada, sino una extensión resiliente del ecosistema SIGAFI, optimizada para operaciones críticas de logística terrestre en tiempo real.
+El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura de Puente Híbrido Universal**. Esta arquitectura permite que el sistema opere con la agilidad de la lectura directa de SIGAFI mientras mantiene un motor de contingencia masivo en espera para garantizar la continuidad operativa ante cualquier fallo de red.
 
 ### Pilares Fundamentales:
-*   **Dual-Database Bridge**: Sincronización bidireccional entre el espejo local (Mirror) e integridad referencial con el núcleo académico (SIGAFI).
-*   **Zero-Downtime Resilience**: Implementación de *Circuit Breakers* para garantizar operatividad incluso con conectividad intermitente hacia SIGAFI.
-*   **Auto-Adaptive Schema (Schema Healer)**: Protocolo de auto-sanación que garantiza la integridad estructural de la base de datos en cada arranque, con protección de escritura proactiva para entornos Directos.
-*   **Variable Environment Core**: Carga nativa de configuración vía `.env` con construcción dinámica de cadenas de conexión.
+*   **Switchable Data Path**: Soporte nativo para `Modo Directo` (Tiempo Real) y `Modo Espejo` (Alta Disponibilidad).
+*   **Master Sync Engine**: Motor de sincronización integral de **23 módulos** que garantiza la replicación total de la estructura académica en el espejo local.
+*   **Zero-Downtime Resilience**: Implementación de *Circuit Breakers* (Polly) que protegen la experiencia de usuario ante latencia o caídas de SIGAFI Central.
+*   **Schema Healer & Parity**: Protocolo de auto-sanación que asegura que la base de datos `istpet_vehiculos` mantenga paridad absoluta con los tipos de datos de SIGAFI.
 
 ---
 
@@ -16,29 +16,29 @@ El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura
 
 ```mermaid
 graph TD
-    subgraph "Capa de Presentación (React 19 + Apple-Style UI)"
-        A[Control Hub<br/>Registro Salida/Llegada] 
-        B[Mission Control<br/>Dashboard de Pista]
-        C[Fleet Management<br/>Gestión de Unidades]
+    subgraph "Capa de Presentación (React 19 + Apple Aesthetic)"
+        A[Control Operativo<br/>Glassmorphism UI] 
+        B[Dashboard de Pista<br/>Live Updates]
+        C[Módulo de Reportes<br/>Excel Parity Export]
     end
 
     subgraph "Servicios de Orquestación Frontend"
         D[Logistics Engine]
-        E[Monitoring Service]
-        F[Sync Data Shield]
+        E[Reporting Service]
+        F[Operative Alerts Hub]
     end
 
     subgraph "Nervio Central: API REST .NET 8"
         G[Logistica Controller<br/>Lógica Operativa]
-        H[Dashboard Controller<br/>Métricas Tiempo Real]
-        I[Sync Controller<br/>Audit & Parity]
+        H[Dashboard Controller<br/>JIT Data Source]
+        I[Sync Controller<br/>Parity & Audit]
     end
 
     subgraph "Capa de Resiliencia y Paridad"
-        K[Resilience Pipeline<br/>Polly Circuit Breaker]
-        L[Hybrid Universal Bridge<br/>SIGAFI Adapter]
-        M[Master Sync Engine<br/>20-Step Sequence]
-        SH[Schema Healer<br/>Boot Protocol]
+        K[Polly Circuit Breaker<br/>50% Failure Tolerance]
+        L[Hybrid Bridge Provider<br/>SqlCentralProvider]
+        M[Master Sync Engine<br/>23-Module Sequence]
+        SH[Schema Healer<br/>Auto-Recovery]
     end
 
     subgraph "Ecosistema de Datos"
@@ -48,12 +48,12 @@ graph TD
     end
 
     A --> D --> G --> K
-    B --> E --> H --> N
+    C --> E --> I --> M
     G --> L --> P
-    J[Guard] --> SH --> O
-    I --> M --> N
     K --> L
-    L --> N
+    L --> P
+    M --> N
+    SH --> O
     N --> O
 ```
 
@@ -61,16 +61,22 @@ graph TD
 
 ## 3. Componentes Estratégicos
 
-### 3.1. Puente Híbrido Universal (`SqlCentralStudentProvider`)
-Actúa como la **Capa de Extracción Primaria**. Realiza búsquedas paralelas en tiempo real:
-1.  **Cache Local**: Si el estudiante ya existe en el espejo local (`alumnos`), retorna datos inmediatos.
-2.  **JIT Fetching**: Si no reside localmente, el puente cruza hacia SIGAFI, materializa la ficha y la inyecta quirúrgicamente en el espejo local antes de responder al frontend.
+### 3.1. Hybrid Universal Bridge (`SqlCentralStudentProvider`)
+Es el componente de mayor complejidad. Gestiona la conexión dual y permite la inyección de datos **JIT (Just-In-Time)**. En Modo Directo, extrae datos directamente de SIGAFI. En Modo Espejo, integra lecturas de SIGAFI con el espejo local utilizando el `SigafiLocalReadMerge`.
 
-### 3.2. Resilience Pipeline (`SigafiResiliencePipeline`)
-Implementa el patrón de **Circuit Breaker** (Disyuntor) mediante la librería `Polly`. Si SIGAFI reporta latencia alta o errores (HTTP 5xx/Timeouts), el sistema entra en **Modo de Operación Local Aislada**, permitiendo el flujo de vehículos sin depender de la conectividad externa.
+### 3.2. Master Sync Engine (`DataSyncService`)
+Implementa un flujo de sincronización de **23 pasos individuales** que cubren:
+- Estructura Académica (Carreras, Periodos, Secciones, Modalidades).
+- Gestión de Flota e Instructores.
+- Planificación (Horarios, Fechas, Horas de Clase, Links de Práctica).
+- Seguridad (Usuarios Web y Roles).
 
-### 3.3. Schema Healer Protocol
-Ubicado en el arranque de `Program.cs`, este servicio actúa como un "administrador de base de datos automatizado". Verifica la existencia de 30+ tablas y 4 vistas críticas. Si falta alguna entidad o índice, el Healer los recrea dinámicamente, eliminando la necesidad de migraciones manuales en despliegues cloud.
+### 3.3. Resilience Pipeline (Polly)
+Utiliza una política de **Circuit Breaker** configurada para:
+- **SamplingDuration**: 10 segundos.
+- **FailureRatio**: 0.5 (50% de fallos).
+- **MinimumThroughput**: 3 llamadas.
+- **BreakDuration**: 30 segundos de aislamiento reactivo.
 
 ---
 
@@ -78,25 +84,24 @@ Ubicado en el arranque de `Program.cs`, este servicio actúa como un "administra
 
 | Patrón | Implementación | Función Crítica |
 | :--- | :--- | :--- |
-| **Mirroring Pattern** | `DataSyncService` | Mantiene paridad 1:1 con SIGAFI mientras protege los datos operativos locales en tablas auxiliares (`_operacion`). |
-| **JIT Materialization** | `LogisticaController` | Sincronización bajo demanda que elimina la necesidad de pre-cargar toda la base de datos de SIGAFI. |
-| **Circuit Breaker** | `SigafiResiliencePipeline` | Evita el colapso de la aplicación por fallas en dependencias externas (SIGAFI). |
-| **Audit Ledger** | `SqlAuditService` | Registra no solo acciones, sino metadatos como IP y User-Agent para cada transacción crítica. |
-| **Dependency Injection** | ASP.NET Core Native | Gestión desacoplada de lifetimes (Scoped para DB, Singleton para Pipelines). |
+| **Circuit Breaker** | `SigafiResiliencePipeline` | Protege el hilo de ejecución backend de colapsos externos. |
+| **JIT Materialization** | `SqlEstudianteService` | Crea registros locales bajo demanda cuando el alumno no existe en el espejo. |
+| **Standby HA** | `SigafiMirrorBackgroundService` | Background service que mantiene el espejo fresco (desactivado por defecto en Modo Directo). |
+| **Reconciliación Selectiva** | `SigafiLocalReadMerge` | Une datos académicos oficiales con estados operativos "Live" locales. |
+| **Schema Healer** | `Program.cs` | Garantiza que cada despliegue tenga la estructura de BD exacta sin intervencion humana. |
 
 ---
 
 ## 5. Estándares Operativos de Datos
 
 El sistema cumple con el **Protocolo de Paridad SIGAFI 2026**:
-- **Sanitización Obligatoria**: Truncamiento preventivo de cadenas para evitar desbordamientos en campos de `chasis`, `motor` y `observaciones`.
-- **Integridad Foránea**: Las transacciones de salida solo se permiten si existe un "Triángulo de Validación": Estudiante (Matriculado) + Vehículo (Disponible) + Instructor (Activo).
-- **Auditabilidad Total**: Cada registro de salida (`cond_alumnos_practicas`) genera automáticamente una entrada en el log de auditoría centralizado.
+- **Consistencia de Tipos**: Cada campo (Chasis, Motor, Placa) tiene validaciones de longitud y formato idénticas a SIGAFI.
+- **Secuencialidad Logística**: Las transacciones siguen el flujo `Salida -> En Pista -> Retorno`, con auditoría inmutable en cada paso.
+- **Seguridad Híbrida**: Soporte para hashes BCrypt y legacy SHA-256 de SIGAFI, con actualización automática de seguridad al primer login exitoso.
 
 ---
 
-## 6. Iconografía y Estética (Apple Design System)
-El sistema utiliza un sistema de diseño propio inspirado en SF Pro de Apple:
-- **Glassmorphism**: Superposición de capas con desenfoque (`backdrop-filter`) para jerarquía visual.
-- **Gráfica Reactiva**: Micro-animaciones en `VehicleCard` y transiciones de estado mediante `StatusBadge`.
-- **Zero-Latency Feel**: Uso intensivo de `Search Debouncing` y estados optimistas en el frontend.
+## 6. Frontend y UX (Apple Design System)
+- **Glassmorphism**: Uso de `backdrop-filter` para interfaces "vivas" que no cansan la vista.
+- **Optimistic UI**: Las transacciones se reflejan instantáneamente en el dashboard mientras se confirma el bridge con el servidor.
+- **PWA Deployment**: Soporte completo para instalación en móviles y tablets de supervisores de pista.
