@@ -78,6 +78,10 @@ const ControlOperativo = () => {
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
     const [salidaSubmitting, setSalidaSubmitting] = useState(false);
     const [clasesLoading, setClasesLoading] = useState(false);
+    
+    // --- NUEVOS: Estados para Modales de Selección ---
+    const [showVehiculoModal, setShowVehiculoModal] = useState(false);
+    const [showInstructorModal, setShowInstructorModal] = useState(false);
     /** Salida animada tras confirmar llegada o eliminar salida: { idPractica, mode } */
     const [llegadaExit, setLlegadaExit] = useState(null);
     /** Control de salida animada (sent/success) */
@@ -422,11 +426,11 @@ const ControlOperativo = () => {
                 ? String(data.idPracticaInstructor).trim()
                 : '';
             const tieneSugerencia =
-                source === 'agenda' && (!!idInstr || data.idPracticaCentral != null);
+                (source === 'agenda' || source === 'manual') && (!!idInstr || data.idPracticaCentral != null);
 
             if (tieneSugerencia) {
                 await aplicarSugerenciaManual(data);
-                showNotification('Alumno, vehículo e instructor cargados desde agenda');
+                showNotification('Alumno, vehículo e instructor cargados automáticamente');
             } else {
                 showNotification(source === 'agenda' ? 'Datos de agenda cargados' : 'Estudiante localizado');
             }
@@ -849,242 +853,179 @@ const ControlOperativo = () => {
                                         </div>
                                     )}
 
-                                    <div className="pt-6">
-                                        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between mb-4 gap-y-1 gap-x-3 lg:gap-x-6 px-1 group">
-                                            <div className="flex-1 text-left min-w-0">
-                                                <h3 className="text-[8px] font-black uppercase tracking-[0.2em] mb-0 px-2 transition-colors duration-300 group-focus-within:text-[var(--istpet-gold)] text-[var(--apple-text-main)]">Asignar Vehículo</h3>
+                                    {estudianteData && (
+                                        <div className="pt-4 space-y-4 animate-apple-in">
+                                            <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] px-2">Verificación de Salida</p>
+                                            
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                {/* Card de Vehículo */}
+                                                <button
+                                                    onClick={() => setShowVehiculoModal(true)}
+                                                    className={`apple-glass p-4 rounded-[1.8rem] text-left transition-all group relative overflow-hidden ${!vehiculoSeleccionado ? 'border-dashed border-2 animate-pulse' : 'border-2 border-transparent hover:border-[var(--istpet-gold)]/30'}`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">Vehículo</span>
+                                                        <svg className="w-3.5 h-3.5 text-[var(--apple-text-sub)] opacity-40 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2 rounded-xl ${!vehiculoSeleccionado ? 'bg-slate-100 text-slate-400' : 'bg-[var(--istpet-gold)]/10 text-[var(--istpet-gold)]'}`}>
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className={`text-sm font-black uppercase truncate ${!vehiculoSeleccionado ? 'text-slate-400 italic' : 'text-[var(--apple-text-main)]'}`}>
+                                                                {vehiculoSeleccionado ? `#${vehiculoSeleccionado.numeroVehiculo}` : 'Pendiente...'}
+                                                            </p>
+                                                            {vehiculoSeleccionado && <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase opacity-60 tracking-tighter truncate">{vehiculoSeleccionado.vehiculoStr || 'Activo'}</p>}
+                                                        </div>
+                                                    </div>
+                                                </button>
+
+                                                {/* Card de Instructor */}
+                                                <button
+                                                    onClick={() => setShowInstructorModal(true)}
+                                                    className={`apple-glass p-4 rounded-[1.8rem] text-left transition-all group relative overflow-hidden ${!instructorSeleccionado ? 'border-dashed border-2 animate-pulse' : 'border-2 border-transparent hover:border-[var(--istpet-gold)]/30'}`}
+                                                >
+                                                    <div className="flex items-center justify-between mb-1">
+                                                        <span className="text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">Instructor</span>
+                                                        <svg className="w-3.5 h-3.5 text-[var(--apple-text-sub)] opacity-40 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                                                    </div>
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`p-2 rounded-xl ${!instructorSeleccionado ? 'bg-slate-100 text-slate-400' : 'bg-[var(--istpet-gold)]/10 text-[var(--istpet-gold)]'}`}>
+                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                        </div>
+                                                        <div className="min-w-0">
+                                                            <p className={`text-sm font-black uppercase truncate ${!instructorSeleccionado ? 'text-slate-400 italic' : 'text-[var(--apple-text-main)]'}`}>
+                                                                {instructorSeleccionado ? instructorSeleccionado.fullName : 'Pendiente...'}
+                                                            </p>
+                                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase opacity-60 tracking-tighter">Instructor Asignado</p>
+                                                        </div>
+                                                    </div>
+                                                </button>
                                             </div>
 
-                                            <div className="flex items-center gap-2 flex-[2]">
-                                                <div className="relative flex-1 group/search">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="BUSCAR VEHÍCULO..."
-                                                        value={filtroVehiculo}
-                                                        onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
-                                                        className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-6 pr-24 py-2.5 text-sm lg:text-base placeholder:text-[11px] lg:placeholder:text-xs font-black tracking-widest text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/30 focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
-                                                    />
-                                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10 transition-all">
-                                                        {filtroVehiculo && (
-                                                            <button
-                                                                onClick={() => setFiltroVehiculo('')}
-                                                                className="p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-all"
-                                                                title="Limpiar"
-                                                            >
-                                                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                                            </button>
-                                                        )}
-                                                        <div className={`p-1.5 transition-all ${filtroVehiculo ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)]'}`}>
-                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                            <div className="pt-2">
+                                                <button
+                                                    id="btn-registrar-salida"
+                                                    onClick={handleProcesarSalida}
+                                                    disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
+                                                    className={`w-full py-4 rounded-[2rem] text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30 shadow-none' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01] active:scale-[0.98]'}`}
+                                                >
+                                                    {estudianteData.isBusy ? 'ESTUDIANTE EN PISTA' :
+                                                        !vehiculoSeleccionado ? 'FALTA SELECCIONAR VEHÍCULO' :
+                                                            !instructorSeleccionado ? 'FALTA SELECCIONAR INSTRUCTOR' :
+                                                                '✓ REGISTRAR SALIDA'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Modal de Selección de Vehículo */}
+                                    {showVehiculoModal && (
+                                        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 animate-apple-in">
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowVehiculoModal(false)} />
+                                            <div className="relative apple-glass w-full max-w-2xl rounded-[2.5rem] shadow-2xl p-6 lg:p-8 animate-apple-in max-h-[90vh] flex flex-col overflow-hidden">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div>
+                                                        <h3 className="text-xl font-black text-[var(--apple-text-main)] tracking-tight">Seleccionar Vehículo</h3>
+                                                        <p className="text-xs text-[var(--apple-text-sub)] font-bold opacity-60 uppercase tracking-widest mt-1">Unidades disponibles en pista</p>
+                                                    </div>
+                                                    <button onClick={() => setShowVehiculoModal(false)} className="p-2 hover:bg-[var(--apple-bg)] rounded-full transition-all text-[var(--apple-text-sub)] hover:text-rose-500">
+                                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </div>
+
+                                                <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 mb-6">
+                                                    <div className="relative flex-1 group/search">
+                                                        <input
+                                                            type="text"
+                                                            placeholder="BUSCAR VEHÍCULO..."
+                                                            value={filtroVehiculo}
+                                                            onChange={(e) => setFiltroVehiculo(e.target.value.toUpperCase())}
+                                                            className="w-full bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[1.5rem] pl-6 pr-24 py-2.5 text-sm lg:text-base font-black tracking-widest text-[var(--apple-text-main)] focus:border-[var(--istpet-gold)] shadow-inner transition-all outline-none"
+                                                        />
+                                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-10 transition-all">
+                                                            {filtroVehiculo && (
+                                                                <button onClick={() => setFiltroVehiculo('')} className="p-1.5 text-[var(--apple-text-sub)] hover:text-rose-500 transition-all cursor-pointer"><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                                                            )}
+                                                            <div className={`p-1.5 transition-all ${filtroVehiculo ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)]'}`}><svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></div>
                                                         </div>
+                                                    </div>
+
+                                                    <div className="flex bg-[var(--apple-bg)] p-1 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
+                                                        {['C', 'D', 'E'].map(lic => (
+                                                            <button key={lic} onClick={() => setFiltroLicencia(filtroLicencia === lic ? null : lic)} className={`w-8 lg:w-10 h-7 lg:h-9 flex items-center justify-center rounded-[0.8rem] text-[9px] lg:text-[10px] font-black transition-all duration-300 select-none cursor-pointer ${filtroLicencia === lic ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30' : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100'}`}>{lic}</button>
+                                                        ))}
                                                     </div>
                                                 </div>
 
-                                                <div className="flex bg-[var(--apple-bg)] p-1 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
-                                                    {['C', 'D', 'E'].map(lic => (
+                                                <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar min-h-0">
+                                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                                        {(() => {
+                                                            const licIdMap = { 'C': [1, 3], 'D': [4], 'E': [5] };
+                                                            const filtered = vehiculos.filter(v => {
+                                                                const term = filtroVehiculo.toLowerCase().trim();
+                                                                const matchLicencia = filtroLicencia ? licIdMap[filtroLicencia].includes(v.idTipoLicencia) : true;
+                                                                const matchFiltro = !term || v.vehiculoStr?.toLowerCase().includes(term) || v.numeroVehiculo?.toString().includes(term);
+                                                                return matchLicencia && matchFiltro;
+                                                            });
+
+                                                            if (filtered.length === 0) return <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border-dashed border-2 opacity-40"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)]">Sin unidades disponibles</p></div>;
+
+                                                            return filtered.map(v => (
+                                                                <VehicleCard
+                                                                    key={idVehiculoKey(v.idVehiculo)}
+                                                                    vehiculo={v}
+                                                                    isSelected={vehiculoSeleccionado?.idVehiculo === v.idVehiculo}
+                                                                    onSelect={(veh) => { handleSeleccionarVehiculo(veh); setShowVehiculoModal(false); }}
+                                                                />
+                                                            ));
+                                                        })()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* Modal de Selección de Instructor */}
+                                    {showInstructorModal && (
+                                        <div className="fixed inset-0 z-[500] flex items-center justify-center p-4 animate-apple-in">
+                                            <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowInstructorModal(false)} />
+                                            <div className="relative apple-glass w-full max-w-lg rounded-[2.5rem] shadow-2xl p-6 lg:p-8 animate-apple-in flex flex-col">
+                                                <div className="flex items-center justify-between mb-6">
+                                                    <div>
+                                                        <h3 className="text-xl font-black text-[var(--apple-text-main)] tracking-tight">Seleccionar Instructor</h3>
+                                                        <p className="text-xs text-[var(--apple-text-sub)] font-bold opacity-60 uppercase tracking-widest mt-1">Personal operativo de turno</p>
+                                                    </div>
+                                                    <button onClick={() => setShowInstructorModal(false)} className="p-2 hover:bg-[var(--apple-bg)] rounded-full transition-all text-[var(--apple-text-sub)] hover:text-rose-500">
+                                                        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                                    </button>
+                                                </div>
+
+                                                <div className="relative mb-4 group/search">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="BUSCAR INSTRUCTOR..."
+                                                        value={filtroInstructor}
+                                                        onChange={(e) => setFiltroInstructor(e.target.value.toUpperCase())}
+                                                        className="w-full rounded-[1.5rem] border-2 border-[var(--apple-border)] bg-[var(--apple-bg)] px-6 py-3 text-sm font-black tracking-widest uppercase text-[var(--apple-text-main)] shadow-inner transition-all outline-none focus:border-[var(--istpet-gold)]"
+                                                    />
+                                                </div>
+
+                                                <div className="max-h-[350px] overflow-y-auto pr-2 custom-scrollbar space-y-2">
+                                                    {instructores.filter(i => !filtroInstructor || i.fullName.toUpperCase().includes(filtroInstructor)).map(i => (
                                                         <button
-                                                            key={lic}
-                                                            onClick={() => setFiltroLicencia(filtroLicencia === lic ? null : lic)}
-                                                            className={`w-8 lg:w-10 h-7 lg:h-9 flex items-center justify-center rounded-[0.8rem] text-[9px] lg:text-[10px] font-black transition-all duration-300 select-none cursor-pointer
-                                                                ${filtroLicencia === lic
-                                                                    ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30'
-                                                                    : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100 hover:bg-[var(--apple-border)]/50'}
-                                                            `}
+                                                            key={i.idInstructor}
+                                                            onClick={() => { setInstructorSeleccionado(i); setFiltroInstructor(''); setShowInstructorModal(false); }}
+                                                            className={`w-full p-4 text-left rounded-2xl transition-all border-2 flex items-center justify-between group ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'bg-[var(--istpet-gold)]/10 border-[var(--istpet-gold)]' : 'bg-[var(--apple-card)] border-transparent hover:border-[var(--apple-border)]'}`}
                                                         >
-                                                            {lic}
+                                                            <span className={`text-[11px] font-black uppercase tracking-tight ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>{i.fullName}</span>
+                                                            <div className={`w-2 h-2 rounded-full ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'bg-[var(--istpet-gold)]' : 'bg-slate-200'}`}></div>
                                                         </button>
                                                     ))}
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div className="max-h-[215px] overflow-y-auto pr-2 custom-scrollbar -mr-2 mt-2">
-                                            <div className="grid grid-cols-3 gap-2">
-                                                {vehiculos.length > 0 ? (
-                                                    (() => {
-                                                        const licIdMap = { 'C': [1, 3], 'D': [4], 'E': [5] };
-                                                        const filtered = vehiculos.filter(v => {
-                                                            const term = filtroVehiculo.toLowerCase().trim();
-                                                            const matchLicencia = filtroLicencia
-                                                                ? licIdMap[filtroLicencia].includes(v.idTipoLicencia)
-                                                                : true;
-                                                            const matchFiltro = !term ||
-                                                                v.vehiculoStr?.toLowerCase().includes(term) ||
-                                                                v.numeroVehiculo?.toString().includes(term);
-                                                            return matchLicencia && matchFiltro;
-                                                        });
-
-                                                        const sel = vehiculoSeleccionado;
-                                                        const selKey = sel?.idVehiculo != null ? idVehiculoKey(sel.idVehiculo) : '';
-                                                        const selectedInFiltered = selKey !== '' && filtered.some(
-                                                            (v) => idVehiculoKey(v.idVehiculo) === selKey
-                                                        );
-                                                        const selTipoLic =
-                                                            selKey !== ''
-                                                                ? (vehiculos.find((v) => idVehiculoKey(v.idVehiculo) === selKey)?.idTipoLicencia ?? sel?.idTipoLicencia)
-                                                                : undefined;
-                                                        /** Solo mostrar pin / borde dorado en la pestaña C/D/E que corresponda al tipo del vehículo. */
-                                                        const seleccionCoincideConPestañaLicencia =
-                                                            !filtroLicencia ||
-                                                            (selTipoLic != null && licIdMap[filtroLicencia]?.includes(selTipoLic));
-
-                                                        let vehiculosParaGrid = filtered;
-                                                        if (selKey !== '' && !selectedInFiltered && seleccionCoincideConPestañaLicencia) {
-                                                            const fromCatalog = vehiculos.find(
-                                                                (v) => idVehiculoKey(v.idVehiculo) === selKey
-                                                            );
-                                                            const pinned = fromCatalog || sel;
-                                                            if (pinned) vehiculosParaGrid = [pinned, ...filtered];
-                                                        }
-
-                                                        if (vehiculosParaGrid.length === 0) {
-                                                            return (
-                                                                <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border border-dashed border-[var(--apple-border)] shadow-inner">
-                                                                    <p className="text-[10px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em]">SIN UNIDADES DISPONIBLES</p>
-                                                                </div>
-                                                            );
-                                                        }
-
-                                                        const sugKey = idVehiculoKey(estudianteData?.idPracticaCentral);
-                                                        const sugTipoLic =
-                                                            sugKey !== ''
-                                                                ? vehiculos.find((x) => idVehiculoKey(x.idVehiculo) === sugKey)?.idTipoLicencia
-                                                                : undefined;
-                                                        const sugerenciaCoincideConPestaña =
-                                                            !filtroLicencia ||
-                                                            (sugTipoLic != null && licIdMap[filtroLicencia]?.includes(sugTipoLic));
-
-                                                        return vehiculosParaGrid.map(v => (
-                                                            <VehicleCard
-                                                                key={idVehiculoKey(v.idVehiculo)}
-                                                                vehiculo={v}
-                                                                isSelected={
-                                                                    seleccionCoincideConPestañaLicencia &&
-                                                                    selKey === idVehiculoKey(v.idVehiculo)
-                                                                }
-                                                                isSuggested={
-                                                                    sugerenciaCoincideConPestaña &&
-                                                                    sugKey === idVehiculoKey(v.idVehiculo)
-                                                                }
-                                                                onSelect={handleSeleccionarVehiculo}
-                                                            />
-                                                        ));
-                                                    })()
-                                                ) : (
-                                                    <div className="col-span-full py-16 text-center opacity-30">
-                                                        <p className="text-[var(--apple-text-sub)] font-black uppercase text-xs tracking-widest animate-pulse">Sincronizando flota...</p>
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div id="seccion-instructor" className="pt-6 px-1 relative">
-                                        <div className="mb-2 transition-all">
-                                            <p className={`text-[8px] font-black uppercase tracking-[0.2em] px-2 transition-colors duration-300 ${showInstructorMenu ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}>Instructor</p>
-                                        </div>
-
-                                        <div className="relative group">
-                                            <div className="relative flex items-center">
-                                                <input
-                                                    ref={instructorInputRef}
-                                                    type="text"
-                                                    readOnly={!isSearchingInstructor}
-                                                    placeholder={isSearchingInstructor ? "BUSCAR..." : "VER LISTA..."}
-                                                    value={isSearchingInstructor && showInstructorMenu ? filtroInstructor : (instructorSeleccionado?.fullName || '')}
-                                                    onChange={(e) => {
-                                                        const val = e.target.value.toUpperCase();
-                                                        setFiltroInstructor(val);
-                                                        if (!showInstructorMenu) setShowInstructorMenu(true);
-                                                    }}
-                                                    onClick={() => setShowInstructorMenu(true)}
-                                                    className={`w-full bg-[var(--apple-bg)] border-2 rounded-[1.5rem] pl-6 pr-28 py-2.5 text-sm lg:text-base font-black text-[var(--apple-text-main)] transition-all shadow-inner outline-none uppercase tracking-widest placeholder:text-[11px] lg:placeholder:text-xs placeholder:font-bold placeholder:text-[var(--apple-text-sub)]/30 z-[150] relative ${showInstructorMenu ? 'border-[var(--istpet-gold)]' : 'border-[var(--apple-border)]'}`}
-                                                />
-                                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 z-[160] transition-all">
-                                                    <button
-                                                        onClick={() => {
-                                                            if (isSearchingInstructor) {
-                                                                setIsSearchingInstructor(false);
-                                                                setFiltroInstructor('');
-                                                                setShowInstructorMenu(true);
-                                                            } else {
-                                                                setShowInstructorMenu(!showInstructorMenu);
-                                                            }
-                                                        }}
-                                                        className={`p-1.5 transition-all ${(!isSearchingInstructor && showInstructorMenu) ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)]'}`}
-                                                        title="Ver lista"
-                                                    >
-                                                        {showInstructorMenu && !isSearchingInstructor ? (
-                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
-                                                        ) : (
-                                                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-                                                        )}
-                                                    </button>
-                                                    <button
-                                                        onClick={() => {
-                                                            setIsSearchingInstructor(true);
-                                                            setShowInstructorMenu(true);
-                                                            setTimeout(() => instructorInputRef.current?.focus(), 50);
-                                                        }}
-                                                        className={`p-1.5 transition-all ${isSearchingInstructor ? 'text-[var(--istpet-gold)]' : 'text-[var(--apple-text-sub)] hover:text-[var(--istpet-gold)]'}`}
-                                                        title="Buscar"
-                                                    >
-                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
-                                                    </button>
-                                                </div>
-                                            </div>
-
-                                            {showInstructorMenu && (isSearchingInstructor ? filtroInstructor.length > 0 : true) && (
-                                                <>
-                                                    <div className="fixed inset-0 z-[140]" onClick={() => setShowInstructorMenu(false)} />
-                                                    <div className="absolute left-0 right-0 top-full mt-3 bg-[var(--apple-bg)] border-2 border-[var(--apple-border)] rounded-[2.2rem] shadow-2xl z-[150] overflow-hidden animate-apple-in p-3 max-h-[300px] overflow-y-auto">
-                                                        {(() => {
-                                                            const filtered = instructores.filter(i =>
-                                                                !isSearchingInstructor || i.fullName.toUpperCase().includes(filtroInstructor)
-                                                            );
-
-                                                            if (filtered.length === 0 && isSearchingInstructor) {
-                                                                return (
-                                                                    <div className="p-8 text-center opacity-40">
-                                                                        <p className="text-[10px] font-black uppercase tracking-widest text-[var(--apple-text-sub)]">Sin coincidencias</p>
-                                                                    </div>
-                                                                );
-                                                            }
-
-                                                            return filtered.map((i) => (
-                                                                <div
-                                                                    key={i.idInstructor}
-                                                                    onClick={() => {
-                                                                        setInstructorSeleccionado(i);
-                                                                        setShowInstructorMenu(false);
-                                                                        setFiltroInstructor('');
-                                                                    }}
-                                                                    className={`p-4 cursor-pointer hover:bg-[var(--apple-primary)]/10 transition-all rounded-2xl ${instructorSeleccionado?.idInstructor === i.idInstructor ? 'bg-[var(--apple-primary)]/10 text-[var(--istpet-gold)]' : 'text-[var(--apple-text-main)]'}`}
-                                                                >
-                                                                    <p className="text-[11px] font-black uppercase tracking-tight">{i.fullName}</p>
-                                                                </div>
-                                                            ));
-                                                        })()}
-                                                    </div>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-6 border-t border-[var(--apple-border)] mt-4">
-                                        <button
-                                            id="btn-registrar-salida"
-                                            onClick={handleProcesarSalida}
-                                            disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
-                                            className={`w-full py-4 rounded-full text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01]'}`}
-                                        >
-                                            {!estudianteData ? 'INGRESAR CÉDULA DEL ALUMNO' :
-                                                estudianteData.isBusy ? 'ESTUDIANTE EN PISTA' :
-                                                    !vehiculoSeleccionado ? 'SELECCIONAR VEHÍCULO' :
-                                                        !instructorSeleccionado ? 'SELECCIONAR INSTRUCTOR' :
-                                                            '✓ REGISTRAR SALIDA'}
-                                        </button>
-                                    </div>
+                                    )}
                                 </div>
                             </div>
                         ) : (
