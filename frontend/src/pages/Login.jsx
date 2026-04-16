@@ -65,7 +65,7 @@ const Login = () => {
                 <div className="apple-card login-glass-card">
                     <div className="apple-login-header">
                         <div className="apple-brand-logo">
-                            <img src="/favicon.png" alt="ISTPET Logo" className="apple-logo-img" />
+                            <img src="/logistica/favicon.png" alt="ISTPET Logo" className="apple-logo-img" />
                             <div className="apple-brand-text">
                                 <span className="apple-title-main">ESCUELA CONDUCCIÓN</span>
                                 <span className="apple-title-sub">ISTPET TRAVERSARI</span>
