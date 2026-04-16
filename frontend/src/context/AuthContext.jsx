@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.removeItem('istpet_token');
         localStorage.removeItem('istpet_user');
         setUser(null);
-        window.location.href = '/login';
+        window.location.href = '/logistica/login';
     };
 
     const isAuthorized = (allowedRoles) => {

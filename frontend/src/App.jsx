@@ -13,7 +13,7 @@ import Vehicles from './pages/Vehicles';
 function App() {
     return (
         <AuthProvider>
-            <BrowserRouter>
+            <BrowserRouter basename="/logistica">
                 <div className="min-h-screen w-full overflow-x-hidden bg-[var(--apple-bg)]">
                     <Routes>
                         {/* Ruta Pública */}

@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useOperativeAlerts } from '../../context/OperativeAlertsContext';
 import { fmtTiempoEnRuta, fmtTimeSpan } from '../../utils/agendaUi';
 
-const logoImg = '/favicon.png';
+const logoImg = '/logistica/favicon.png';
 
 const Layout = ({ children }) => {
     const { theme, toggleTheme } = useTheme();
