@@ -4,7 +4,7 @@ Este manual es confidencial y está dirigido a personal SysAdmin e ingenieros de
 
 ---
 
-## 🔒 1. Gestión de Modos de Base de Datos y Paridad
+## 1. Gestión de Modos de Base de Datos y Paridad
 
 ISTPET Logística opera bajo un ecosistema de infraestructura conmutable. La variable núcleo está alojada en la raíz del entorno: `DATABASE_MODE` (`.env` o OS Env Var).
 
@@ -21,7 +21,7 @@ ISTPET Logística opera bajo un ecosistema de infraestructura conmutable. La var
 
 ---
 
-## 🛠 2. Runbook de Despliegue y Recuperación Continua (CD)
+## 2. Runbook de Despliegue y Recuperación Continua (CD)
 
 No existe necesidad de correr scripts largos SQL.
 
@@ -42,7 +42,7 @@ cd C:\Ruta\Del\Repositorio
 
 ---
 
-## 🚑 3. Resolución de Incidentes Comunes (Troubleshooting)
+## 3. Resolución de Incidentes Comunes (Troubleshooting)
 
 ### Fenómeno 1: `ERROR: "SIGAFI Muestra Latencia Crítica y Despacho Falla"`
 El Polly Circuit Breaker entrará en escena.

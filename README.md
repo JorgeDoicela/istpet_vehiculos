@@ -14,7 +14,7 @@
 
 ---
 
-## 🚀 Innovaciones Clave (Version Final)
+## Innovaciones Clave (Version Final)
 
 - **Hybrid Universal Bridge**: Arquitectura que permite conmutar entre lectura directa de SIGAFI y un espejo local sincronizado.
 - **Resiliencia Industrial**: Implementación de *Circuit Breakers* (Polly) para proteger el sistema ante caídas de la base de datos central.
@@ -24,7 +24,7 @@
 
 ---
 
-## 🏗️ Ecosistema Técnico
+## Ecosistema Técnico
 
 El sistema utiliza un **Backend .NET 8** con C# que actúa como puente inteligente hacia SIGAFI (MySQL), exponiendo una API REST robusta al **Frontend React 19**.
 
@@ -37,7 +37,7 @@ El sistema utiliza un **Backend .NET 8** con C# que actúa como puente inteligen
 
 ---
 
-## 📁 Estructura del Proyecto
+## Estructura del Proyecto
 
 ```bash
 istpet_vehiculos/
@@ -60,7 +60,7 @@ istpet_vehiculos/
 
 ---
 
-## 🛠️ Despliegue Rápido
+## Despliegue Rápido
 
 ### Requisitos Previos
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
@@ -78,14 +78,14 @@ istpet_vehiculos/
 
 ---
 
-## 📄 Documentación Técnica Completa
+## Documentación Técnica Completa
 
 Para una comprensión profunda de las decisiones de ingeniería y el funcionamiento interno, consulte los siguientes manuales alojados en el directorio `/docs`:
 
-- 📐 **[Arquitectura del Sistema](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/ARCHITECTURE.md)**: Análisis del "Hybrid Bridge" y resiliencia.
-- 🔌 **[Especificación de API](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/API_SPEC.md)**: Contratos detallados y flujos de paridad.
-- 🎨 **[Guía Frontend](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/FRONTEND_GUIDE.md)**: Implementación de la estética Glassmorphism y React 19.
-- 📋 **[Manual de Operaciones](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/OPERATIONS_MANUAL.md)**: Guía crítica para administración de Alta Disponibilidad (HA).
+- **[Arquitectura del Sistema](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/ARCHITECTURE.md)**: Análisis del "Hybrid Bridge" y resiliencia.
+- **[Especificación de API](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/API_SPEC.md)**: Contratos detallados y flujos de paridad.
+- **[Guía Frontend](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/FRONTEND_GUIDE.md)**: Implementación de la estética Glassmorphism y React 19.
+- **[Manual de Operaciones](file:///c:/Users/DESARROLLADOR/Desktop/Proyectos/istpet_vehiculos/docs/OPERATIONS_MANUAL.md)**: Guía crítica para administración de Alta Disponibilidad (HA).
 
 ---
 © 2026 ISTPET Zenith - Advanced Engineering Team.
