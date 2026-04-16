@@ -1,62 +1,55 @@
-# Manual de Operaciones y Alta Disponibilidad (HA)
+# Manual de Operaciones y Contingencia (Runbooks)
 
-Este manual está dirigido a administradores de sistemas y personal técnico encargado del mantenimiento de ISTPET Logística.
-
----
-
-## 1. Gestión de Modos de Base de Datos
-
-ISTPET Logística es un sistema híbrido que puede operar en dos modos principales definidos por la variable de entorno `DATABASE_MODE`.
-
-### A. Modo Directo (Default / Producción)
-- **Configuración**: `DATABASE_MODE=Direct`
-- **Comportamiento**: 
-  - Las consultas de estudiantes y catálogo se realizan en tiempo real contra SIGAFI Central.
-  - La base de datos local `istpet_vehiculos` se usa solo para persistir estados operativos ("En Pista") y auditoría.
-  - El motor de sincronización masiva entra en **Standby**.
-
-### B. Modo Espejo (Standby HA)
-- **Configuración**: `DATABASE_MODE=Mirror`
-- **Comportamiento**:
-  - El sistema utiliza la base de datos local como fuente primaria.
-  - Útil cuando la conexión con SIGAFI es extremadamente lenta o inestable.
-  - Requiere ejecuciones periódicas del **Master Sync**.
+Este manual es confidencial y está dirigido a personal SysAdmin e ingenieros de mantenimiento del Sistema Logístico ISPTEC / Zenith. Define las arquitecturas de contingencia de Alta Disponibilidad (HA) y resoluciones estándar para anomalías.
 
 ---
 
-## 2. Procedimiento de Sincronización Manual
+## 🔒 1. Gestión de Modos de Base de Datos y Paridad
 
-Si por alguna razón los datos locales han divergido (por ejemplo, un cambio masivo en SIGAFI que no se refleja), siga estos pasos:
+ISTPET Logística opera bajo un ecosistema de infraestructura conmutable. La variable núcleo está alojada en la raíz del entorno: `DATABASE_MODE` (`.env` o OS Env Var).
 
-1. Inicie sesión como **Administrador**.
-2. Diríjase a la ruta `/configuracion` (o similar, dependiendo de la UI).
-3. Localice el botón **"Sincronización Maestra (Full Sync)"**.
-4. **IMPORTANTE**: Este proceso bloquea la tabla de alumnos por unos segundos. No se recomienda ejecutarlo durante horas pico de salida de vehículos.
+### A. Modo Directo (Producción Principal)
+- **Activación:** `DATABASE_MODE=Direct`
+- **Diagnóstico:** El backend extrae identificadores en tiempo real mediante *JIT Queries* contra la base Central (`SIGAFI`).
+- **Casos de Uso:** Es el modo que rige el día a día. Garantiza que inscripciones y nuevas asignaciones estén disponibles al milisegundo para los guardias.
+- **Acción del Cluster:** El Job de sincronización nocturna `SigafiMirrorBackgroundService` se **pausa automáticamente**.
 
----
-
-## 3. Resolución de Problemas (Troubleshooting)
-
-### El sistema dice "SIGAFI No Disponible"
-1. Verifique el estado del Circuit Breaker en los logs del backend.
-2. Si el circuito está `OPEN`, el sistema fallará rápido por protección.
-3. Valide la conectividad VPN o de red hacia la IP de SIGAFI.
-
-### Error: VEHICULO_EN_USO fantasma
-Si un vehículo aparece como "En Pista" pero ya regresó físicamente:
-1. Revise el panel de "Garita de Retorno".
-2. Si no aparece allí, un administrador puede forzar el cierre del registro en la tabla `practicas` (poner `ensalida=0`).
+### B. Modo Espejo (Protocolo HA de Contingencia)
+- **Activación:** `DATABASE_MODE=Mirror`
+- **Diagnóstico:** Aísla el servidor de la nube académica y direcciona todo el I/O logístico y de lecturas sobre la DB `istpet_vehiculos` local.
+- **Casos de Uso:** Latencia masiva en la VPN educativa, o paradas programadas de SIGAFI.
 
 ---
 
-## 4. Despliegue y Actualización
+## 🛠 2. Runbook de Despliegue y Recuperación Continua (CD)
 
-### Actualización de Esquema (Schema Healer)
-El sistema auto-repara su esquema en cada reinicio. Si agrega una columna nueva en el código (`AppDbContext`), simplemente reinicie el servicio de .NET y el `SchemaHealer` se encargará de crearla.
+No existe necesidad de correr scripts largos SQL.
 
-### Generación de Release
-Utilice el script oficial:
+**Paso para Actualizar Servidor / Despliegue Zero-Downtime:**
 ```powershell
+# Ingrese al entorno Windows/Server del ISTPET
+cd C:\Ruta\Del\Repositorio
+# Dispare el Release Generador:
 .\scripts\create-release-bundle.ps1
 ```
-Este script genera un `.zip` con todos los binarios y configuraciones optimizadas para el entorno ISTPET.
+*Lo que hace internamente:*
+1. Compila front y back end de forma binaria.
+2. Comprime assets e imágenes Docker locales.
+3. Genera un archivo `.zip` portátil que puede ser enviado al servidor DMZ sin requerimientos de red adicional (Air-Gapped Deployment).
+
+> [!CAUTION]
+> **Schema Healer:** El sistema repara la BD automáticamente en cada reinicio. NO ingrese sentencias `CREATE TABLE` manuales; puede provocar choques con Entity Framework y corromper migraciones controladas.
+
+---
+
+## 🚑 3. Resolución de Incidentes Comunes (Troubleshooting)
+
+### Fenómeno 1: `ERROR: "SIGAFI Muestra Latencia Crítica y Despacho Falla"`
+El Polly Circuit Breaker entrará en escena.
+- **Protocolo Inmediato:** El frontend no se caerá, pero botará alertas de indisponibilidad. Espere `30s` (Tiempo natural de reposo de Polly) antes de intentar dar paso a otro estudiante. 
+- **Solución Final:** Si dura > 5min, rote a *Modo Espejo (Mirror)* cambiando la variable local temporalmente.
+
+### Fenómeno 2: `Vehículo Fantasma (Vehículo bloqueado en modo "EN_PISTA")`
+Provocado si el servidor central se corta justo en la fase de confirmación de registro de un retorno de garita.
+- **Resolución UI:** Solicite a un usuario `admin` que elimine el flujo trabado presionando el botón "Forzar Corrección/Revertir".
+- **Comprobación Interna:** Valide la vista `v_clases_activas`. Aquella tabla pivote es la fuente real de la interfaz. No edite manualmente filas transaccionales desde el CMS.

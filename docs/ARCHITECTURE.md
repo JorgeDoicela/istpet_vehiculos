@@ -2,59 +2,70 @@
 
 ## 1. Visión Holística
 
-El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura de Puente Híbrido Universal**. Esta arquitectura permite que el sistema opere con la agilidad de la lectura directa de SIGAFI mientras mantiene un motor de contingencia masivo en espera para garantizar la continuidad operativa ante cualquier fallo de red.
+El sistema ISTPET Vehículos está diseñado bajo un paradigma de **Arquitectura de Puente Híbrido Universal**. No es simplemente un front-end para una base de datos local; opera interceptando, fusionando y materializando datos desde la infraestructura central `SIGAFI` mientras mantiene un motor masivo de contingencia local. 
+
+> [!TIP]
+> **Modo Directo Recomendado:** Para garantizar la paridad académica en todo momento, el sistema se ejecuta en **Modo Directo**. La lógica `JIT` (Just-In-Time) asegura que ningún fallo de sincronización previo limite la gestión operativa actual.
 
 ### Pilares Fundamentales:
-*   **Switchable Data Path**: Soporte nativo para `Modo Directo` (Tiempo Real) y `Modo Espejo` (Alta Disponibilidad).
-*   **Master Sync Engine**: Motor de sincronización integral de **23 módulos** que garantiza la replicación total de la estructura académica en el espejo local.
-*   **Zero-Downtime Resilience**: Implementación de *Circuit Breakers* (Polly) que protegen la experiencia de usuario ante latencia o caídas de SIGAFI Central.
-*   **Schema Healer & Parity**: Protocolo de auto-sanación que asegura que la base de datos `istpet_vehiculos` mantenga paridad absoluta con los tipos de datos de SIGAFI.
+*   **Switchable Data Path**: Soporte nativo para operaciones en tiempo real (`Direct`) y operaciones aisladas (`Mirror`).
+*   **Master Sync Engine**: Un motor iterativo asíncrono de **23 Módulos** que replica el ecosistema académico y logístico para Alta Disponibilidad (HA).
+*   **Zero-Downtime Resilience**: Orquestación de *Circuit Breakers* mediante Poly, evadiendo colapsos en cascada ante deficiencias de red.
+*   **Schema Healer & Parity**: Auto-reparación estructural (`Database.EnsureCreated`) con protección contra degradación de esquemas.
 
 ---
 
 ## 2. Diagrama de Arquitectura de Misión Crítica
 
 ```mermaid
-graph TD
-    subgraph "Capa de Presentación (React 19 + Apple Aesthetic)"
-        A[Control Operativo<br/>Glassmorphism UI] 
-        B[Dashboard de Pista<br/>Live Updates]
-        C[Módulo de Reportes<br/>Excel Parity Export]
+flowchart TD
+    %% Define Styles
+    classDef frontend fill:#0a84ff,stroke:#fff,stroke-width:2px,color:#fff
+    classDef api fill:#30d158,stroke:#fff,stroke-width:2px,color:#fff
+    classDef db fill:#ff9f0a,stroke:#fff,stroke-width:2px,color:#fff
+    classDef shield fill:#ff375f,stroke:#fff,stroke-width:2px,color:#fff
+    
+    subgraph Client ["Capa de Presentación (React 19)"]
+        UI_Control["Control Operativo<br/>(Glassmorphism UI)"]:::frontend
+        UI_Dash["Mission Control<br/>(Live Board)"]:::frontend
+        UI_Reports["Módulo de Reportes<br/>(Exportación Pura)"]:::frontend
     end
 
-    subgraph "Servicios de Orquestación Frontend"
-        D[Logistics Engine]
-        E[Reporting Service]
-        F[Operative Alerts Hub]
+    subgraph API ["Gateway NET 8 (API REST)"]
+        Ctrl_Log["Logistica Controller<br/>(Lógica Operativa)"]:::api
+        Ctrl_Dash["Dashboard Controller<br/>(Métricas JIT)"]:::api
+        Ctrl_Sync["Sync Controller<br/>(Auditoría y Paridad)"]:::api
     end
 
-    subgraph "Nervio Central: API REST .NET 8"
-        G[Logistica Controller<br/>Lógica Operativa]
-        H[Dashboard Controller<br/>JIT Data Source]
-        I[Sync Controller<br/>Parity & Audit]
+    subgraph Middleware ["Capa de Resiliencia y Adaptación"]
+        CBreaker["Polly Circuit Breaker<br/>(50% F-Ratio / 30s Wait)"]:::shield
+        HBridge["Hybrid Bridge Provider<br/>(SqlCentralST)"]:::shield
+        MSync["Master Sync Engine<br/>(23-Module Worker)"]:::shield
+        SHealer["Schema Healer<br/>(Auto Recovery)"]:::shield
     end
 
-    subgraph "Capa de Resiliencia y Paridad"
-        K[Polly Circuit Breaker<br/>50% Failure Tolerance]
-        L[Hybrid Bridge Provider<br/>SqlCentralProvider]
-        M[Master Sync Engine<br/>23-Module Sequence]
-        SH[Schema Healer<br/>Auto-Recovery]
+    subgraph Storage ["Ecosistema de Datos"]
+        DB_Local[("Espejo Local<br/>(istpet_vehiculos)")]:::db
+        DB_Central[("SIGAFI Central<br/>(Remote DB)")]:::db
     end
 
-    subgraph "Ecosistema de Datos"
-        N[EF Core 8 Power Layer]
-        O[(Local Mirror DB<br/>istpet_vehiculos)]
-        P[(SIGAFI Central DB<br/>External Source)]
-    end
+    %% Flows
+    UI_Control -->|Axios REST| Ctrl_Log
+    UI_Dash -->|Axios Polling| Ctrl_Dash
+    UI_Reports -->|Request Meta| Ctrl_Sync
 
-    A --> D --> G --> K
-    C --> E --> I --> M
-    G --> L --> P
-    K --> L
-    L --> P
-    M --> N
-    SH --> O
-    N --> O
+    Ctrl_Log -->|Protegido| CBreaker
+    Ctrl_Dash --> HBridge
+    Ctrl_Sync --> MSync
+
+    CBreaker -->|Fallback| HBridge
+    HBridge -->|Lectura Directa| DB_Central
+    HBridge -->|Materialización| DB_Local
+    
+    MSync -.->|Bulk Copy| DB_Local
+    MSync -.->|Source| DB_Central
+    
+    SHealer -->|Validate Constraints| DB_Local
 ```
 
 ---
@@ -62,46 +73,36 @@ graph TD
 ## 3. Componentes Estratégicos
 
 ### 3.1. Hybrid Universal Bridge (`SqlCentralStudentProvider`)
-Es el componente de mayor complejidad. Gestiona la conexión dual y permite la inyección de datos **JIT (Just-In-Time)**. En Modo Directo, extrae datos directamente de SIGAFI. En Modo Espejo, integra lecturas de SIGAFI con el espejo local utilizando el `SigafiLocalReadMerge`.
+El motor de puente híbrido ejecuta consultas asíncronas JIT. Si se requiere un estudiante que no figura en la base local (p.ej., recién matriculado), el *Bridge* extrae el grafo técnico de SIGAFI (Nivel, Período, etc.) y ejecuta un *Upsert* silente en el espejo local.
 
 ### 3.2. Master Sync Engine (`DataSyncService`)
-Implementa un flujo de sincronización de **23 pasos individuales** que cubren:
-- Estructura Académica (Carreras, Periodos, Secciones, Modalidades).
-- Gestión de Flota e Instructores.
-- Planificación (Horarios, Fechas, Horas de Clase, Links de Práctica).
-- Seguridad (Usuarios Web y Roles).
+Esecuta 23 transacciones de bloque secuenciales:
+- `Pasos 1-10`: Estructura Académica (Carreras, Mallas, Cursos, Estudiantes).
+- `Pasos 11-15`: Gestión Operativa (Instructores, Vehículos Operativos).
+- `Pasos 16-23`: Planificación y Seguridad (Asignaciones de horarios, Usuarios).
 
 ### 3.3. Resilience Pipeline (Polly)
-Utiliza una política de **Circuit Breaker** configurada para:
-- **SamplingDuration**: 10 segundos.
-- **FailureRatio**: 0.5 (50% de fallos).
-- **MinimumThroughput**: 3 llamadas.
-- **BreakDuration**: 30 segundos de aislamiento reactivo.
+El sistema encapsula la conexión a SIGAFI bajo un pipeline reactivo:
+- **SamplingDuration**: `10s` (Mide salud en las últimas transacciones).
+- **FailureRatio**: `0.5` (Permite hasta 50% de error antes de romper circuito).
+- **BreakDuration**: `30s` (Aísla fallos de servidor central temporalmente garantizando UX fluida y previniendo `Thread Pool Starvation`).
 
 ---
 
-## 4. Patrones de Diseño Avanzados
+## 4. Patrones de Diseño Implementados
 
-| Patrón | Implementación | Función Crítica |
+| Categoría | Patrón | Implementación Analítica |
 | :--- | :--- | :--- |
-| **Circuit Breaker** | `SigafiResiliencePipeline` | Protege el hilo de ejecución backend de colapsos externos. |
-| **JIT Materialization** | `SqlEstudianteService` | Crea registros locales bajo demanda cuando el alumno no existe en el espejo. |
-| **Standby HA** | `SigafiMirrorBackgroundService` | Background service que mantiene el espejo fresco (desactivado por defecto en Modo Directo). |
-| **Reconciliación Selectiva** | `SigafiLocalReadMerge` | Une datos académicos oficiales con estados operativos "Live" locales. |
-| **Schema Healer** | `Program.cs` | Garantiza que cada despliegue tenga la estructura de BD exacta sin intervencion humana. |
+| **Estabilidad** | Circuit Breaker | `SigafiResiliencePipeline` bloquea llamadas iterativas si la central sufre colapsos, emitiendo respuestas de resguardo. |
+| **Ingeniería de Datos**| JIT Materialization | `EstudianteLogisticaResponse` inyecta filas al vuelo para estudiantes no persistidos en la base local. |
+| **Gobernanza** | Standby HA Mode | `SigafiMirrorBackgroundService` permanece en el pipeline del host en modo inactivo; listo para actuar si se revierte a modo espejo. |
+| **Deduplicación**| Reconciliación Selectiva | `SigafiLocalReadMerge` utiliza llaves combinadas priorizando los timestamps de llegada en caso de choques. |
 
 ---
 
-## 5. Estándares Operativos de Datos
+## 5. Diseño Front-End (Glassmorphism & UX)
 
-El sistema cumple con el **Protocolo de Paridad SIGAFI 2026**:
-- **Consistencia de Tipos**: Cada campo (Chasis, Motor, Placa) tiene validaciones de longitud y formato idénticas a SIGAFI.
-- **Secuencialidad Logística**: Las transacciones siguen el flujo `Salida -> En Pista -> Retorno`, con auditoría inmutable en cada paso.
-- **Seguridad Híbrida**: Soporte para hashes BCrypt y legacy SHA-256 de SIGAFI, con actualización automática de seguridad al primer login exitoso.
-
----
-
-## 6. Frontend y UX (Apple Design System)
-- **Glassmorphism**: Uso de `backdrop-filter` para interfaces "vivas" que no cansan la vista.
-- **Optimistic UI**: Las transacciones se reflejan instantáneamente en el dashboard mientras se confirma el bridge con el servidor.
-- **PWA Deployment**: Soporte completo para instalación en móviles y tablets de supervisores de pista.
+El cliente web utiliza **React 19** aprovechando el renderizado concurrente. 
+- **Estética Inmersiva**: Los paneles utilizan `backdrop-blur-*` sobre componentes para crear jerarquía visual contra fondos oscuros.
+- **Optimistic Rendering**: El UI reacciona instantáneamente a click en "Salida" mientras cursa la promesa subyacente.
+- **Normalización**: Abstracciones (`agendaUi.js`) evitan exponer implementaciones específicas de la API a la lógica de pintado DOM, parseando esquemas camelCase vs. SIGAFI PascalCase.

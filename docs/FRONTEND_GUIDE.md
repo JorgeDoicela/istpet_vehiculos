@@ -1,73 +1,55 @@
 # Guía de Ingeniería Frontend: React 19 — Zenith Edition
 
-Este documento detalla la arquitectura, el sistema de diseño y los patrones de desarrollo utilizados en la interfaz de usuario de ISTPET Vehículos 2026.
+Este documento aborda los patrones arquitectónicos bajo los cuales el frontend ha sido consolidado. La premisa principal es evitar la saturación del Main Thread, favoreciendo micro-transacciones asíncronas y retroalimentaciones efímeras.
 
 ---
 
 ## 1. Stack Tecnológico Industrial
 
-| Tecnología | Versión | Rol Crítico |
+| Dominios de Renderizado | Tecnología / Librería | Naturaleza de Implementación |
 | :--- | :--- | :--- |
-| **React** | 19.0 | Soporte para `useTransition` y optimizaciones de renderizado. |
-| **Vite** | 5.2+ | Empaquetado de alta velocidad y soporte PWA. |
-| **Tailwind CSS** | 3.4+ | Estilización atómica y tokens de Glassmorphism. |
-| **Lucide React** | 0.350+ | Set de iconografía consistente. |
-| **XLSX (SheetJS)** | 0.19+ | Generación nativa de reportes Excel en el cliente. |
+| **Núcleo de Ejecución** | **React 19.0** | Implementamos concurrencia para evitar bloqueos del UI (`useTransition`). |
+| **Gestión de Paquetes** | **Vite 5.x** | Hot-Module Replacement en < 100ms. Minimización automática de CSS/JS. |
+| **Estilización** | **Tailwind CSS 3.4+** | Variables atómicas con un fuerte énfasis en la aceleración por hardware (Transformaciones). |
+| **Reportes Excel** | **SheetJS (XLSX)** | Generación binaria nativa directa en el navegador, descargando carga de la API. |
 
 ---
 
-## 2. Sistema de Diseño: Apple Aesthetic
+## 2. Paradigma Apple "Glassmorphism"
 
-La interfaz utiliza una interpretación moderna de los principios de Apple, priorizando la claridad y la responsividad física.
+En el diseño para logística o monitoreo (Garitas, Supervisión), los fondos puros causan fatiga visual nocturna. ISTPET implementa el modelo Glassmorphism con un enfoque performante:
 
-### Características Visuales:
-*   **Glassmorphism**: Capas de transparencia con `backdrop-filter` para mantener el contexto del dashboard.
-*   **Micro-animaciones**: Transiciones de entrada tipo "slide-in" y efectos de escala en tarjetas de vehículos.
-*   **Respuesta Háptica Visual**: Feedback inmediato en botones de salida y llegada para confirmar la acción del usuario.
+- **Efecto de Capas (`backdrop-blur-md`)**: Solo se aplica en paneles de alto nivel, permitiendo visualizar contextualmente movimientos tras las ventanas logísticas sin opacidad del 100%.
+- **Prevención Térmica**: Evita el pintado constante en el DOM (re-paints) mediante el acelerado hardware sobre elementos translúcidos de fondo, delegando animaciones exclusivamente a variables `transform` y `opacity`.
 
 ---
 
-## 3. Módulos de Misión Crítica
+## 3. Topología de Componentes Core
 
-### 3.1. Control Operativo (`ControlOperativo.jsx`)
-Gestiona el flujo central de logística. Implementa una búsqueda híbrida (Local + Central) y sugiere automáticamente datos de la agenda.
+### El Motor de Logística (`ControlOperativo.jsx`)
+No es simplemente un formulario. Este componente es un agrupador del `Business Logic` para gestionar salidas vehiculares.
+- **Búsqueda Debounced Híbrida**: Retrasa en 300ms la petición a SIGAFI hasta que el ingreso del dígito esté finalizado.
+- **Auto-Enriquecimiento**: Utiliza el utilitario `agendaUi.js` para parsear el modelo PascalCase de DB central y renderizarlo en camelCase local.
 
-### 3.2. Centro de Reportes (`Reports.jsx`)
-Módulo avanzado que permite auditar el historial de prácticas por fecha e instructor.
-*   **Normalización**: Une los campos de SIGAFI con los registros locales para mostrar la "Versión Final" de la práctica.
-*   **Exportación**: Genera archivos `.xlsx` con metadatos específicos para la administración del ISTPET.
-
-### 3.3. Historial Rápido (`History.jsx` / `Home.jsx`)
-Visualización de las últimas 10 prácticas completadas para una verificación rápida de retornos sin entrar al módulo de reportes.
+### El Exportador Masivo (`Reports.jsx`)
+Mapeo asíncrono de más de cientos de transacciones históricas. 
+- Implementa una tabla virtualizada de previsualización que delega el renderizado pesado hacia **XLSX**, comprimiendo los vectores para generar la descarga nativa en el dispositivo del usuario.
 
 ---
 
-## 4. Utilidades y Normalización (`agendaUi.js`)
+## 4. Progressive Web App (PWA) e Instalabilidad
 
-Debido a que el backend retorna una mezcla de PascalCase (Legacy) y camelCase (Modern), el frontend utiliza una capa de normalización en `utils/agendaUi.js`.
-*   **`normalizeAgendaRow`**: Asegura que el componente `ActiveClasses` reciba datos consistentes independientemente de si provienen del espejo local o de SIGAFI.
-*   **Cálculo de Duración**: Funciones puras para determinar el tiempo en pista basado en `hora_salida` y `llegada`.
-
----
-
-## 5. Capacidades PWA (Progressive Web App)
-
-El sistema está configurado para comportarse como una aplicación nativa:
-- **Offline Ready**: Cacheo de activos estáticos para carga instantánea.
-- **Installable**: Puede añadirse a la pantalla de inicio en Windows, Android e iOS.
-- **Manifest**: Iconos institucionales y colores de marca definidos en `manifest.json`.
+Configuradas mediante el manifiesto, las interfaces están diseñadas para prescindir de la barra de direcciones del navegador en el dispositivo final:
+- Cache Activo de `JS/CSS`, impidiendo fallas catastróficas del cliente si la red parpadea temporalmente. 
+- Se provee una experiencia similar a native app al abrir directo en iPads y dispositivos en garita. 
 
 ---
 
-## 6. Pipeline de Producción
+## 5. Deployment Scripts de Front-End
 
+Para liberar un nuevo reléase visual del cliente:
 ```bash
-# Desarrollo
-npm run dev
-
-# Construcción de Producción
-npm run build
-
-# Previsualización del Bundle Final
-npm run preview
+npm install     # Asegurar paridad de árbol de dependencias
+npm run build   # Compilación AOT para Vercel o NGINX
+npm run preview # Test loopback en dist/
 ```
