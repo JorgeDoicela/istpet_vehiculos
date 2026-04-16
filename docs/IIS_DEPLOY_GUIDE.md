@@ -2,18 +2,31 @@
 
 Esta guía detalla el proceso para actualizar el sistema ISTPET Vehículos en el servidor de producción institucional.
 
-## 1. Automatización (Recomendado)
+## 1. Automatización Total (Recomendado)
 
-Se ha creado un script de PowerShell en la raíz del proyecto para realizar todo el proceso de compilación y empaquetado automáticamente.
+Se ha implementado un sistema de despliegue unificado que utiliza **SSH** para enviar y activar la nueva versión en un solo paso.
+
+### Requisitos:
+- Acceso SSH configurado entre la máquina de desarrollo y el servidor (llaves públicas en `administrators_authorized_keys`).
 
 ### Ejecución:
 1. Abre una terminal en la carpeta raíz del proyecto.
-2. Ejecuta: `.\scripts\build-and-package.ps1`
-3. Al finalizar, obtendrás un archivo llamado `ISTPET_DEPLOY_BUNDLE_YYYYMMDD_HHMM.zip` en la raíz.
+2. Ejecuta: `powershell -ExecutionPolicy Bypass -File .\scripts\full-deploy.ps1`
+3. El script hará: Build -> Package -> Upload -> Unzip remoto -> Limpieza.
 
 ---
 
-## 2. Procedimiento en el Servidor
+## 2. Configuración de Acceso (Solo una vez)
+
+Si el servidor pide contraseña, debes autorizar tu llave SSH:
+1. Genera tu llave local: `ssh-keygen -t ed25519`.
+2. Sube la llave al servidor IIS:
+   - Ruta para Administradores: `%ProgramData%\ssh\administrators_authorized_keys`
+   - Permisos: Solo `SYSTEM` y `Administradores` deben tener acceso Full Control.
+
+---
+
+## 3. Procedimiento Manual (Alternativo)
 
 Una vez que tengas el paquete ZIP, sigue estos pasos en el servidor IIS:
 
