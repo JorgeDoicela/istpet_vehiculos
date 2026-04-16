@@ -1,0 +1,457 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>backend</name>
+    </assembly>
+    <members>
+        <member name="M:backend.Controllers.AuthController.ResolveDisplayNameAsync(System.String,System.Boolean)">
+            <param name="usuario">Cédula del usuario.</param>
+            <param name="sigafiNoDisponibleEnLogin">
+            Si ya falló <see cref="M:backend.Services.Interfaces.ICentralStudentProvider.GetWebUserFromSigafiAsync(System.String)"/> con excepción,
+            no volvemos a llamar a SIGAFI aquí (evita esperas largas en cadena).
+            </param>
+        </member>
+        <member name="T:backend.Controllers.EstudiantesController">
+            Estudiantes Controller: Absolute SIGAFI Naming Parity 2026.
+        </member>
+        <member name="T:backend.Controllers.LogisticaController">
+            Logistica Controller: Absolute SIGAFI Parity Edition 2026.
+            Guaranteed 1:1 naming with central database for idAlumno, idProfesor, idVehiculo.
+        </member>
+        <member name="M:backend.Controllers.LogisticaController.EnsureCatalogDependenciesExistAsync(System.String,System.Int32,System.Int32,System.Int32)">
+            <summary>
+            JIT (Just-In-Time) Synchronization of Catalog Dependencies.
+            Checks if the required foreign keys exist locally; if not, fetches the catalog from SIGAFI.
+            </summary>
+        </member>
+        <member name="T:backend.Controllers.ReportsController">
+            Reportes: SIGAFI primero + espejo local sin duplicar (por idPractica).
+        </member>
+        <member name="M:backend.Controllers.SyncController.SigafiProbe(System.Threading.CancellationToken)">
+            <summary>
+            Comprueba que cada SELECT contra SIGAFI (los mismos que usa MasterSync) ejecute sin error y devuelve conteos.
+            </summary>
+        </member>
+        <member name="M:backend.Controllers.SyncController.GetAuditParity">
+            <summary>
+            Auditoría de Paridad: Compara el conteo de registros entre SIGAFI y la base de datos local.
+            Este endpoint es público para facilitar la verificación rápida de la sincronización.
+            </summary>
+        </member>
+        <member name="M:backend.Controllers.SyncController.InspectStudent(System.String)">
+            <summary>
+            Inserta una cédula para comparar los datos de un estudiante entre SIGAFI y la base local.
+            </summary>
+        </member>
+        <member name="M:backend.Controllers.SyncController.InspectInstructor(System.String)">
+            <summary>
+            Inserta un ID de profesor para comparar los datos entre SIGAFI y la base local.
+            </summary>
+        </member>
+        <member name="M:backend.Controllers.SyncController.InspectVehicle(System.String)">
+            <summary>
+            Inserta una placa para comparar los datos de un vehículo entre SIGAFI y la base local.
+            </summary>
+        </member>
+        <member name="T:backend.DTOs.ApiResponse`1">
+            Estandarización de Respuesta Empresarial
+            Garantiza que el Frontend siempre reciba un formato coherente.
+        </member>
+        <member name="P:backend.DTOs.ApiResponse`1.Detail">
+            <summary>Solo en desarrollo: detalle técnico del fallo (p. ej. excepción).</summary>
+        </member>
+        <member name="T:backend.DTOs.LoginRequest">
+            Auth DTOs: Refactored 2026.
+        </member>
+        <member name="T:backend.DTOs.DataParityAuditDto">
+            <summary>
+            Resumen de paridad de datos entre SIGAFI (Remoto) y la base de datos local istpet_vehiculos.
+            </summary>
+        </member>
+        <member name="T:backend.DTOs.TableParityInfo">
+            <summary>
+            Información de paridad para una tabla específica.
+            </summary>
+        </member>
+        <member name="P:backend.DTOs.TableParityInfo.Status">
+            <summary>
+            Determina el estado de la sincronización.
+            </summary>
+        </member>
+        <member name="P:backend.DTOs.TableParityInfo.ParityPercentage">
+            <summary>
+            Porcentaje de paridad (0 a 100).
+            </summary>
+        </member>
+        <member name="T:backend.DTOs.EstudianteDto">
+            Domain DTOs: Absolute Parity with SIGAFI naming 2026.
+        </member>
+        <member name="T:backend.DTOs.EstudianteLogisticaResponse">
+            Logistica DTOs: Refactored for Absolute SIGAFI Parity 2026.
+            Guaranteed 1:1 naming with central database for idAlumno, idProfesor, idVehiculo, idPractica.
+        </member>
+        <member name="P:backend.DTOs.EstudianteLogisticaResponse.carrera">
+            <summary>Nombre de carrera (SIGAFI), sin semestre.</summary>
+        </member>
+        <member name="P:backend.DTOs.EstudianteLogisticaResponse.detalleMatriculaSigafi">
+            <summary>Línea tipo SIGAFI: carrera/nivel, paralelo, sección y jornada (cuadro blanco central).</summary>
+        </member>
+        <member name="P:backend.DTOs.AlumnoSugerenciaLogisticaDto.horaAgenda">
+            <summary>Próxima práctica abierta en SIGAFI (hoy o futura, sin llegada), para sugerencias fuera del top de agenda.</summary>
+        </member>
+        <member name="T:backend.DTOs.ParityInspectionResult`2">
+            <summary>
+            Resultado de la inspección detallada de paridad para una entidad.
+            </summary>
+            <typeparam name="TRemote">Tipo del DTO retornado por SIGAFI.</typeparam>
+            <typeparam name="TLocal">Tipo del DTO/Modelo local.</typeparam>
+        </member>
+        <member name="P:backend.DTOs.ParityInspectionResult`2.RemoteData">
+            <summary>Datos tal cual vienen del servidor remoto SIGAFI.</summary>
+        </member>
+        <member name="P:backend.DTOs.ParityInspectionResult`2.LocalData">
+            <summary>Datos tal cual están guardados en la base de datos local.</summary>
+        </member>
+        <member name="P:backend.DTOs.ParityInspectionResult`2.InParity">
+            <summary>Determina si ambos registros existen y están sincronizados (basado en lógica de negocio).</summary>
+        </member>
+        <member name="P:backend.DTOs.ParityInspectionResult`2.Mismatches">
+            <summary>Lista de discrepancias encontradas entre ambos lados.</summary>
+        </member>
+        <member name="P:backend.DTOs.ParityInspectionResult`2.Status">
+            <summary>Estado descriptivo de la entidad.</summary>
+        </member>
+        <member name="T:backend.DTOs.SigafiProbeResponse">
+            <summary>
+            Resultado de comprobar lecturas remotas SIGAFI (misma lógica que MasterSync / API).
+            </summary>
+        </member>
+        <member name="T:backend.Hosting.SigafiMirrorBackgroundService">
+            <summary>
+            Mantiene el espejo local alineado con sigafi_es sin intervención manual.
+            </summary>
+        </member>
+        <member name="T:backend.Hosting.SigafiMirrorSyncOptions">
+            <summary>
+            Sincronización automática SIGAFI (fuente) → BD local istpet_vehiculos (espejo).
+            </summary>
+        </member>
+        <member name="P:backend.Hosting.SigafiMirrorSyncOptions.Enabled">
+            <summary>Si false, no se programa ningún ciclo (solo sync manual vía API).</summary>
+        </member>
+        <member name="P:backend.Hosting.SigafiMirrorSyncOptions.IntervalMinutes">
+            <summary>Minutos entre ejecuciones completas (mínimo 1).</summary>
+        </member>
+        <member name="P:backend.Hosting.SigafiMirrorSyncOptions.RunOnStartup">
+            <summary>Ejecutar un ciclo al arrancar la API (tras el retraso inicial).</summary>
+        </member>
+        <member name="P:backend.Hosting.SigafiMirrorSyncOptions.StartupDelaySeconds">
+            <summary>Espera tras el arranque antes del primer sync (dar tiempo a MySQL/red).</summary>
+        </member>
+        <member name="T:backend.Middleware.ErrorHandlingMiddleware">
+            Middleware de Manejo Global de Excepciones
+            Atrapa cualquier error no controlado y lo devuelve en formato ApiResponse.
+        </member>
+        <member name="T:backend.Models.AlertaMantenimiento">
+            Read-only model for SQL View: v_alerta_mantenimiento
+            Aligned with SQL Healer (snake_case database)
+        </member>
+        <member name="T:backend.Models.Asignacion">
+            Asignacion Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'Asignaciones' table schema.
+        </member>
+        <member name="T:backend.Models.AsignacionInstructorVehiculo">
+            Instructor-Vehicle Assignment Model: Absolute SIGAFI Parity.
+            Maps to sigafi_es.asignacion_instructores_vehiculos
+        </member>
+        <member name="T:backend.Models.AuditLog">
+            <summary>
+            Registro inmutable de cada acción relevante realizada en el sistema.
+            Solo lectura para auditoría; nunca se modifica un registro existente.
+            </summary>
+        </member>
+        <member name="P:backend.Models.AuditLog.usuario">
+            <summary>Cédula / login del operador que ejecutó la acción.</summary>
+        </member>
+        <member name="P:backend.Models.AuditLog.accion">
+            <summary>Código de la acción: LOGIN, LOGIN_FAIL, SALIDA, LLEGADA, SYNC, SYNC_FAIL.</summary>
+        </member>
+        <member name="P:backend.Models.AuditLog.entidad_id">
+            <summary>ID de la entidad afectada (idPractica, idAlumno, etc.).</summary>
+        </member>
+        <member name="P:backend.Models.AuditLog.detalles">
+            <summary>JSON o texto libre con el detalle de la operación.</summary>
+        </member>
+        <member name="P:backend.Models.AuditLog.ip_origen">
+            <summary>IP del cliente que originó la solicitud.</summary>
+        </member>
+        <member name="T:backend.Models.Carrera">
+            Carrera Model: SIGAFI Parity 2026.
+            Aligned with SIGAFI 'carreras' table schema.
+        </member>
+        <member name="T:backend.Models.CategoriaExamenConduccion">
+            Conduct Exam Category Model: SIGAFI Parity.
+            Maps to sigafi_es.categorias_examenes_conduccion
+        </member>
+        <member name="T:backend.Models.CategoriaVehiculo">
+            Vehicle Category Model: SIGAFI Parity.
+            Maps to sigafi_es.categoria_vehiculos
+        </member>
+        <member name="T:backend.Models.ClaseActiva">
+            Read-only model for SQL View: v_clases_activas.
+            Absolute Parity 2026: Aligned with idPractica as the primary handle.
+        </member>
+        <member name="T:backend.Models.Curso">
+            Curso Model: Absolute SIGAFI Parity 2026.
+            Aligned with table 'cursos'.
+        </member>
+        <member name="T:backend.Models.Estudiante">
+            Estudiante Model: Absolute SIGAFI Parity 2026.
+            Comprehensive alignment with SIGAFI 'alumnos' table schema.
+        </member>
+        <member name="T:backend.Models.FechaHorario">
+            FechaHorario Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'fechas_horarios' table.
+        </member>
+        <member name="T:backend.Models.HoraClase">
+            HoraClase Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'horas_clases' table.
+        </member>
+        <member name="T:backend.Models.HorarioAlumno">
+            Student Schedule Model: Absolute SIGAFI Parity.
+            Maps to sigafi_es.cond_alumnos_horarios
+        </member>
+        <member name="T:backend.Models.HorarioProfesor">
+            HorarioProfesor Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'horario_profesores' table.
+        </member>
+        <member name="T:backend.Models.Institucion">
+            Institucion Model: SIGAFI Parity 2026.
+            Aligned with SIGAFI 'instituciones' table schema.
+        </member>
+        <member name="T:backend.Models.Instructor">
+            Instructor Model: Absolute SIGAFI Parity 2026.
+            Comprehensive alignment with SIGAFI 'profesores' table schema.
+        </member>
+        <member name="T:backend.Models.Matricula">
+            Enrollment Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'matriculas' table schema.
+        </member>
+        <member name="T:backend.Models.MatriculaExamenConduccion">
+            <summary>
+            Espejo SIGAFI <c>matriculas_examen_conduccion</c> (camelCase en BD).
+            </summary>
+        </member>
+        <member name="T:backend.Models.Modalidad">
+            Modalidad Model: SIGAFI Parity 2026.
+            Aligned with SIGAFI 'modalidades' table schema.
+        </member>
+        <member name="T:backend.Models.Periodo">
+            Academic Period Model: SIGAFI Parity 2026.
+            Aligned with SIGAFI 'periodos' table schema.
+        </member>
+        <member name="T:backend.Models.Practica">
+            Practica Model: Absolute SIGAFI Parity 2026.
+            Aligned with table 'cond_alumnos_practicas'.
+        </member>
+        <member name="T:backend.Models.PracticaHorarioAlumno">
+            Practice-Schedule Junction Model: SIGAFI Parity.
+            Maps to sigafi_es.cond_practicas_horarios_alumnos
+            This links a Practice (cond_alumnos_practicas) to a Schedule (cond_alumnos_horarios).
+        </member>
+        <member name="T:backend.Models.Seccion">
+            Section Model: SIGAFI Parity 2026.
+            Aligned with SIGAFI 'secciones' table schema.
+        </member>
+        <member name="T:backend.Models.SyncLog">
+            <summary>
+            Bitácora de Sincronización Profesional
+            Registra cada trago de datos externos para auditoría.
+            </summary>
+        </member>
+        <member name="T:backend.Models.SyncMapping">
+            Adaptador Dinámico de Datos
+            Permite mapear "Campo de fuera" -> "Columna ISTPET" sin tocar la base de datos.
+        </member>
+        <member name="T:backend.Models.TipoLicencia">
+            ISTPET Enterprise License Types: Refactored 2026.
+        </member>
+        <member name="P:backend.Models.TipoLicencia.id_categoria_sigafi">
+            <summary>Si está definido, el registro proviene de SIGAFI categoria_vehiculos (mapeo estable).</summary>
+        </member>
+        <member name="T:backend.Models.Usuario">
+            Usuario Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'usuarios_web' table schema.
+        </member>
+        <member name="T:backend.Models.Vehiculo">
+            Vehicle Model: Absolute SIGAFI Parity 2026.
+            Aligned with SIGAFI 'vehiculos' table schema.
+        </member>
+        <member name="T:backend.Services.Helpers.DataValidator">
+            El "Escáner de Aduanas" de ISTPET
+            Sanitiza y limpia cualquier dato antes de enviarlo a la Base de Datos.
+        </member>
+        <member name="T:backend.Services.Helpers.PasswordHelper">
+            <summary>
+            Lógica de validación de contraseñas ajustada a SIGAFI clásico.
+            Soporta solo la validación en texto plano (límite de 20 caracteres en base de datos).
+            </summary>
+        </member>
+        <member name="T:backend.Services.Helpers.SigafiLocalReadMerge">
+            <summary>
+            Une lecturas SIGAFI + espejo local sin duplicar (prioridad SIGAFI en choque de clave).
+            </summary>
+        </member>
+        <member name="T:backend.Services.Helpers.ISigafiResiliencePipeline">
+             <summary>
+             Circuit breaker singleton para todas las llamadas a la BD remota SIGAFI.
+            
+             Comportamiento:
+               - Closed   : opera normalmente.
+               - Open     : falló ≥50 % de las últimas 3 llamadas en 10 s → rechaza
+                            rápidamente durante 30 s sin intentar abrir conexión.
+               - HalfOpen : tras 30 s prueba UNA llamada; si tiene éxito vuelve a Closed.
+            
+             Si el circuito está abierto, los callers reciben BrokenCircuitException
+             que los try/catch existentes en SqlCentralStudentProvider convierten en
+             respuesta null/vacía, igual que cualquier otro error de red.
+             </summary>
+        </member>
+        <member name="T:backend.Services.Helpers.SigafiVehicleUpsert">
+            <summary>
+            Alinea filas de vehículos en el espejo local con el catálogo actual de SIGAFI.
+            </summary>
+        </member>
+        <member name="T:backend.Services.Implementations.DataSyncService">
+            Sincronización masiva: SIEMPRE lee desde SIGAFI (ICentralStudentProvider / SigafiConnection)
+            y escribe en la BD local (DefaultConnection). SIGAFI es la fuente; istpet_vehiculos es copia de trabajo.
+        </member>
+        <member name="T:backend.Services.Implementations.SigafiExtractionProbe">
+            <summary>
+            Ejecuta cada extracción SIGAFI y devuelve conteos o error por módulo (sin escribir en BD local).
+            </summary>
+        </member>
+        <member name="M:backend.Services.Implementations.SigafiMirrorPersistenceService.PersistEstudiantesFromLitesAsync(System.Collections.Generic.IEnumerable{backend.Services.Interfaces.CentralAlumnoLiteDto},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Services.Implementations.SigafiMirrorPersistenceService.PersistPracticesFromScheduleDtosAsync(System.Collections.Generic.IEnumerable{backend.Services.Interfaces.ScheduledPracticeDto},System.Threading.CancellationToken)">
+            <inheritdoc />
+        </member>
+        <member name="T:backend.Services.Implementations.SigafiReportService">
+            Reportes contra la BD SIGAFI del servidor configurado.
+            Refactored 2026 for Absolute Parity: idAlumno, idProfesor, numeroVehiculo, etc.
+        </member>
+        <member name="T:backend.Services.Implementations.SqlCentralStudentProvider">
+            Puente de lectura hacia la BD remota SIGAFI (sigafi_es) vía SigafiConnection.
+            Aquí vive la extracción primaria; DataSyncService y otros consumidores copian hacia la BD local.
+            Paridad de nombres de columnas con SIGAFI 2026.
+        </member>
+        <member name="M:backend.Services.Implementations.SqlCentralStudentProvider.GetTodayCompletedPracticesAsync(System.Int32)">
+            <summary>
+            Obtiene el historial de prácticas COMPLETADAS (con retorno) del día actual.
+            </summary>
+        </member>
+        <member name="M:backend.Services.Implementations.SqlCentralStudentProvider.GetNextOpenPracticesForAlumnosAsync(System.Collections.Generic.IEnumerable{System.String})">
+            <inheritdoc />
+        </member>
+        <member name="M:backend.Services.Implementations.SqlCentralStudentProvider.GetAllLicenseTypesFromCentralAsync">
+            <summary>
+            SIGAFI no expone tipo_licencia; se deriva de categoria_vehiculos para poblar tipo_licencia local.
+            Para categorías "LICENCIA TIPO X" se normaliza el código como X (C/D/E...).
+            </summary>
+        </member>
+        <member name="M:backend.Services.Implementations.SqlCentralStudentProvider.TryGetModalidadDescripcionAsync(System.Int32)">
+            <summary>
+            Intenta leer la etiqueta de modalidad/jornada en SIGAFI (nombres de columna varían entre instalaciones).
+            </summary>
+        </member>
+        <member name="T:backend.Services.Implementations.SqlEstudianteService">
+            Student Search Service: Refactored for Absolute SIGAFI Parity 2026.
+            Si no está en el espejo local, consulta SIGAFI y materializa el alumno (sin depender del cron de sync).
+        </member>
+        <member name="T:backend.Services.Implementations.SqlLogisticaService">
+            EF Core Implementation of ILogisticaService
+            Refactored 2026 for Absolute Parity: idAlumno, idProfesor, idVehiculo, idPractica.
+        </member>
+        <member name="T:backend.Services.Interfaces.IAuditService">
+            <summary>
+            Persiste eventos de auditoría de forma asíncrona y no bloqueante.
+            Nunca lanza excepciones al caller; los fallos de escritura se loguean internamente.
+            </summary>
+        </member>
+        <member name="T:backend.Services.Interfaces.CentralStudentDto">
+            Interface for the ISTPET Centralized Student Database Bridge.
+            Updated 2026: Absolute SIGAFI Naming Parity.
+        </member>
+        <member name="P:backend.Services.Interfaces.CentralStudentDto.CarreraNombre">
+            <summary>Nombre de carrera SIGAFI (<c>carreras.Carrera</c>), sin mezclar semestre.</summary>
+        </member>
+        <member name="P:backend.Services.Interfaces.CentralStudentDto.NivelCurso">
+            <summary>Semestre/nivel del curso (<c>cursos.Nivel</c>), p. ej. TERCERO.</summary>
+        </member>
+        <member name="P:backend.Services.Interfaces.ScheduledPracticeDto.idPeriodo">
+            <summary>Desde <c>cond_alumnos_practicas.idPeriodo</c> (SIGAFI).</summary>
+        </member>
+        <member name="P:backend.Services.Interfaces.ScheduledPracticeDto.SigafiCancelado">
+            <summary>Campos SIGAFI para persistir el espejo local (tras enriquecer pueden reflejar también estado operativo local).</summary>
+        </member>
+        <member name="T:backend.Services.Interfaces.CentralHorarioDto">
+            <summary>Filas de sigafi_es.cond_alumnos_horarios (sin columnas inventadas).</summary>
+        </member>
+        <member name="P:backend.Services.Interfaces.CentralTipoLicenciaDto.id_categoria_sigafi">
+            <summary>Origen SIGAFI categoria_vehiculos.idCategoria cuando aplica.</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetNextOpenPracticesForAlumnosAsync(System.Collections.Generic.IEnumerable{System.String})">
+            <summary>Para cada cédula, la próxima práctica en SIGAFI con fecha ≥ hoy, no cancelada y sin hora de llegada.</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetWebUserFromSigafiAsync(System.String)">
+            <summary>Lectura directa de un usuario en SIGAFI (usuarios_web).</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetVehicleByPlacaFromCentralAsync(System.String)">
+            <summary>Lectura directa en SIGAFI por placa (fuente de verdad).</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.SearchStudentsFromCentralAsync(System.String)">
+            <summary>
+            Busca directamente en SIGAFI por cédula (prefijo) o por apellido/nombre (prefijo).
+            Usado como fuente primaria en el autocomplete del Control Operativo para encontrar
+            estudiantes que aún no han sido sincronizados al espejo local.
+            </summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetClasesActivasEnRutaFromCentralAsync">
+            <summary>Prácticas en ruta en SIGAFI (ensalida=1, no canceladas).</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetAlertasVehiculoDesdeCentralAsync">
+            <summary>Vehículos inactivos en SIGAFI (p. ej. alerta operativa).</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.GetTodayCompletedPracticesAsync(System.Int32)">
+            <summary>Historial de retornos de hoy (completados).</summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.InvalidateSigafiCatalogCache">
+            <summary>
+            Invalida todas las entradas de caché de catálogos SIGAFI.
+            Llamar antes de un MasterSync para garantizar datos frescos.
+            </summary>
+        </member>
+        <member name="M:backend.Services.Interfaces.ICentralStudentProvider.CancelPracticeInCentralAsync(System.Int32)">
+            <summary>Libera un registro en la base central (cancelado=1, ensalida=0).</summary>
+        </member>
+        <member name="T:backend.Services.Interfaces.IEstudianteService">
+            Student Search Service: Refactored for Absolute SIGAFI Parity 2026.
+        </member>
+        <member name="T:backend.Services.Interfaces.ILogisticaService">
+            Interface for specialized Logistics Management
+            Uses SQL Stored Procedures for business logic integrity.
+        </member>
+        <member name="T:backend.Services.Interfaces.ISigafiMirrorPersistenceService">
+            <summary>
+            Persiste en <c>istpet_vehiculos</c> los datos obtenidos de SIGAFI durante el uso normal
+            (además del Master Sync), para que el sistema siga operando si SIGAFI no está disponible.
+            </summary>
+        </member>
+        <member name="T:backend.Services.Interfaces.ISigafiReportService">
+            <summary>
+            Reportes leídos de la instancia MySQL SIGAFI configurada en appsettings (servidor = fuente de verdad).
+            </summary>
+        </member>
+    </members>
+</doc>
