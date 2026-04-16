@@ -441,11 +441,7 @@ namespace backend.Services.Implementations
                     JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE (p.fecha >= CURDATE() - INTERVAL 1 DAY)
-                    AND (
-                        -- Solo filtrar por cancelado si la columna existe o asumir 0
-                        NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'sigafi_es' AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado')
-                        OR p.cancelado = 0
-                    )
+                    AND COALESCE(p.cancelado, 0) = 0
                       AND p.fecha >= CURDATE() - INTERVAL 1 DAY
                       AND NOT EXISTS (
                           SELECT 1 
@@ -547,10 +543,7 @@ namespace backend.Services.Implementations
                     JOIN profesores pr ON pr.idProfesor = p.idProfesor
                     WHERE p.hora_llegada IS NULL
                     AND p.fecha >= CURDATE()
-                    AND (
-                        NOT EXISTS (SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = 'sigafi_es' AND TABLE_NAME = 'cond_alumnos_practicas' AND COLUMN_NAME = 'cancelado')
-                        OR p.cancelado = 0
-                    )
+                    AND COALESCE(p.cancelado, 0) = 0
                     AND TRIM(p.idalumno) IN ({inClause})
                     ORDER BY p.idalumno ASC, p.fecha ASC, p.hora_salida ASC";
 
@@ -758,9 +751,9 @@ SELECT
     p.fecha,
     p.hora_salida
 FROM cond_alumnos_practicas p
-INNER JOIN alumnos a ON a.idAlumno = p.idalumno
-INNER JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
-INNER JOIN profesores pr ON pr.idProfesor = p.idProfesor
+LEFT JOIN alumnos a ON TRIM(a.idAlumno) = TRIM(p.idalumno)
+LEFT JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
+LEFT JOIN profesores pr ON TRIM(pr.idProfesor) = TRIM(p.idProfesor)
 WHERE COALESCE(p.cancelado, 0) = 0 AND COALESCE(p.ensalida, 0) = 1";
 
                 await using var conn = new MySqlConnection(_connectionString);
@@ -1217,7 +1210,10 @@ WHERE COALESCE(activo, 1) = 0";
 
                         await trans.CommitAsync();
                         _logger.LogInformation("Práctica {idPractica} cancelada exitosamente en SIGAFI Central.", idPractica);
-                        return affected > 0;
+                        
+                        // [IDEMPOTENCIA] Retornamos true siempre que hayamos llegado aquí sin errores.
+                        // Si affected == 0, simplemente significa que ya no estaba activa, lo cual es éxito operativo.
+                        return true;
                     }
                     catch (Exception ex)
                     {

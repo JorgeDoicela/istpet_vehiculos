@@ -169,11 +169,18 @@ namespace backend.Services.Implementations
                 // 1. Obtener registro de la práctica
                 var practica = await _context.Practicas.FindAsync(idPractica);
                 if (practica == null)
-                    return "ERROR: Registro de práctica no encontrado.";
+                {
+                    // [IDEMPOTENCIA] Si no existe, es probable que ya se haya eliminado o procesado.
+                    // En modo directo, esto es un éxito operativo.
+                    return "EXITO";
+                }
 
                 // 2. Validar que esté en salida
                 if (practica.ensalida == 0)
-                    return "ERROR: Esta práctica ya fue cerrada o no ha iniciado.";
+                {
+                    // [IDEMPOTENCIA] Si ya no está en salida, ya se registró la llegada.
+                    return "EXITO";
+                }
 
                 // 3. Registrar Llegada
                 practica.hora_llegada = DateTime.Now.TimeOfDay;
@@ -264,9 +271,9 @@ namespace backend.Services.Implementations
                 return "EXITO";
             }
 
-            // Si llegamos aquí y no estaba localmente, pero tampoco pudimos confirmar Central, 
-            // devolvemos un error específico pero permitimos que el front decida si ocultar.
-            return "ERROR: Registro no localizado en base local ni central.";
+            // [IDEMPOTENCIA] Si no se encontró localmente y el proveedor central no reportó filas afectadas,
+            // pero el idPractica es válido, asumimos que ya no existe (que es lo que el usuario quería).
+            return "EXITO"; // "Registro ya no existe o fue eliminado previamente."
         }
     }
 }

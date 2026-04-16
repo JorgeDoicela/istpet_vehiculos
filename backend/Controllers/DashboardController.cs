@@ -49,28 +49,57 @@ namespace backend.Controllers
             try
             {
                 List<ClaseActiva> desdeLocal = new();
+                bool vistaFallo = false;
                 try
                 {
                     desdeLocal = await _context.ClasesActivas.ToListAsync();
+                    _logger.LogInformation("[SYNC] Vista v_clases_activas devolvió {count} filas.", desdeLocal.Count);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Vista local v_clases_activas no disponible; se usa solo SIGAFI.");
+                    vistaFallo = true;
+                    _logger.LogWarning(ex, "[SYNC-WARN] Error mapeando v_clases_activas. Probable desajuste de columnas.");
                 }
 
-                // [OPTIMIZACIÓN DIRECTA] Si estamos en modo directo, la vista local apunta a SIGAFI
-                // por lo que no hace falta preguntar a _central y luego mezclar.
-                var merged = desdeLocal; 
-                if (!desdeLocal.Any()) {
-                    merged = (await _central.GetClasesActivasEnRutaFromCentralAsync()).ToList();
+                // [OPTIMIZACIÓN DIRECTA] 
+                var finalResult = desdeLocal; 
+                if (vistaFallo || !desdeLocal.Any()) {
+                    _logger.LogInformation("[SYNC] Intentando fallback central por falta de datos o error en vista.");
+                    var central = (await _central.GetClasesActivasEnRutaFromCentralAsync()).ToList();
+                    _logger.LogInformation("[SYNC] Fallback central devolvió {count} filas.", central.Count);
+                    finalResult = central;
                 }
 
-                return Ok(ApiResponse<IEnumerable<ClaseActiva>>.Ok(merged,
-                    "Datos directos de SIGAFI (vía vista v_clases_activas)."));
+                return Ok(ApiResponse<IEnumerable<ClaseActiva>>.Ok(finalResult,
+                    "Sincronización de clases activas completada."));
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "[SYNC-ERR] Error fatal en GetClasesActivas.");
                 return StatusCode(500, ApiResponse<IEnumerable<ClaseActiva>>.Fail($"Dashboard Error: {ex.Message}"));
+            }
+        }
+
+        [HttpGet("clases-activas-raw")]
+        public async Task<ActionResult<ApiResponse<object>>> GetClasesActivasRaw()
+        {
+            try
+            {
+                // Consulta ultra-basica para ver que hay en la tabla pilar
+                var raw = await _context.Practicas
+                    .Where(p => p.ensalida == 1 && (p.cancelado == 0 || p.cancelado == null))
+                    .Select(p => new { p.idPractica, p.idalumno, p.idvehiculo, p.ensalida, p.cancelado, p.fecha })
+                    .ToListAsync();
+
+                return Ok(ApiResponse<object>.Ok(new { 
+                    count = raw.Count, 
+                    data = raw,
+                    connection = _context.Database.GetDbConnection().ConnectionString.Split(';').FirstOrDefault(s => s.StartsWith("Server") || s.StartsWith("Database"))
+                }, "Datos crudos de cond_alumnos_practicas."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<object>.Fail(ex.Message));
             }
         }
 

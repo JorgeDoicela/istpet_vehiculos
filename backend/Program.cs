@@ -517,19 +517,19 @@ await using (var scope = app.Services.CreateAsyncScope())
             SELECT
                 p.idPractica AS id_registro,
                 p.idalumno AS idAlumno,
-                e.primerNombre AS primer_nombre,
-                e.apellidoPaterno AS apellido_paterno,
-                COALESCE(CONCAT(e.apellidoPaterno, ' ', e.primerNombre), p.idalumno) AS estudiante,
+                COALESCE(e.primerNombre, '') AS primer_nombre,
+                COALESCE(e.apellidoPaterno, '') AS apellido_paterno,
+                COALESCE(TRIM(CONCAT(e.apellidoPaterno, ' ', e.primerNombre)), p.idalumno) AS estudiante,
                 v.idVehiculo AS id_vehiculo,
                 v.numero_vehiculo AS numero_vehiculo,
                 v.placa AS placa,
-                COALESCE(CONCAT(i.primerApellido, ' ', i.primerNombre), p.idProfesor) AS instructor,
+                COALESCE(TRIM(CONCAT(i.primerApellido, ' ', i.primerNombre)), p.idProfesor) AS instructor,
                 p.hora_salida AS salida
             FROM cond_alumnos_practicas p
-            LEFT JOIN alumnos e ON p.idalumno = e.idAlumno
+            LEFT JOIN alumnos e ON TRIM(p.idalumno) = TRIM(e.idAlumno)
             LEFT JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
-            LEFT JOIN profesores i ON p.idProfesor = i.idProfesor
-            WHERE p.ensalida = 1 AND p.cancelado = 0",
+            LEFT JOIN profesores i ON TRIM(p.idProfesor) = TRIM(i.idProfesor)
+            WHERE p.ensalida = 1 AND COALESCE(p.cancelado, 0) = 0",
 
             @"CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
             SELECT

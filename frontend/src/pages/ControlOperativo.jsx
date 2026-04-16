@@ -63,6 +63,8 @@ const ControlOperativo = () => {
     const [claseSeleccionada, setClaseSeleccionada] = useState(null);
     const [horaRetorno, setHoraRetorno] = useState('');
     const [fechaHoy, setFechaHoy] = useState('');
+    const [lastSync, setLastSync] = useState(new Date());
+    const [clockSkew, setClockSkew] = useState(0);
     const [agendadosHoy, setAgendadosHoy] = useState([]);
     const [agendaFuente, setAgendaFuente] = useState('sigafi');
     const [agendaObtenidoEn, setAgendaObtenidoEn] = useState(null);
@@ -74,6 +76,8 @@ const ControlOperativo = () => {
     const [isSearchingInstructor, setIsSearchingInstructor] = useState(false);
     const [filtroLlegada, setFiltroLlegada] = useState('');
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
+    const [salidaSubmitting, setSalidaSubmitting] = useState(false);
+    const [clasesLoading, setClasesLoading] = useState(false);
     /** Salida animada tras confirmar llegada o eliminar salida: { idPractica, mode } */
     const [llegadaExit, setLlegadaExit] = useState(null);
     /** Control de salida animada (sent/success) */
@@ -86,7 +90,6 @@ const ControlOperativo = () => {
         onConfirm: () => { },
         type: 'info'
     });
-    const [clockSkew, setClockSkew] = useState(0); // Desfase en ms (ServerTime - ClientTime)
 
     const showNotification = (message, type = 'success') => {
         setNotification({ message, type });
@@ -199,6 +202,19 @@ const ControlOperativo = () => {
             cargarInstructores();
             cargarAgendadosHoy();
         }
+    }, [activeTab]);
+
+    // [POLLING] Refresco automático cada 15s para auto-sanar tras reinicios del backend.
+    // cargarClasesActivas se refresca siempre (panel Llegada siempre activo).
+    // cargarAgendadosHoy solo si está en la pestaña 'salida'.
+    useEffect(() => {
+        const poll = setInterval(() => {
+            cargarClasesActivas();
+            if (activeTab === 'salida') {
+                cargarAgendadosHoy();
+            }
+        }, 15000); // cada 15 segundos
+        return () => clearInterval(poll);
     }, [activeTab]);
 
     const cargarAgendadosHoy = async () => {
@@ -357,16 +373,22 @@ const ControlOperativo = () => {
     };
 
     const cargarClasesActivas = async () => {
+        setClasesLoading(true);
         try {
-            const { clases, serverTime } = await dashboardService.getClasesActivas();
-            setClasesActivas(clases);
-            if (serverTime) {
-                const sTime = new Date(serverTime).getTime();
+            const result = await dashboardService.getClasesActivas();
+            const list = result.clases || [];
+            setClasesActivas(list);
+            publishClasesActivas(list);
+            setLastSync(new Date());
+            if (result.serverTime) {
+                const sTime = new Date(result.serverTime).getTime();
                 const cTime = new Date().getTime();
                 setClockSkew(sTime - cTime);
             }
         } catch (e) {
-            showNotification('Error cargando vehículos en pista', 'error');
+            // [RESILIENCIA] Si el backend no responde, limpiamos la lista
+            // para evitar mostrar registros "fantasma" de operaciones ya procesadas.
+            setClasesActivas([]);
         }
     };
 
@@ -474,6 +496,9 @@ const ControlOperativo = () => {
             showNotification('Faltan datos (Estudiante, Vehículo o Instructor)', 'error');
             return;
         }
+        // [GUARD] Evitar doble envío por doble clic en modal
+        if (salidaSubmitting) return;
+        setSalidaSubmitting(true);
         try {
             await logisticaService.registrarSalida({
                 idMatricula: estudianteData.idMatricula,
@@ -492,6 +517,7 @@ const ControlOperativo = () => {
                 setVehiculoSeleccionado(null);
                 setInstructorSeleccionado(null);
                 setFiltroLicencia(null);
+                setSalidaSubmitting(false);
                 cargarVehiculosDisponibles();
                 cargarClasesActivas(); // Refrescar pestaña Llegada inmediatamente
                 cargarAgendadosHoy(); // Refrescar Agenda (ahora filtrado por asiste=1)
@@ -500,6 +526,7 @@ const ControlOperativo = () => {
         } catch (err) {
             const apiMsg = getApiErrorMessage(err, 'No se pudo registrar la salida.');
             showNotification(apiMsg, 'error');
+            setSalidaSubmitting(false);
         }
     };
 
@@ -562,10 +589,12 @@ const ControlOperativo = () => {
         try {
             await logisticaService.eliminarSalida(idPractica);
             showNotification('Registro eliminado y agenda liberada');
+            // [OPTIMISTA] Eliminar inmediatamente del estado local para evitar registros fantasma.
+            setClasesActivas(prev => prev.filter(c => c.idPractica !== idPractica));
+            setClaseSeleccionada(null);
             setLlegadaExit({ idPractica, mode: 'remove' });
             window.setTimeout(() => {
                 setLlegadaExit(null);
-                setClaseSeleccionada(null);
                 cargarClasesActivas();
                 cargarAgendadosHoy();
                 setLlegadaSubmitting(false);
@@ -580,10 +609,12 @@ const ControlOperativo = () => {
 
             if (isNotFound) {
                 showNotification('El registro ya no existe en el sistema. Actualizando...');
+                // [OPTIMISTA] También limpiar en caso de "ya no existe"
+                setClasesActivas(prev => prev.filter(c => c.idPractica !== idPractica));
+                setClaseSeleccionada(null);
                 setLlegadaExit({ idPractica, mode: 'remove' });
                 window.setTimeout(() => {
                     setLlegadaExit(null);
-                    setClaseSeleccionada(null);
                     cargarClasesActivas();
                     cargarAgendadosHoy();
                     setLlegadaSubmitting(false);
@@ -1080,9 +1111,11 @@ const ControlOperativo = () => {
                                             className="w-full bg-[var(--apple-bg)] border border-[var(--apple-border)] rounded-full pl-10 pr-4 py-2.5 text-xs font-semibold text-[var(--apple-text-main)] placeholder:text-[var(--apple-text-sub)]/40 outline-none transition-colors shadow-[inset_0_1px_1px_rgba(0,0,0,0.05)] focus:border-[var(--istpet-gold)] focus:ring-1 focus:ring-[var(--istpet-gold)]/20"
                                         />
                                     </div>
-                                    <p className="mt-2 text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.1em] px-1 tabular-nums">
-                                        {clasesActivas.length} vehículo{clasesActivas.length !== 1 ? 's' : ''} en pista
-                                    </p>
+                                    <div className="mt-2 flex items-center justify-between px-1">
+                                        <p className="text-[9px] font-bold text-[var(--apple-text-sub)] uppercase tracking-[0.1em] tabular-nums">
+                                            {clasesActivas.length} vehículo{clasesActivas.length !== 1 ? 's' : ''} en pista
+                                        </p>
+                                    </div>
                                 </div>
 
                                 <div className={llegadaExit ? 'pointer-events-none' : ''}>
