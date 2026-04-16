@@ -842,13 +842,7 @@ const ControlOperativo = () => {
 
                                                 {/* TICKET DE VERIFICACION UNIFICADO */}
                                                 <div className="relative z-10 mt-8 pt-6 border-t-2 border-dashed border-[var(--apple-border)]">
-                                                    {/* Badge de Listo */}
-                                                    {vehiculoSeleccionado && instructorSeleccionado && !estudianteData.isBusy && (
-                                                        <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-5 py-1.5 rounded-full text-[11px] lg:text-xs font-black tracking-widest uppercase shadow-md flex items-center gap-2 animate-bounce-slow">
-                                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                                                            LISTO PARA SALIDA
-                                                        </div>
-                                                    )}
+
 
                                                     <div className="flex flex-col gap-2">
                                                         {/* Fila Vehículo */}
