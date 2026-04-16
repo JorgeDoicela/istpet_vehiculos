@@ -1,5 +1,5 @@
 const CACHE_NAME = 'istpet-cache-v1'
-const APP_SHELL = ['/', '/manifest.webmanifest', '/pwa-icon.svg']
+const APP_SHELL = ['/logistica/', '/logistica/manifest.webmanifest', '/logistica/pwa-icon.svg']
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -31,7 +31,7 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, cloned))
           return networkResponse
         })
-        .catch(() => caches.match('/'))
+        .catch(() => caches.match('/logistica/'))
     })
   )
 })

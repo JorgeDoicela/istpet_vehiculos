@@ -31,6 +31,10 @@ scp "./$BUNDLE_NAME" "${SSH_USER}@${SERVER_IP}:Desktop/"
 # 4. Instalación Remota (Con visibilidad total)
 Write-Host "==> Ejecutando instalación remota..." -ForegroundColor Green
 $Commands = @(
+    "Import-Module WebAdministration -ErrorAction SilentlyContinue",
+    "Write-Output '--- SERVIDOR: Gestionando Bloqueos (IIS Recycle) ---'",
+    "$pools = Get-ChildItem 'IIS:\AppPools\' | Where-Object { $_.name -like '*Logistica*' }",
+    "foreach ($p in $pools) { Write-Output ('Deteniendo Pool: ' + $p.name); Stop-WebAppPool -Name $p.name -ErrorAction SilentlyContinue; Start-Sleep -s 1 }",
     "Write-Output '--- SERVIDOR: Iniciando Extracción ---'",
     "if (!(Test-Path 'C:\temp_deploy')) { New-Item -ItemType Directory -Path 'C:\temp_deploy' }",
     "Expand-Archive -Path 'C:\Users\Administrador\Desktop\$BUNDLE_NAME' -DestinationPath 'C:\temp_deploy' -Force",
@@ -38,6 +42,7 @@ $Commands = @(
     "robocopy 'C:\temp_deploy\backend' 'C:\inetpub\wwwroot\apiLogistica' /E /R:3 /W:5",
     "Write-Output '--- SERVIDOR: Copiando Frontend ---'",
     "robocopy 'C:\temp_deploy\frontend' 'C:\inetpub\wwwroot\logistica' /E /R:3 /W:5",
+    "foreach ($p in $pools) { Write-Output ('Iniciando Pool: ' + $p.name); Start-WebAppPool -Name $p.name -ErrorAction SilentlyContinue }",
     "Remove-Item -Path 'C:\temp_deploy' -Recurse -Force",
     "Remove-Item -Path 'C:\Users\Administrador\Desktop\$BUNDLE_NAME' -Force",
     "Write-Output '--- SERVIDOR: Proceso Finalizado ---'"
