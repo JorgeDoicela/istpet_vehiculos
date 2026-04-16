@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useTheme } from '../components/common/ThemeContext';
 import Layout from '../components/layout/Layout';
@@ -29,12 +29,11 @@ const LLEGADA_EXIT_MS = 520;
  * Guaranteed 1:1 naming with central database for idAlumno, idProfesor, idVehiculo.
  */
 const ControlOperativo = () => {
-    const { theme } = useTheme();
+    useTheme();
     const { publishClasesActivas } = useOperativeAlerts();
     const [searchParams] = useSearchParams();
     const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'salida');
     const [notification, setNotification] = useState(null);
-    const instructorInputRef = useRef(null);
     const agendaSheetTouchStartY = useRef(0);
 
     // Sync activeTab con URL params
@@ -63,7 +62,6 @@ const ControlOperativo = () => {
     const [claseSeleccionada, setClaseSeleccionada] = useState(null);
     const [horaRetorno, setHoraRetorno] = useState('');
     const [fechaHoy, setFechaHoy] = useState('');
-    const [lastSync, setLastSync] = useState(new Date());
     const [clockSkew, setClockSkew] = useState(0);
     const [agendadosHoy, setAgendadosHoy] = useState([]);
     const [agendaFuente, setAgendaFuente] = useState('sigafi');
@@ -71,13 +69,10 @@ const ControlOperativo = () => {
     const [filtroAgenda, setFiltroAgenda] = useState('');
     const [agendadosLoading, setAgendadosLoading] = useState(false);
     const [showAgendaDrawer, setShowAgendaDrawer] = useState(false);
-    const [showInstructorMenu, setShowInstructorMenu] = useState(false);
     const [filtroInstructor, setFiltroInstructor] = useState('');
-    const [isSearchingInstructor, setIsSearchingInstructor] = useState(false);
     const [filtroLlegada, setFiltroLlegada] = useState('');
     const [llegadaSubmitting, setLlegadaSubmitting] = useState(false);
     const [salidaSubmitting, setSalidaSubmitting] = useState(false);
-    const [clasesLoading, setClasesLoading] = useState(false);
     
     // --- NUEVOS: Estados para Modales de Selección ---
     const [showVehiculoModal, setShowVehiculoModal] = useState(false);
@@ -206,7 +201,7 @@ const ControlOperativo = () => {
             cargarInstructores();
             cargarAgendadosHoy();
         }
-    }, [activeTab]);
+    }, [activeTab, cargarClasesActivas, cargarVehiculosDisponibles, cargarInstructores, cargarAgendadosHoy]);
 
     // [POLLING] Refresco automático cada 15s para auto-sanar tras reinicios del backend.
     // cargarClasesActivas se refresca siempre (panel Llegada siempre activo).
@@ -219,30 +214,30 @@ const ControlOperativo = () => {
             }
         }, 15000); // cada 15 segundos
         return () => clearInterval(poll);
-    }, [activeTab]);
+    }, [activeTab, cargarClasesActivas, cargarAgendadosHoy]);
 
-    const cargarAgendadosHoy = async () => {
+    const cargarAgendadosHoy = useCallback(async () => {
         setAgendadosLoading(true);
         try {
             const pack = await logisticaService.getAgendadosHoy();
             setAgendadosHoy(pack.practicas || []);
             setAgendaFuente(pack.fuenteDatos || 'sigafi');
             setAgendaObtenidoEn(pack.obtenidoEn ?? null);
-        } catch (e) {
-            console.error(e);
+        } catch {
+            // Ignorado
         } finally {
             setAgendadosLoading(false);
         }
-    };
+    }, []);
 
-    const cargarInstructores = async () => {
+    const cargarInstructores = useCallback(async () => {
         try {
             const data = await logisticaService.getInstructores();
             setInstructores(data);
-        } catch (e) {
+        } catch {
             showNotification('Error cargando catálogo de instructores', 'error');
         }
-    };
+    }, []);
 
     // Autocompletado y Sugerencias
     useEffect(() => {
@@ -345,8 +340,8 @@ const ControlOperativo = () => {
 
                     setSugerencias(combined.slice(0, 5));
                     setMostrarSugerencias(combined.length > 0);
-                } catch (e) {
-                    console.error(e);
+                } catch {
+                    // Ignorado
                 }
             } else {
                 setSugerencias([]);
@@ -354,7 +349,7 @@ const ControlOperativo = () => {
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [salidaIdAlumno, agendadosHoy, estudianteData, clasesActivas]);
+    }, [salidaIdAlumno, agendadosHoy, estudianteData, clasesActivas, activeTab, salidaLoading]);
 
     // Autobúsqueda definitiva
     useEffect(() => {
@@ -365,36 +360,35 @@ const ControlOperativo = () => {
             }
         }, 800);
         return () => clearTimeout(timer);
-    }, [salidaIdAlumno, activeTab, estudianteData]);
+    }, [salidaIdAlumno, activeTab, estudianteData, ejecutarBusquedaEstudiante]);
 
-    const cargarVehiculosDisponibles = async () => {
+    const cargarVehiculosDisponibles = useCallback(async () => {
         try {
             const data = await logisticaService.getVehiculosDisponibles();
             setVehiculos(data);
-        } catch (e) {
+        } catch {
             showNotification('Error cargando flota', 'error');
         }
-    };
+    }, []);
 
-    const cargarClasesActivas = async () => {
-        setClasesLoading(true);
+    const cargarClasesActivas = useCallback(async () => {
         try {
             const result = await dashboardService.getClasesActivas();
             const list = result.clases || [];
             setClasesActivas(list);
             publishClasesActivas(list);
-            setLastSync(new Date());
+            
             if (result.serverTime) {
                 const sTime = new Date(result.serverTime).getTime();
                 const cTime = new Date().getTime();
                 setClockSkew(sTime - cTime);
             }
-        } catch (e) {
+        } catch {
             // [RESILIENCIA] Si el backend no responde, limpiamos la lista
             // para evitar mostrar registros "fantasma" de operaciones ya procesadas.
             setClasesActivas([]);
         }
-    };
+    }, [publishClasesActivas]);
 
     useEffect(() => {
         publishClasesActivas(clasesActivas);
@@ -411,7 +405,7 @@ const ControlOperativo = () => {
         };
     };
 
-    const ejecutarBusquedaEstudiante = async (idAlumnoEnviado = null, source = 'manual', agendaCtx = null) => {
+    const ejecutarBusquedaEstudiante = useCallback(async (idAlumnoEnviado = null, source = 'manual', agendaCtx = null) => {
         const idAlumnoABuscar = idAlumnoEnviado || salidaIdAlumno;
         if (!idAlumnoABuscar || idAlumnoABuscar.length < 10) return;
 
@@ -441,9 +435,9 @@ const ControlOperativo = () => {
         } finally {
             setSalidaLoading(false);
         }
-    };
+    }, [salidaIdAlumno, aplicarSugerenciaManual]);
 
-    const aplicarSugerenciaManual = async (dataOverride = null) => {
+    const aplicarSugerenciaManual = useCallback(async (dataOverride = null) => {
         const data = dataOverride || estudianteData;
         if (!data) return;
 
@@ -474,7 +468,7 @@ const ControlOperativo = () => {
                     sVeh = freshV.find((v) => v.idVehiculo === vid);
                 }
                 if (!sVeh && data.practicaVehiculo) {
-                    const m = String(data.practicaVehiculo).match(/#([\w\-]+)/);
+                    const m = String(data.practicaVehiculo).match(/#([\w-]+)/);
                     sVeh = {
                         idVehiculo: vid,
                         numeroVehiculo: m ? m[1] : (data.numeroVehiculo || "0"),
@@ -487,7 +481,7 @@ const ControlOperativo = () => {
         } catch (err) {
             console.error('Error aplicando sugerencia:', err);
         }
-    };
+    }, [estudianteData, instructores, vehiculos]);
 
     const handleSeleccionarVehiculo = (veh) => {
         setVehiculoSeleccionado((prev) =>

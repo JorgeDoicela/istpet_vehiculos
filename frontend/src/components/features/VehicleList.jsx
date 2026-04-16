@@ -15,7 +15,7 @@ const VehicleList = ({ vehicles }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
         {safeVehicles.map((v) => (
-          <div key={v.id_Vehiculo || v.id_vehiculo || Math.random()} className="apple-card group">
+          <div key={v.id_Vehiculo || v.id_vehiculo || v.placa || v.numero_vehiculo} className="apple-card group">
             <div className="flex justify-between items-start mb-10">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 bg-[var(--apple-bg)] rounded-3xl flex items-center justify-center text-[var(--apple-text-main)] shadow-xl border border-[var(--apple-border)] group-hover:scale-110 transition-transform duration-700">

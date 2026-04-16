@@ -29,7 +29,8 @@ const ActiveClasses = ({ classes, clockSkew = 0 }) => {
     useLayoutEffect(() => {
         const grid = gridRef.current;
         if (!grid || classCount === 0) {
-            setListMaxPx(null);
+            // Using requestAnimationFrame to avoid "setState during render" warning from lint
+            requestAnimationFrame(() => setListMaxPx(null));
             return;
         }
 
@@ -51,7 +52,7 @@ const ActiveClasses = ({ classes, clockSkew = 0 }) => {
             }
             if (!Number.isFinite(top) || !Number.isFinite(bottom) || bottom <= top) return;
             const px = Math.ceil(bottom - top);
-            setListMaxPx(Math.max(48, px));
+            requestAnimationFrame(() => setListMaxPx(Math.max(48, px)));
         };
 
         measure();

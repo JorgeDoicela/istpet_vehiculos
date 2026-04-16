@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useTheme } from '../components/common/ThemeContext';
 import './Login.css';
 
@@ -13,7 +13,6 @@ const Login = () => {
     const { login, isAuthenticated } = useAuth();
     const { theme, toggleTheme } = useTheme();
     const navigate = useNavigate();
-    const location = useLocation();
 
     // Redirigir si ya está autenticado
     useEffect(() => {

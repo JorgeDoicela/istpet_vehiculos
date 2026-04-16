@@ -17,7 +17,7 @@ const Students = () => {
             const data = await studentService.getByIdAlumno(idAlumno);
             setStudent(data);
             toastSuccess('Estudiante localizado con éxito');
-        } catch (err) {
+        } catch {
             toastError('No se encontró ningún estudiante con esa identificación');
         } finally {
             setLoading(false);

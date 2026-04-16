@@ -12,7 +12,7 @@ const placaDesdeVehiculoStr = (str) => {
     return s.split(' - ')[0]?.trim() || '---';
 };
 
-const VehicleCard = ({ vehiculo, isSelected, isSuggested, onSelect }) => {
+const VehicleCard = ({ vehiculo, isSelected, onSelect }) => {
     // Exact mapping from refactored DTO
     const numero = vehiculo.numeroVehiculo || vehiculo.vehiculoStr?.split('#').pop() || '??';
     const placa = placaDesdeVehiculoStr(vehiculo.vehiculoStr);

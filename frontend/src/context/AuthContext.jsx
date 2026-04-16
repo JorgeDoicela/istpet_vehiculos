@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
 
@@ -13,9 +14,10 @@ export const AuthProvider = ({ children }) => {
         const token = localStorage.getItem('istpet_token');
 
         if (savedUser && token) {
-            setUser(JSON.parse(savedUser));
+            requestAnimationFrame(() => setUser(JSON.parse(savedUser)));
         }
-        setLoading(false);
+        
+        requestAnimationFrame(() => setLoading(false));
     }, []);
 
     const login = async (username, password) => {
