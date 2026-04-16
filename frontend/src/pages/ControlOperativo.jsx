@@ -829,95 +829,91 @@ const ControlOperativo = () => {
                                                                         {estudianteData.horarioFecha && `${estudianteData.horarioFecha} · `}{estudianteData.horarioProximo}
                                                                     </p>
                                                                 )}
-                                                                {(estudianteData.vehiculoPlanificado || estudianteData.instructorPlanificado) && (
-                                                                    <p className="text-[10px] font-bold text-[var(--apple-primary)]/65 uppercase leading-snug">
-                                                                        {estudianteData.vehiculoPlanificado}{estudianteData.instructorPlanificado && ` · ${estudianteData.instructorPlanificado}`}
-                                                                    </p>
-                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
 
                                                     {/* Jornada */}
-                                                    <div className="shrink-0 text-right pt-0.5">
+                                                    <div className="shrink-0 text-right pt-0.5 relative z-10 flex flex-col items-end">
                                                         <span className="block text-[7px] font-black text-[var(--apple-text-sub)] uppercase tracking-widest opacity-50 mb-1">Jornada</span>
                                                         <span className="block text-[10px] font-black text-[var(--apple-text-main)] uppercase leading-none">{estudianteData.jornada}</span>
                                                     </div>
                                                 </div>
-                                                <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[var(--apple-primary)]/[0.03] to-transparent skew-x-12 translate-x-12 group-hover:translate-x-8 transition-transform duration-700"></div>
-                                            </div>
-                                        </div>
-                                    ) : !salidaLoading && salidaIdAlumno.length >= 1 && (
-                                        <div className="p-8 border-2 border-dashed border-[var(--apple-border)] rounded-[2rem] text-center">
-                                            <p className="text-[var(--apple-text-sub)] font-bold text-sm uppercase">Ingrese la cédula para identificar al estudiante</p>
-                                        </div>
-                                    )}
 
-                                    {estudianteData && (
-                                        <div className="pt-4 space-y-4 animate-apple-in">
-                                            <p className="text-[9px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] px-2">Verificación de Salida</p>
-                                            
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                {/* Card de Vehículo */}
-                                                <button
-                                                    onClick={() => setShowVehiculoModal(true)}
-                                                    className={`apple-glass p-4 rounded-[1.8rem] text-left transition-all group relative overflow-hidden ${!vehiculoSeleccionado ? 'border-dashed border-2 animate-pulse' : 'border-2 border-transparent hover:border-[var(--istpet-gold)]/30'}`}
-                                                >
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">Vehículo</span>
-                                                        <svg className="w-3.5 h-3.5 text-[var(--apple-text-sub)] opacity-40 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
-                                                    </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-xl ${!vehiculoSeleccionado ? 'bg-slate-100 text-slate-400' : 'bg-[var(--istpet-gold)]/10 text-[var(--istpet-gold)]'}`}>
-                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg>
+                                                {/* TICKET DE VERIFICACION UNIFICADO */}
+                                                <div className="relative z-10 mt-6 pt-5 border-t-2 border-dashed border-[var(--apple-border)]">
+                                                    {/* Badge de Listo */}
+                                                    {vehiculoSeleccionado && instructorSeleccionado && !estudianteData.isBusy && (
+                                                        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-emerald-500 text-white px-3 py-1 rounded-full text-[9px] font-black tracking-widest uppercase shadow-sm flex items-center gap-1.5 animate-bounce-slow">
+                                                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
+                                                            LISTO PARA SALIDA
                                                         </div>
-                                                        <div className="min-w-0">
-                                                            <p className={`text-sm font-black uppercase truncate ${!vehiculoSeleccionado ? 'text-slate-400 italic' : 'text-[var(--apple-text-main)]'}`}>
-                                                                {vehiculoSeleccionado ? `#${vehiculoSeleccionado.numeroVehiculo}` : 'Pendiente...'}
-                                                            </p>
-                                                            {vehiculoSeleccionado && <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase opacity-60 tracking-tighter truncate">{vehiculoSeleccionado.vehiculoStr || 'Activo'}</p>}
-                                                        </div>
-                                                    </div>
-                                                </button>
+                                                    )}
 
-                                                {/* Card de Instructor */}
-                                                <button
-                                                    onClick={() => setShowInstructorModal(true)}
-                                                    className={`apple-glass p-4 rounded-[1.8rem] text-left transition-all group relative overflow-hidden ${!instructorSeleccionado ? 'border-dashed border-2 animate-pulse' : 'border-2 border-transparent hover:border-[var(--istpet-gold)]/30'}`}
-                                                >
-                                                    <div className="flex items-center justify-between mb-1">
-                                                        <span className="text-[8px] font-black text-[var(--istpet-gold)] uppercase tracking-widest">Instructor</span>
-                                                        <svg className="w-3.5 h-3.5 text-[var(--apple-text-sub)] opacity-40 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M9 5l7 7-7 7" /></svg>
+                                                    <div className="flex flex-col gap-1">
+                                                        {/* Fila Vehículo */}
+                                                        <button 
+                                                            onClick={() => setShowVehiculoModal(true)}
+                                                            className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group ${!vehiculoSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
+                                                        >
+                                                            <div className="flex items-center gap-3.5">
+                                                                <div className={`p-2 rounded-xl ${!vehiculoSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
+                                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h8M8 11h8M5 15h14M4 19h16l-1.5-6h-13L4 19zm0 0v-2" /></svg>
+                                                                </div>
+                                                                <div className="text-left">
+                                                                    <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-0.5">Vehículo Asignado</span>
+                                                                    <p className={`text-sm font-black uppercase leading-none ${!vehiculoSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
+                                                                        {vehiculoSeleccionado ? `#${vehiculoSeleccionado.numeroVehiculo}` : 'Tocar para seleccionar vehículo'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <svg className="w-4 h-4 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                                        </button>
+
+                                                        {/* Fila Instructor */}
+                                                        <button 
+                                                            onClick={() => setShowInstructorModal(true)}
+                                                            className={`w-full flex items-center justify-between p-3 rounded-2xl transition-all group ${!instructorSeleccionado ? 'bg-amber-500/10 hover:bg-amber-500/20' : 'hover:bg-[var(--apple-bg)]'}`}
+                                                        >
+                                                            <div className="flex items-center gap-3.5">
+                                                                <div className={`p-2 rounded-xl ${!instructorSeleccionado ? 'text-amber-500 bg-amber-500/10' : 'text-[var(--apple-text-main)] bg-[var(--apple-bg)] group-hover:bg-[var(--apple-border)]'}`}>
+                                                                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                                                                </div>
+                                                                <div className="text-left">
+                                                                    <span className="block text-[8px] font-black text-[var(--apple-text-sub)] uppercase tracking-[0.2em] mb-0.5">Instructor a Cargo</span>
+                                                                    <p className={`text-sm font-black uppercase leading-none truncate max-w-[180px] sm:max-w-xs ${!instructorSeleccionado ? 'text-amber-600' : 'text-[var(--apple-text-main)]'}`}>
+                                                                        {instructorSeleccionado ? instructorSeleccionado.fullName : 'Tocar para seleccionar instructor'}
+                                                                    </p>
+                                                                </div>
+                                                            </div>
+                                                            <svg className="w-4 h-4 text-[var(--apple-text-sub)] opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" /></svg>
+                                                        </button>
                                                     </div>
-                                                    <div className="flex items-center gap-3">
-                                                        <div className={`p-2 rounded-xl ${!instructorSeleccionado ? 'bg-slate-100 text-slate-400' : 'bg-[var(--istpet-gold)]/10 text-[var(--istpet-gold)]'}`}>
-                                                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <p className={`text-sm font-black uppercase truncate ${!instructorSeleccionado ? 'text-slate-400 italic' : 'text-[var(--apple-text-main)]'}`}>
-                                                                {instructorSeleccionado ? instructorSeleccionado.fullName : 'Pendiente...'}
-                                                            </p>
-                                                            <p className="text-[10px] font-bold text-[var(--apple-text-sub)] uppercase opacity-60 tracking-tighter">Instructor Asignado</p>
-                                                        </div>
-                                                    </div>
-                                                </button>
+                                                </div>
+
+                                                <div className="absolute top-0 right-0 h-full w-24 bg-gradient-to-l from-[var(--apple-primary)]/[0.03] to-transparent skew-x-12 translate-x-12 group-hover:translate-x-8 transition-transform duration-700 z-0"></div>
                                             </div>
 
+                                            {/* El botón de Salida Gigante se mantiene por fuera para darle peso */}
                                             <div className="pt-2">
                                                 <button
                                                     id="btn-registrar-salida"
                                                     onClick={handleProcesarSalida}
                                                     disabled={!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado}
-                                                    className={`w-full py-4 rounded-[2rem] text-sm font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30 shadow-none' : 'btn-apple-primary shadow-xl shadow-[var(--istpet-gold)]/20 hover:scale-[1.01] active:scale-[0.98]'}`}
+                                                    className={`w-full py-4 rounded-[2rem] text-base font-black transition-all ${(!estudianteData || estudianteData.isBusy || !vehiculoSeleccionado || !instructorSeleccionado) ? 'bg-[var(--apple-border)] text-[var(--apple-text-sub)] cursor-not-allowed opacity-30 shadow-none' : 'btn-apple-primary shadow-xl shadow-[var(--apple-primary)]/30 hover:scale-[1.01] active:scale-[0.98]'}`}
                                                 >
-                                                    {estudianteData.isBusy ? 'ESTUDIANTE EN PISTA' :
-                                                        !vehiculoSeleccionado ? 'FALTA SELECCIONAR VEHÍCULO' :
-                                                            !instructorSeleccionado ? 'FALTA SELECCIONAR INSTRUCTOR' :
-                                                                '✓ REGISTRAR SALIDA'}
+                                                    {estudianteData.isBusy ? 'ESTUDIANTE YA EN PISTA' :
+                                                        !vehiculoSeleccionado ? 'SELECCIONE EL VEHÍCULO PARA CONTINUAR' :
+                                                            !instructorSeleccionado ? 'SELECCIONE EL INSTRUCTOR PARA CONTINUAR' :
+                                                                '✓ CONFIRMAR Y REGISTRAR SALIDA'}
                                                 </button>
                                             </div>
                                         </div>
-                                    )}
+                                    ) : !salidaLoading && salidaIdAlumno.length >= 1 ? (
+                                        <div className="p-8 border-2 border-dashed border-[var(--apple-border)] rounded-[2rem] text-center">
+                                            <p className="text-[var(--apple-text-sub)] font-bold text-sm uppercase">Ingrese la cédula para identificar al estudiante</p>
+                                        </div>
+                                    ) : null}
 
                                     {/* Modal de Selección de Vehículo */}
                                     {showVehiculoModal && (
@@ -952,8 +948,19 @@ const ControlOperativo = () => {
                                                     </div>
 
                                                     <div className="flex bg-[var(--apple-bg)] p-1 rounded-[1.5rem] border border-[var(--apple-border)] shadow-sm shrink-0">
-                                                        {['C', 'D', 'E'].map(lic => (
-                                                            <button key={lic} onClick={() => setFiltroLicencia(filtroLicencia === lic ? null : lic)} className={`w-8 lg:w-10 h-7 lg:h-9 flex items-center justify-center rounded-[0.8rem] text-[9px] lg:text-[10px] font-black transition-all duration-300 select-none cursor-pointer ${filtroLicencia === lic ? 'bg-[var(--istpet-gold)] text-white shadow-sm shadow-[var(--istpet-gold)]/30' : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100'}`}>{lic}</button>
+                                                        {[
+                                                            { id: 'C', color: '#0ea5e9' },
+                                                            { id: 'D', color: '#f59e0b' },
+                                                            { id: 'E', color: '#6366f1' }
+                                                        ].map(lic => (
+                                                            <button 
+                                                                key={lic.id} 
+                                                                onClick={() => setFiltroLicencia(filtroLicencia === lic.id ? null : lic.id)} 
+                                                                className={`w-10 lg:w-12 h-8 lg:h-10 flex items-center justify-center rounded-[0.8rem] text-[10px] lg:text-[11px] font-black transition-all duration-300 select-none cursor-pointer ${filtroLicencia === lic.id ? 'text-white shadow-md' : 'text-[var(--apple-text-sub)] opacity-50 hover:opacity-100'}`}
+                                                                style={{ backgroundColor: filtroLicencia === lic.id ? lic.color : 'transparent', boxShadow: filtroLicencia === lic.id ? `0 4px 12px ${lic.color}40` : 'none' }}
+                                                            >
+                                                                {lic.id}
+                                                            </button>
                                                         ))}
                                                     </div>
                                                 </div>
@@ -969,7 +976,15 @@ const ControlOperativo = () => {
                                                                 return matchLicencia && matchFiltro;
                                                             });
 
-                                                            if (filtered.length === 0) return <div className="col-span-full py-12 text-center apple-glass rounded-[2rem] border-dashed border-2 opacity-40"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)]">Sin unidades disponibles</p></div>;
+                                                            if (filtered.length === 0) return (
+                                                                <div className="col-span-full py-16 flex flex-col items-center justify-center animate-apple-in">
+                                                                    <div className="w-20 h-20 bg-[var(--apple-bg)] rounded-full flex items-center justify-center mb-4 text-[var(--apple-border)] shadow-inner">
+                                                                        <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+                                                                    </div>
+                                                                    <p className="text-[11px] font-black uppercase tracking-[0.2em] text-[var(--apple-text-sub)] opacity-60">Sin unidades encontradas</p>
+                                                                    <p className="text-[9px] font-bold text-[var(--apple-text-sub)] opacity-40 mt-1 uppercase">Intente con otro número o categoría</p>
+                                                                </div>
+                                                            );
 
                                                             return filtered.map(v => (
                                                                 <VehicleCard
