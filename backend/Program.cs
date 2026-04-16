@@ -529,7 +529,10 @@ await using (var scope = app.Services.CreateAsyncScope())
             LEFT JOIN alumnos e ON TRIM(p.idalumno) = TRIM(e.idAlumno)
             LEFT JOIN vehiculos v ON p.idvehiculo = v.idVehiculo
             LEFT JOIN profesores i ON TRIM(p.idProfesor) = TRIM(i.idProfesor)
-            WHERE p.ensalida = 1 AND COALESCE(p.cancelado, 0) = 0",
+            WHERE p.ensalida = 1 
+              AND COALESCE(p.cancelado, 0) = 0 
+              AND p.hora_llegada IS NULL 
+              AND p.fecha >= (CURDATE() - INTERVAL 1 DAY)",
 
             @"CREATE OR REPLACE VIEW v_alerta_mantenimiento AS
             SELECT

@@ -61,13 +61,23 @@ namespace backend.Controllers
                     _logger.LogWarning(ex, "[SYNC-WARN] Error mapeando v_clases_activas. Probable desajuste de columnas.");
                 }
 
-                // [OPTIMIZACIÓN DIRECTA] 
-                var finalResult = desdeLocal; 
+                // [OPTIMIZACIÓN DIRECTA]
+                // En modo Directo, local y central son el mismo origen, pero el fallback usa SQL directo
+                // que es inmune a problemas de mapeo de la vista local.
+                var finalResult = desdeLocal;
                 if (vistaFallo || !desdeLocal.Any()) {
-                    _logger.LogInformation("[SYNC] Intentando fallback central por falta de datos o error en vista.");
+                    _logger.LogInformation("[SYNC] Intentando fallback central (SQL Directo) por falta de datos o error en vista.");
                     var central = (await _central.GetClasesActivasEnRutaFromCentralAsync()).ToList();
                     _logger.LogInformation("[SYNC] Fallback central devolvió {count} filas.", central.Count);
-                    finalResult = central;
+                    
+                    // Mezclamos por idPractica para evitar duplicados si la vista devolvió algo parcial
+                    var localIds = desdeLocal.Select(x => x.idPractica).ToHashSet();
+                    foreach(var c in central) {
+                        if (!localIds.Contains(c.idPractica)) {
+                            desdeLocal.Add(c);
+                        }
+                    }
+                    finalResult = desdeLocal;
                 }
 
                 return Ok(ApiResponse<IEnumerable<ClaseActiva>>.Ok(finalResult,
@@ -87,8 +97,11 @@ namespace backend.Controllers
             {
                 // Consulta ultra-basica para ver que hay en la tabla pilar
                 var raw = await _context.Practicas
-                    .Where(p => p.ensalida == 1 && (p.cancelado == 0 || p.cancelado == null))
-                    .Select(p => new { p.idPractica, p.idalumno, p.idvehiculo, p.ensalida, p.cancelado, p.fecha })
+                    .Where(p => p.ensalida == 1 
+                        && (p.cancelado == 0 || p.cancelado == null) 
+                        && p.hora_llegada == null
+                        && p.fecha >= DateTime.Today.AddDays(-1))
+                    .Select(p => new { p.idPractica, p.idalumno, p.idvehiculo, p.ensalida, p.cancelado, p.fecha, p.hora_salida })
                     .ToListAsync();
 
                 return Ok(ApiResponse<object>.Ok(new { 

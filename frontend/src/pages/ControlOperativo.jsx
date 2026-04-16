@@ -126,6 +126,135 @@ const ControlOperativo = () => {
         return { agendaBloqueHoy: hoy, agendaBloqueAnteriores: ant };
     }, [agendaFiltrada]);
 
+    const cargarAgendadosHoy = useCallback(async () => {
+        setAgendadosLoading(true);
+        try {
+            const pack = await logisticaService.getAgendadosHoy();
+            setAgendadosHoy(pack.practicas || []);
+            setAgendaFuente(pack.fuenteDatos || 'sigafi');
+            setAgendaObtenidoEn(pack.obtenidoEn ?? null);
+        } catch {
+            // Ignorado
+        } finally {
+            setAgendadosLoading(false);
+        }
+    }, []);
+
+    const cargarInstructores = useCallback(async () => {
+        try {
+            const data = await logisticaService.getInstructores();
+            setInstructores(data);
+        } catch {
+            showNotification('Error cargando catálogo de instructores', 'error');
+        }
+    }, []);
+
+    const cargarVehiculosDisponibles = useCallback(async () => {
+        try {
+            const data = await logisticaService.getVehiculosDisponibles();
+            setVehiculos(data);
+        } catch {
+            showNotification('Error cargando flota', 'error');
+        }
+    }, []);
+
+    const cargarClasesActivas = useCallback(async () => {
+        try {
+            const result = await dashboardService.getClasesActivas();
+            const list = result.clases || [];
+            setClasesActivas(list);
+            publishClasesActivas(list);
+            
+            if (result.serverTime) {
+                const sTime = new Date(result.serverTime).getTime();
+                const cTime = new Date().getTime();
+                setClockSkew(sTime - cTime);
+            }
+        } catch {
+            // [RESILIENCIA] Si el backend no responde, limpiamos la lista
+            // para evitar mostrar registros "fantasma" de operaciones ya procesadas.
+            setClasesActivas([]);
+        }
+    }, [publishClasesActivas]);
+
+    const aplicarSugerenciaManual = useCallback(async (dataOverride = null) => {
+        const data = dataOverride || estudianteData;
+        if (!data) return;
+
+        const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
+            ? String(data.idPracticaInstructor).trim()
+            : '';
+
+        try {
+            if (idInstr) {
+                let sInstr = instructores.find((i) => i.idInstructor === idInstr);
+                if (!sInstr) {
+                    const fresh = await logisticaService.getInstructores();
+                    setInstructores(fresh);
+                    sInstr = fresh.find((i) => i.idInstructor === idInstr);
+                }
+                if (!sInstr && data.practicaInstructor) {
+                    sInstr = { idInstructor: idInstr, fullName: data.practicaInstructor };
+                }
+                if (sInstr) setInstructorSeleccionado(sInstr);
+            }
+
+            if (data.idPracticaCentral != null) {
+                const vid = Number(data.idPracticaCentral);
+                let sVeh = vehiculos.find((v) => v.idVehiculo === vid);
+                if (!sVeh) {
+                    const freshV = await logisticaService.getVehiculosDisponibles();
+                    setVehiculos(freshV);
+                    sVeh = freshV.find((v) => v.idVehiculo === vid);
+                }
+                if (!sVeh && data.practicaVehiculo) {
+                    const m = String(data.practicaVehiculo).match(/#([\w-]+)/);
+                    sVeh = {
+                        idVehiculo: vid,
+                        numeroVehiculo: m ? m[1] : (data.numeroVehiculo || "0"),
+                        vehiculoStr: data.practicaVehiculo
+                    };
+                }
+
+                if (sVeh) setVehiculoSeleccionado(sVeh);
+            }
+        } catch (err) {
+            console.error('Error aplicando sugerencia:', err);
+        }
+    }, [estudianteData, instructores, vehiculos]);
+
+    const ejecutarBusquedaEstudiante = useCallback(async (idAlumnoEnviado = null, source = 'manual', agendaCtx = null) => {
+        const idAlumnoABuscar = idAlumnoEnviado || salidaIdAlumno;
+        if (!idAlumnoABuscar || idAlumnoABuscar.length < 10) return;
+
+        setSalidaLoading(true);
+        setEstudianteData(null);
+        try {
+            const data = await logisticaService.buscarEstudiante(idAlumnoABuscar, agendaCtx);
+            setEstudianteData(data);
+            if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
+
+            const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
+                ? String(data.idPracticaInstructor).trim()
+                : '';
+            const tieneSugerencia =
+                (source === 'agenda' || source === 'manual') && (!!idInstr || data.idPracticaCentral != null);
+
+            if (tieneSugerencia) {
+                await aplicarSugerenciaManual(data);
+                showNotification('Alumno, vehículo e instructor cargados automáticamente');
+            } else {
+                showNotification(source === 'agenda' ? 'Datos de agenda cargados' : 'Estudiante localizado');
+            }
+        } catch (err) {
+            const d = err.response?.data;
+            const apiMsg = d?.message ?? d?.Message;
+            showNotification(apiMsg || err.message || 'No localizado', 'error');
+        } finally {
+            setSalidaLoading(false);
+        }
+    }, [salidaIdAlumno, aplicarSugerenciaManual]);
+
     // Auto-scroll al vehículo seleccionado (especialmente útil para carga desde Agenda)
     useEffect(() => {
         if (vehiculoSeleccionado && activeTab === 'salida') {
@@ -216,28 +345,9 @@ const ControlOperativo = () => {
         return () => clearInterval(poll);
     }, [activeTab, cargarClasesActivas, cargarAgendadosHoy]);
 
-    const cargarAgendadosHoy = useCallback(async () => {
-        setAgendadosLoading(true);
-        try {
-            const pack = await logisticaService.getAgendadosHoy();
-            setAgendadosHoy(pack.practicas || []);
-            setAgendaFuente(pack.fuenteDatos || 'sigafi');
-            setAgendaObtenidoEn(pack.obtenidoEn ?? null);
-        } catch {
-            // Ignorado
-        } finally {
-            setAgendadosLoading(false);
-        }
-    }, []);
 
-    const cargarInstructores = useCallback(async () => {
-        try {
-            const data = await logisticaService.getInstructores();
-            setInstructores(data);
-        } catch {
-            showNotification('Error cargando catálogo de instructores', 'error');
-        }
-    }, []);
+
+
 
     // Autocompletado y Sugerencias
     useEffect(() => {
@@ -362,33 +472,9 @@ const ControlOperativo = () => {
         return () => clearTimeout(timer);
     }, [salidaIdAlumno, activeTab, estudianteData, ejecutarBusquedaEstudiante]);
 
-    const cargarVehiculosDisponibles = useCallback(async () => {
-        try {
-            const data = await logisticaService.getVehiculosDisponibles();
-            setVehiculos(data);
-        } catch {
-            showNotification('Error cargando flota', 'error');
-        }
-    }, []);
 
-    const cargarClasesActivas = useCallback(async () => {
-        try {
-            const result = await dashboardService.getClasesActivas();
-            const list = result.clases || [];
-            setClasesActivas(list);
-            publishClasesActivas(list);
-            
-            if (result.serverTime) {
-                const sTime = new Date(result.serverTime).getTime();
-                const cTime = new Date().getTime();
-                setClockSkew(sTime - cTime);
-            }
-        } catch {
-            // [RESILIENCIA] Si el backend no responde, limpiamos la lista
-            // para evitar mostrar registros "fantasma" de operaciones ya procesadas.
-            setClasesActivas([]);
-        }
-    }, [publishClasesActivas]);
+
+
 
     useEffect(() => {
         publishClasesActivas(clasesActivas);
@@ -405,83 +491,9 @@ const ControlOperativo = () => {
         };
     };
 
-    const ejecutarBusquedaEstudiante = useCallback(async (idAlumnoEnviado = null, source = 'manual', agendaCtx = null) => {
-        const idAlumnoABuscar = idAlumnoEnviado || salidaIdAlumno;
-        if (!idAlumnoABuscar || idAlumnoABuscar.length < 10) return;
 
-        setSalidaLoading(true);
-        setEstudianteData(null);
-        try {
-            const data = await logisticaService.buscarEstudiante(idAlumnoABuscar, agendaCtx);
-            setEstudianteData(data);
-            if (data.tipoLicencia) setFiltroLicencia(data.tipoLicencia);
 
-            const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
-                ? String(data.idPracticaInstructor).trim()
-                : '';
-            const tieneSugerencia =
-                (source === 'agenda' || source === 'manual') && (!!idInstr || data.idPracticaCentral != null);
 
-            if (tieneSugerencia) {
-                await aplicarSugerenciaManual(data);
-                showNotification('Alumno, vehículo e instructor cargados automáticamente');
-            } else {
-                showNotification(source === 'agenda' ? 'Datos de agenda cargados' : 'Estudiante localizado');
-            }
-        } catch (err) {
-            const d = err.response?.data;
-            const apiMsg = d?.message ?? d?.Message;
-            showNotification(apiMsg || err.message || 'No localizado', 'error');
-        } finally {
-            setSalidaLoading(false);
-        }
-    }, [salidaIdAlumno, aplicarSugerenciaManual]);
-
-    const aplicarSugerenciaManual = useCallback(async (dataOverride = null) => {
-        const data = dataOverride || estudianteData;
-        if (!data) return;
-
-        const idInstr = data.idPracticaInstructor != null && String(data.idPracticaInstructor).trim() !== ''
-            ? String(data.idPracticaInstructor).trim()
-            : '';
-
-        try {
-            if (idInstr) {
-                let sInstr = instructores.find((i) => i.idInstructor === idInstr);
-                if (!sInstr) {
-                    const fresh = await logisticaService.getInstructores();
-                    setInstructores(fresh);
-                    sInstr = fresh.find((i) => i.idInstructor === idInstr);
-                }
-                if (!sInstr && data.practicaInstructor) {
-                    sInstr = { idInstructor: idInstr, fullName: data.practicaInstructor };
-                }
-                if (sInstr) setInstructorSeleccionado(sInstr);
-            }
-
-            if (data.idPracticaCentral != null) {
-                const vid = Number(data.idPracticaCentral);
-                let sVeh = vehiculos.find((v) => v.idVehiculo === vid);
-                if (!sVeh) {
-                    const freshV = await logisticaService.getVehiculosDisponibles();
-                    setVehiculos(freshV);
-                    sVeh = freshV.find((v) => v.idVehiculo === vid);
-                }
-                if (!sVeh && data.practicaVehiculo) {
-                    const m = String(data.practicaVehiculo).match(/#([\w-]+)/);
-                    sVeh = {
-                        idVehiculo: vid,
-                        numeroVehiculo: m ? m[1] : (data.numeroVehiculo || "0"),
-                        vehiculoStr: data.practicaVehiculo
-                    };
-                }
-
-                if (sVeh) setVehiculoSeleccionado(sVeh);
-            }
-        } catch (err) {
-            console.error('Error aplicando sugerencia:', err);
-        }
-    }, [estudianteData, instructores, vehiculos]);
 
     const handleSeleccionarVehiculo = (veh) => {
         setVehiculoSeleccionado((prev) =>

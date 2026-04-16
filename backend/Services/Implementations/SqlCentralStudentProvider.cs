@@ -754,7 +754,10 @@ FROM cond_alumnos_practicas p
 LEFT JOIN alumnos a ON TRIM(a.idAlumno) = TRIM(p.idalumno)
 LEFT JOIN vehiculos v ON v.idVehiculo = p.idvehiculo
 LEFT JOIN profesores pr ON TRIM(pr.idProfesor) = TRIM(p.idProfesor)
-WHERE COALESCE(p.cancelado, 0) = 0 AND COALESCE(p.ensalida, 0) = 1";
+WHERE COALESCE(p.cancelado, 0) = 0 
+  AND COALESCE(p.ensalida, 0) = 1 
+  AND p.hora_llegada IS NULL 
+  AND p.fecha >= (CURDATE() - INTERVAL 1 DAY)";
 
                 await using var conn = new MySqlConnection(_connectionString);
                 await conn.OpenAsync();
