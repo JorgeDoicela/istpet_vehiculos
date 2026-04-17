@@ -1,13 +1,13 @@
-# ISTPET Logistics: SIGAFI Parity Edition 2026
+# Logística vehículos ISTPET: Edición de paridad SIGAFI 2026
 
-![ISTPET Zenith Header](https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png) <!-- Reemplazar con imagen real si existe -->
+![ISTPET Zenith Header](https://institutotraversari.edu.ec/wp-content/uploads/2025/09/FONDO-WEB1.png)
 
 [![.NET 8](https://img.shields.io/badge/.NET-8.0-512BD4?style=for-the-badge&logo=dotnet)](https://dotnet.microsoft.com/)
 [![React 19](https://img.shields.io/badge/React-19.0-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1?style=for-the-badge&logo=mysql&logoColor=white)](https://www.mysql.com/)
 [![Vite](https://img.shields.io/badge/Vite-5.0+-646CFF?style=for-the-badge&logo=vite&logoColor=white)](https://vitejs.dev/)
 
-**ISTPET Logistics** es la plataforma de control operativo de flota y monitoreo académico definitiva del Instituto Superior Tecnológico "Mayor Pedro Traversari" (ISTPET). Diseñada para garantizar una **paridad absoluta** con la base de datos central de SIGAFI, esta edición 2026 introduce una arquitectura híbrida de alta disponibilidad y una experiencia de usuario de grado industrial.
+**Logística vehículos ISTPET** es un sistema de control operativo de flota y monitoreo académico definitiva del Instituto Superior Tecnológico "Mayor Pedro Traversari" (ISTPET). Diseñada para garantizar una **paridad absoluta** con la base de datos central de SIGAFI, esta edición 2026 introduce una arquitectura híbrida de alta disponibilidad y una experiencia de usuario de grado industrial.
 
 > [!IMPORTANT]
 > **Estado de Producción:** El sistema opera actualmente en **Modo Directo**, consultando SIGAFI en tiempo real. El **Modo Espejo (Sincronización Masiva)** se mantiene como un respaldo de alta disponibilidad (Standby HA) reactivable por configuración.
